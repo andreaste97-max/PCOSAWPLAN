@@ -113,7 +113,7 @@ var googleProvider=new firebase.auth.GoogleAuthProvider();
 
 var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
-function syncFromCloud(uid){if(!uid)return Promise.resolve();SYNC_KEYS.forEach(function(k){localStorage.removeItem("pcos_"+k);});["fast_isOn","fast_start","fast_goal"].forEach(function(k){localStorage.removeItem("pcos_"+k);});var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
 function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
 function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
@@ -1812,7 +1812,7 @@ function OnboardingWizard(props){
   var _s1=useState(0),step=_s1[0],setStep=_s1[1];
   var _s2=useState({name:"",age:27,height:168,weight:77,goalW:68,bf:29,goalBf:23,ifH:14,ifOpen:"10:00",ifClose:"20:00",stepsG:10000,waterG:8,workoutsG:4,allergies:[],pcosType:"classic",fitnessLevel:"beginner"}),form=_s2[0],setForm=_s2[1];
   function upd(k,v){var u=Object.assign({},form);u[k]=v;setForm(u);}
-  function finish(){var prof=Object.assign({},form);SV("profile",prof);SV("pcos_onboarded",true);setProfile(prof);window.location.reload();}
+  function finish(){var prof=Object.assign({},form);SV("profile",prof);SV("pcos_onboarded",true);props.setProfile(prof);if(_syncUid){syncToCloud(_syncUid).then(function(){window.location.reload();}).catch(function(){window.location.reload();});}else{window.location.reload();}}
   var ALLERGY_OPTS=["Lattosio","Glutine","Frutta secca","Uova","Soia","Pesce"];
   function toggleAllergy(a){var u=form.allergies.slice();var i=u.indexOf(a);if(i===-1)u.push(a);else u.splice(i,1);upd("allergies",u);}
   var steps=[
@@ -2195,7 +2195,7 @@ function App(){
   useEffect(function(){SV("profile",profile);requestNotifPerm();},[profile]);
 
   function doSync(){if(!user)return;setSyncing(true);syncToCloud(user.uid).then(function(){setLastSync(new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));setSyncing(false);}).catch(function(){setSyncing(false);});}
-  function doLogout(){_syncUid=null;fbAuth.signOut();setUser(null);}
+  function doLogout(){_syncUid=null;SYNC_KEYS.forEach(function(k){localStorage.removeItem("pcos_"+k);});["fast_isOn","fast_start","fast_goal","pcos_onboarded"].forEach(function(k){localStorage.removeItem("pcos_"+k);});localStorage.removeItem("pcos_progressPhotos");fbAuth.signOut();setUser(null);}
 
   /* View mode for doctor */
   var viewUid=getViewUid();
