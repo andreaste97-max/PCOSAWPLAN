@@ -756,6 +756,111 @@ function MedicalDashboard(){
 }
 
 
+/* ═══════════ PCOS AI ASSISTANT (Rule-Based) ═══════════ */
+var AI_KB=[
+{k:["colazione","mattina","breakfast","prima colazione"],t:"Colazione PCOS-Friendly",r:"La colazione e il pasto piu importante nella PCOS. Dopo il digiuno notturno, il corpo ha bisogno di stabilita glicemica. Le regole d'oro: 1) Proteine al centro — uova (fino a 12/settimana), salmone, affettati magri (tacchino, bresaola), hummus, tofu. Senza proteine avrai montagne russe glicemiche. 2) Grassi buoni — frutta secca (mandorle, noci, pistacchi), burro di arachidi, avocado. 3) Carboidrati complessi e fibrosi — pane integrale di segale, avena, grano saraceno. 4) EVITA: yogurt magro (indice insulinico altissimo, piu del pane bianco!), cornetti, gallette di riso, cereali zuccherati, succhi di frutta. Alternative al latte vaccino: latte di mandorla, cocco, nocciola. Esempio perfetto: 2 uova strapazzate + pane di segale + avocado + mandorle + te verde."},
+{k:["indice glicemico","glicemia","zucchero","zuccheri","spike","picco","picchi"],t:"Indice Glicemico e PCOS",r:"Nella PCOS l'insulina e la chiave di tutto. Piu la glicemia sale dopo un pasto, piu insulina viene prodotta = piu androgeni = piu sintomi. Le regole: 1) Mangia SEMPRE in quest'ordine: VERDURA (prima!) → PROTEINE → CARBOIDRATI (mai da soli). 2) Scegli carboidrati ad alto contenuto di fibre: quinoa, riso integrale, farro, legumi, grano saraceno, patate dolci. 3) Evita carboidrati raffinati: pane bianco, pasta non integrale, riso bianco, dolci, gallette di riso (IG altissimo!). 4) Abbina sempre un grasso buono (olio EVO, frutta secca) per rallentare l'assorbimento. 5) Frutta: si, ma con moderazione e MAI da sola — sempre con frutta secca o dopo un pasto."},
+{k:["verdura","verdure","vegetali","ortaggi","insalata","fibre","fibra"],t:"Verdure nella PCOS",r:"Le verdure sono il tuo superpotere nella PCOS: fibra, antiossidanti, vitamine, indice glicemico e insulinico bassissimo. Devono essere il PRIMO alimento di ogni pasto — la fibra rallenta l'assorbimento degli zuccheri successivi. Top PCOS: broccoli, cavolfiori, zucchine, spinaci (crudi meglio), cavolo, rucola, sedano, peperoni, carciofi, finocchi, funghi. Attenzione a: carote (meglio crude, cotte raddoppiano l'IG), zucca (meglio al forno che bollita), barbabietola (meglio cruda a fettine). I pomodori e cetrioli hanno molta acqua e poca fibra: abbinali sempre a qualcosa di fibroso (sedano, rucola). Quantita: almeno 200-250g di verdure strutturate, 80-100g di insalata. Obiettivo: 2-3 porzioni di verdura al giorno."},
+{k:["legumi","lenticch","ceci","fagioli","piselli","soia"],t:"Legumi e PCOS",r:"I legumi sono fantastici per la PCOS! Considerali come 'carboidrati proteici' — hanno un indice glicemico molto piu basso dei cereali, ottime proteine vegetali e tante fibre. Prevengono i picchi glicemici e danno sazietà a lungo. Regole: comprali secchi e biologici, ammollo 18-24 ore. Puoi consumarli 3-5 volte a settimana. 3 modi per un pasto equilibrato: 1) Come sostituto dei cereali (es. zuppa di lenticchie + verdure + olio EVO), 2) Come contorno proteico (ceci in insalata + verdure + pesce), 3) In crema (hummus come base proteica). Attenzione: piselli e fave hanno piu amidi — trattali come patate, non come verdura."},
+{k:["latticin","latte","yogurt","formaggio","formaggi","dairy","calcio"],t:"Latticini e PCOS",r:"Scoperta importante: i latticini a basso contenuto di grassi hanno indice glicemico basso MA indice INSULINICO altissimo! Lo yogurt magro stimola l'insulina PIU del pane bianco. Perche? Il latte vaccino contiene IGF-1 e aminoacidi ramificati (BCAA) che fanno impennare l'insulina. Cosa fare: 1) Riduci latticini, soprattutto quelli 'light'. 2) Preferisci: latte di mandorla, cocco, nocciola, anacardi (evita latte di riso = IG alto). 3) Se vuoi yogurt: greco intero max 2 volte/settimana, mai quotidianamente. 4) I fiocchi di latte e il brie hanno indice insulinico piu basso. 5) Calcio? L'OMS ha ridotto le raccomandazioni. Prendi vitamina D, fai esercizio fisico, bevi acqua ricca di calcio (es. Sangemini, ~1L/giorno)."},
+{k:["inositolo","myo-inositolo","d-chiro","integratore","integratori","supplemento","supplementi"],t:"Integratori per PCOS",r:"I piu importanti scientificamente: 1) MYO-INOSITOLO: il re degli integratori PCOS. Insulino-sensibilizzante, migliora ovulazione, riduce testosterone e HOMA-IR, regolarizza il ciclo. Dose: 2-4g/giorno, lontano dai pasti per miglior assorbimento. 2) VITAMINA D: carente nell'80% delle donne con PCOS. Target: 40-60 ng/mL. 3) OMEGA-3: anti-infiammatorio, migliora profilo lipidico. 4) MAGNESIO: riduce ansia, migliora sonno e insulino-sensibilità. 5) ZINCO: riduce testosterone e DHT, utile per acne e capelli. 6) NAC (N-Acetilcisteina): antiossidante, migliora ovulazione. 7) ACIDO FOLICO/METILFOLATO: essenziale per fertilità. Ricorda: gli integratori NON sostituiscono alimentazione e stile di vita. Consulta sempre il tuo endocrinologo."},
+{k:["insulino","insulina","resistenza","homa","glicemia a digiuno","iperinsulin"],t:"Insulino-Resistenza e PCOS",r:"L'insulino-resistenza e il motore nascosto della PCOS. Il tuo corpo produce troppa insulina → piu androgeni → piu sintomi (acne, irsutismo, ciclo irregolare, difficolta a perdere peso). Come combatterla: 1) ALIMENTAZIONE: pasti completi (verdura+proteine+carboidrati complessi+grassi buoni), mai carboidrati da soli. 2) ORDINE DEI CIBI: verdura prima, proteine poi, carboidrati per ultimi. 3) ESERCIZIO: i pesi sono i migliori — il muscolo consuma glucosio anche a riposo. Anche una camminata di 15 min dopo i pasti abbassa la glicemia del 30%. 4) DIGIUNO INTERMITTENTE: migliora la sensibilità insulinica. 5) SONNO: dormire <7 ore peggiora l'insulino-resistenza del 40%. 6) Valori da monitorare: insulina basale (<10), HOMA-IR (<1.5), glicemia a digiuno (<90)."},
+{k:["peso","dimagri","perdere","grasso","addominale","pancia","metabolismo","calorie"],t:"Perdita di Peso nella PCOS",r:"Nella PCOS perdere peso e piu difficile ma NON impossibile. Il problema non e solo 'mangiare meno' — devi spegnere i meccanismi che sostengono l'iperinsulinemia. Strategie efficaci: 1) DEFICIT MODERATO: non scendere sotto 1200-1300 kcal, il metabolismo si adatterebbe. 2) PRIORITA' PROTEINE: almeno 1.6-2g/kg per preservare muscolo. 3) PESI > CARDIO: il muscolo brucia grasso 24/7. Ogni kg di muscolo = ~50 kcal extra/giorno a riposo. 4) GRASSO ADDOMINALE: e il piu legato all'insulino-resistenza. Si riduce con pesi, IF, gestione cortisolo e sonno. 5) PAZIENZA: nella PCOS servono 8-12 settimane per vedere risultati. Il peso puo non cambiare ma la composizione corporea si (meno grasso, piu muscolo). Pesa te stessa max 1 volta a settimana, stessa ora, a digiuno."},
+{k:["allena","eserciz","palestr","pesi","forza","squat","stacco","muscol","gym","workout"],t:"Allenamento e PCOS",r:"L'allenamento con i pesi e il MIGLIORE per la PCOS — meglio del cardio! Perche: il muscolo e un 'magazzino di glucosio' che migliora la sensibilità insulinica 24/7. Piano ideale: 3-4 sessioni/settimana di pesi (upper/lower/core), 30-45 min. Esercizi top: squat, stacco, hip thrust, pressa, affondi (gambe e glutei bruciano piu calorie). Aggiungi: 8000-10000 passi/giorno (attivita NEAT = brucia piu calorie del cardio intenso). EVITA: troppo HIIT/cardio intenso (alza il cortisolo → piu grasso addominale). Pilates e ottimo come complemento: meno ansia, core forte, postura migliore. Progressione: aumenta il peso o le reps ogni 1-2 settimane. Il tuo corpo si adatta — devi dargli stimoli nuovi."},
+{k:["digiuno","fasting","intermittente","finestra","16:8","14:10","12:12"],t:"Digiuno Intermittente e PCOS",r:"Il digiuno intermittente (IF) e un ottimo alleato nella PCOS perche migliora la sensibilità insulinica, riduce l'infiammazione e attiva l'autofagia cellulare. Protocolli: 12:12 (principianti), 14:10 (ideale per PCOS), 16:8 (avanzato). Regole: 1) Colazione ABBONDANTE e proteica come primo pasto. 2) Cena LEGGERA e entro la finestra. 3) Durante il digiuno: acqua, te verde, tisane senza zucchero (niente latte!). 4) Il caffe ha un leggero effetto ipoglicemizzante — ok ma senza zucchero. 5) NON saltare pasti — riduci la finestra, non il numero di pasti. 6) Fase luteale: se hai molta fame pre-mestruale, e NORMALE. Puoi ridurre il digiuno a 12:12 in quei giorni. L'IF non e una dieta, e un ritmo alimentare."},
+{k:["ciclo","mestrual","mestruazion","ovulaz","fase","follicol","lute","amenorrea","irregolar"],t:"Ciclo Mestruale e PCOS",r:"Il ciclo irregolare e il sintomo piu comune della PCOS, causato dall'eccesso di androgeni che impedisce ai follicoli di maturare. Le 4 fasi e cosa fare: 1) MESTRUALE (G1-5): riposo, ferro (spinaci, lenticchie, carne rossa), zenzero per crampi. Allenamento leggero. 2) FOLLICOLARE (G6-13): energia in salita! Proteine per follicoli, verdure crucifere. Aumenta intensità allenamento. 3) OVULATORIA (G14-16): picco di energia. Vai all-out con i pesi, fibre per metabolizzare estrogeni. 4) LUTEALE (G17-35+): prima meta ancora ok, seconda meta riduci. Carboidrati complessi per serotonina, magnesio, cannella. Fame aumentata = normale, prepara snack sani. Se non hai il ciclo: l'IF, l'inositolo e la perdita di peso possono ripristinarlo."},
+{k:["acne","pelle","brufol","irsutismo","peli","capelli","caduta","androgen","testosterone","dht"],t:"Acne, Irsutismo e PCOS",r:"Acne e irsutismo nella PCOS sono causati dall'eccesso di androgeni (testosterone, DHT, DHEA-S). Strategie: 1) ALIMENTAZIONE anti-infiammatoria: riduci latticini (stimolano IGF-1 e androgeni), zuccheri raffinati, cibi processati. Aumenta omega-3, zinco, verdure crucifere (broccoli, cavolo — metabolizzano gli estrogeni). 2) INTEGRATORI: Zinco (riduce DHT), NAC, inositolo, the verde. 3) PESI: non aumentano il testosterone nelle donne — anzi, migliorando l'insulino-resistenza possono RIDURRE gli androgeni. 4) STRESS: il cortisolo cronico alza i DHEA-S surrenalici. Meditazione, yoga, sonno regolare. 5) Valori da controllare: testosterone totale, testosterone libero, DHEA-S, SHBG (piu e alto meglio e). Il myo-inositolo aumenta l'SHBG."},
+{k:["fertili","gravid","concepimento","ovulazione","mamm","bambino","figli"],t:"PCOS e Fertilità",r:"La PCOS e la causa piu comune di infertilità femminile, ma NON significa che non puoi diventare mamma. L'anovulazione e il problema principale — i follicoli non maturano per l'eccesso di androgeni e insulina. Cosa fare: 1) Perdita di peso: anche solo il 5-10% migliora significativamente l'ovulazione. 2) Myo-inositolo: studi dimostrano che migliora significativamente il tasso di ovulazione e regolarizza il ciclo. 3) Metilfolato/acido folico: essenziale. 4) Alimentazione anti-infiammatoria e IF. 5) Farmaci: la metformina migliora l'insulino-sensibilità e puo ripristinare l'ovulazione. Il clomifene stimola l'ovulazione. 6) Approccio multidisciplinare: nutrizionista + ginecologo/a + eventualmente endocrinologo/a. La PCOS non e sempre un ostacolo a diventare mamme."},
+{k:["stress","cortisolo","ansia","relax","meditazione","mentale","psicolog"],t:"Stress, Cortisolo e PCOS",r:"Il cortisolo (ormone dello stress) e un nemico silenzioso nella PCOS. Cortisolo alto → piu insulina → piu androgeni → piu grasso addominale → piu stress = un circolo vizioso. Come spezzarlo: 1) SONNO: 7-9 ore, regolare. Il cortisolo segue il ritmo circadiano. 2) CAMMINATE nella natura: 20-30 min abbassano il cortisolo del 25%. 3) RESPIRAZIONE: 5 min di box breathing (4s inspira, 4s trattieni, 4s espira, 4s trattieni) abbassano il cortisolo immediatamente. 4) LIMITA caffè a 1-2/giorno prima delle 14:00. 5) EVITA allenamenti troppo intensi la sera (alzano il cortisolo). 6) MAGNESIO prima di dormire. 7) Non sottovalutare la salute mentale: una psicologa puo aiutarti nel percorso. La PCOS non e solo fisica — ha un impatto emotivo importante."},
+{k:["sonno","dorm","notturn","insonnia","sveglia","riposo"],t:"Sonno e PCOS",r:"Dormire bene e una MEDICINA per la PCOS. Meno di 7 ore: cortisolo +37%, insulino-resistenza peggiora del 40%, leptina diminuisce (piu fame), grelina aumenta (piu voglia di dolci). Regole: 1) 7-9 ore a notte, SEMPRE. 2) Orari regolari: vai a letto e svegliati alla stessa ora. 3) Buio totale: la melatonina si produce solo al buio. 4) Niente schermi 30 min prima di dormire. 5) Temperatura fresca (18-20°C). 6) Magnesio glicinato o bisglicinato prima di dormire. 7) Tisana camomilla o valeriana. 8) Evita caffeina dopo le 14:00 e alcol la sera. Il sonno profondo e quando il corpo ripara, gli ormoni si resettano e l'insulina si ricalibra."},
+{k:["analisi","sangue","esami","ematici","valore","valori","prelievo","check","tiroide","tsh"],t:"Analisi del Sangue PCOS",r:"Esami fondamentali da fare almeno 1-2 volte/anno: 1) INSULINA BASALE: ideale <10 μU/mL. 2) HOMA-IR: <1.5 ottimo, >2.5 insulino-resistenza. 3) GLICEMIA A DIGIUNO: <90 mg/dL ideale, 100-125 pre-diabete. 4) TESTOSTERONE TOTALE: spesso elevato nella PCOS. 5) DHEA-S: androgeno surrenalico, elevato nel 25% delle PCOS. 6) SHBG: piu e alto meglio e — lega il testosterone libero. 7) TSH: 1-2.5 ideale (nella PCOS controllare sempre la tiroide). 8) VITAMINA D: target 40-60 ng/mL, carente nell'80% delle PCOS. 9) FERRITINA: >30 ideale, controllare se ciclo abbondante. 10) PROFILO LIPIDICO: colesterolo, trigliceridi. Porta questi valori al tuo endocrinologo e usa la sezione Analisi dell'app per monitorare i trend."},
+{k:["motivazione","morale","difficile","mollare","sconforto","stanca","non ce la faccio","dura","fatica"],t:"Motivazione e PCOS",r:"Lo so, la PCOS puo essere frustrante. I risultati arrivano piu lentamente, il corpo sembra non rispondere, e ci sono giorni in cui vorresti mollare tutto. Ma ricorda: 1) Non sei sola — la PCOS colpisce 1 donna su 10. 2) Ogni piccolo gesto conta: quel bicchiere d'acqua, quella camminata, quella scelta alimentare. 3) I cambiamenti piu importanti non si vedono sulla bilancia — insulina che migliora, infiammazione che cala, energia che torna. 4) Inizia a piccoli passi, non tutto insieme. Chi ha avuto i risultati migliori ci ha messo 1-2 ANNI di percorso graduale. 5) Non e una 'dieta' — e il tuo nuovo stile di vita. Innamorati del percorso. 6) La PCOS si gestisce, non ti definisce. Tu sei molto piu dei tuoi sintomi. Continua, un giorno alla volta."},
+{k:["acqua","idratazione","bere","bevande","te verde","tisana","caffe"],t:"Idratazione e PCOS",r:"L'acqua e l'unica bevanda con cui dissetarsi nella PCOS. Obiettivo: almeno 1.5-2L/giorno. Bevande consigliate: 1) ACQUA: preferibilmente ricca di calcio (es. Sangemini). 2) TE VERDE: anti-infiammatorio, antiossidante, leggero effetto termogenico. 2-3 tazze/giorno. 3) TISANE: zenzero (anti-nausea, anti-infiammatorio), cannella (migliora insulino-sensibilità), menta. 4) CAFFE: max 1-2 al giorno, senza zucchero, prima delle 14:00. Evita: succhi di frutta (solo zuccheri), bevande zuccherate, energy drink, latte vaccino (alto indice insulinico), bevande di riso (IG alto). L'idratazione migliora digestione, pelle, energia e aiuta il metabolismo."},
+{k:["frutta secca","mandorl","noci","pistacch","semi","arachid","nocciole"],t:"Frutta Secca e PCOS",r:"La frutta secca e INDISPENSABILE nella PCOS — fornisce grassi buoni, proteine, fibre e minerali. Top: mandorle (le migliori per IG), noci (omega-3), pistacchi (proteine), noci pecan, anacardi, nocciole. Semi: chia (omega-3, fibre), zucca (zinco!), girasole, lino (fitoestrogeni), sesamo, canapa. Usi: 1) A colazione: una manciata con yogurt o porridge. 2) Come snack: 20-30g per spezzare la fame senza spike glicemici. 3) In crema: burro di mandorle o arachidi su pane integrale. 4) Nelle insalate: semi di zucca e girasole. Regola: comprale sfuse, non tostate e non salate. La frutta secca e il tuo migliore alleato anti-picco-glicemico."}
+];
+function findBestMatch(q){
+  var ql=q.toLowerCase().replace(/[^a-zA-Zàèéìòù0-9\s]/g,"");
+  var best=null;var bestScore=0;
+  AI_KB.forEach(function(entry){
+    var score=0;
+    entry.k.forEach(function(keyword){
+      if(ql.includes(keyword))score+=keyword.length;
+    });
+    if(score>bestScore){bestScore=score;best=entry;}
+  });
+  return bestScore>=3?best:null;
+}
+function PCOSAssistant({profile}){
+  const[msgs,setMsgs]=useState([{from:"ai",text:"Ciao! Sono il tuo assistente PCOS. Posso aiutarti su alimentazione, allenamento, digiuno intermittente, integratori, ciclo mestruale, analisi del sangue e molto altro. Chiedimi quello che vuoi!",time:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}]);
+  const[input,setInput]=useState("");
+  const[typing,setTyping]=useState(false);
+  var chatRef=useRef(null);
+  var mc=calcMacros(profile);
+  var cp=getCyclePhaseNow();
+  useEffect(function(){if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},[msgs]);
+  function personalizeResp(text){
+    var t=text;
+    if(profile.name)t=t.replace(/NOME/g,profile.name);
+    return t;
+  }
+  function buildContext(){
+    var ctx=[];
+    ctx.push("Il tuo target calorico e ~"+mc.target+" kcal/giorno.");
+    ctx.push("Il tuo protocollo IF e "+profile.ifH+":"+(24-profile.ifH)+" (finestra "+profile.ifOpen+"-"+profile.ifClose+").");
+    if(profile.weight&&profile.goalW)ctx.push("Peso attuale: "+profile.weight+"kg, obiettivo: "+profile.goalW+"kg ("+Math.max(0,(profile.weight-profile.goalW).toFixed(1))+"kg da perdere).");
+    if(profile.allergies&&profile.allergies.length>0)ctx.push("Intolleranze: "+profile.allergies.join(", ")+".");
+    if(cp)ctx.push("Sei in fase "+CYCLE_PHASES[cp.phase].name+" del ciclo (giorno "+cp.day+").");
+    return ctx.join(" ");
+  }
+  function suggest(){
+    var suggestions=["Cosa mangiare a colazione?","Come perdere grasso addominale?","Quali integratori prendere?","Come funziona il digiuno intermittente?","Quali analisi del sangue fare?","Consigli per il ciclo irregolare","Come gestire lo stress?","Quanta acqua devo bere?","Latticini si o no?","Sono senza motivazione..."];
+    return suggestions;
+  }
+  function sendMsg(){
+    if(!input.trim())return;
+    var userMsg={from:"user",text:input.trim(),time:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};
+    var newMsgs=msgs.concat([userMsg]);
+    setMsgs(newMsgs);
+    setInput("");
+    setTyping(true);
+    setTimeout(function(){
+      var match=findBestMatch(input);
+      var reply;
+      if(match){
+        var context=buildContext();
+        reply={from:"ai",text:"**"+match.t+"**\n\n"+personalizeResp(match.r)+"\n\n_In base al tuo profilo: "+context+"_",time:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};
+      }else{
+        reply={from:"ai",text:"Non ho una risposta specifica su questo argomento, ma posso aiutarti su: alimentazione PCOS, indice glicemico, colazione, verdure, legumi, latticini, integratori (inositolo, vitamina D...), insulino-resistenza, perdita di peso, allenamento, digiuno intermittente, ciclo mestruale, fertilità, acne/irsutismo, stress/cortisolo, sonno, analisi del sangue, frutta secca, idratazione. Prova a riformulare la domanda o scegli un argomento qui sotto!",time:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};
+      }
+      setMsgs(newMsgs.concat([reply]));
+      setTyping(false);
+    },800+Math.random()*700);
+  }
+  function renderText(text){
+    var parts=text.split("\n");
+    return parts.map(function(p,i){
+      if(!p.trim())return null;
+      var t=p;
+      var isBold=t.startsWith("**")&&t.includes("**",2);
+      var isItalic=t.startsWith("_")&&t.endsWith("_");
+      if(isBold)return React.createElement("div",{key:i,style:{fontWeight:"700",fontSize:"13px",marginBottom:"6px",color:C.sageD}},t.replace(/\*\*/g,""));
+      if(isItalic)return React.createElement("div",{key:i,style:{fontStyle:"italic",fontSize:"10px",marginTop:"6px",padding:"6px 8px",borderRadius:"6px",background:C.sageP,color:C.sageD}},t.replace(/_/g,""));
+      return React.createElement("div",{key:i,style:{fontSize:"12px",lineHeight:1.6,marginBottom:"4px"}},t);
+    });
+  }
+  return(<div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 220px)",minHeight:"400px"}}>
+    <SecH title="Assistente PCOS" sub="Basato sulle guide Lotus Flower PCOS 101"/>
+    <div ref={chatRef} style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:"10px",padding:"4px 0",marginBottom:"10px"}}>
+      {msgs.map(function(m,i){return(<div key={i} style={{display:"flex",justifyContent:m.from==="user"?"flex-end":"flex-start"}}><div style={{maxWidth:"85%",padding:"10px 14px",borderRadius:m.from==="user"?"14px 14px 4px 14px":"14px 14px 14px 4px",background:m.from==="user"?"linear-gradient(135deg,"+C.sage+","+C.sageD+")":C.white,color:m.from==="user"?C.white:C.txt,fontFamily:F.s,boxShadow:"0 1px 3px rgba(0,0,0,.08)",border:m.from==="ai"?"1px solid "+C.bdr:"none"}}>{m.from==="ai"?renderText(m.text):<span style={{fontSize:"12px",lineHeight:1.5}}>{m.text}</span>}<div style={{fontSize:"8px",color:m.from==="user"?"rgba(255,255,255,.6)":C.txtL,textAlign:"right",marginTop:"4px"}}>{m.time}</div></div></div>);})}
+      {typing&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{padding:"10px 18px",borderRadius:"14px 14px 14px 4px",background:C.white,border:"1px solid "+C.bdr}}><span style={{fontFamily:F.s,fontSize:"12px",color:C.txtL,animation:"pulse 1s infinite"}}>Sto pensando...</span></div></div>}
+    </div>
+    {msgs.length<=2&&(<div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"10px"}}>{suggest().map(function(s,i){return(<button key={i} onClick={function(){setInput(s);}} style={{padding:"6px 10px",borderRadius:"20px",border:"1px solid "+C.sageL,background:C.sageP,color:C.sageD,fontSize:"10px",fontFamily:F.s,cursor:"pointer",whiteSpace:"nowrap"}}>{s}</button>);})}</div>)}
+    <div style={{display:"flex",gap:"8px"}}><input value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendMsg();}} placeholder="Chiedimi qualcosa sulla PCOS..." style={Object.assign({},iS,{flex:1,padding:"12px",borderRadius:"20px"})}/><button onClick={sendMsg} disabled={!input.trim()||typing} style={{padding:"12px 18px",borderRadius:"20px",border:"none",background:!input.trim()?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"14px",cursor:!input.trim()?"default":"pointer"}}>➤</button></div>
+    <p style={{fontSize:"8px",fontFamily:F.s,color:C.txtL,textAlign:"center",margin:"6px 0 0"}}>Le risposte sono basate sulle guide Lotus Flower PCOS 101. Consulta sempre il tuo medico per decisioni cliniche.</p>
+  </div>);
+}
+
+
 /* ═══════════ BENESSERE (Integratori + Sonno + Medical + Export + Photos) ═══════════ */
 function Benessere(){
   const[sub,setSub]=useState("supps");
@@ -836,6 +941,7 @@ function App(){
           <NavTab label="Ciclo" icon="🩸" active={tab==="ciclo"} onClick={function(){setTab("ciclo");}}/>
           <NavTab label="Garmin" icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
           <NavTab label="Salute" icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
+          <NavTab label="AI" icon="🤖" active={tab==="ai"} onClick={function(){setTab("ai");}}/>
         </div>
       </div>
       <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
@@ -847,6 +953,7 @@ function App(){
         {tab==="ciclo"&&<CicloMestruale/>}
         {tab==="garmin"&&<GarminSection profile={profile}/>}
         {tab==="benessere"&&<Benessere/>}
+        {tab==="ai"&&<PCOSAssistant profile={profile}/>}
       </div>
       <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v3.0 | Cloud ☁️ | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
     </div>
