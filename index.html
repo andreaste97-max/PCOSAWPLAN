@@ -111,9 +111,9 @@ var fbAuth=firebase.auth();
 var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
-var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
-function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();var cloudProf=null;try{cloudProf=data.profile?JSON.parse(data.profile):null;}catch(e){}var localProf=null;try{var lp=localStorage.getItem("pcos_profile");localProf=lp?JSON.parse(lp):null;}catch(e){}var cloudHasProfile=cloudProf&&cloudProf.name;var localHasProfile=localProf&&localProf.name;Object.keys(data).forEach(function(k){if(k==="lastSync")return;if(k==="profile"&&localHasProfile&&!cloudHasProfile)return;if(k==="pcos_onboarded"&&localHasProfile&&!cloudHasProfile)return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();var cloudProf=null;try{cloudProf=data.profile?JSON.parse(data.profile):null;}catch(e){}var localProf=null;try{var lp=localStorage.getItem("pcos_profile");localProf=lp?JSON.parse(lp):null;}catch(e){}var cloudHasProfile=cloudProf&&cloudProf.name;var localHasProfile=localProf&&localProf.name;var localFastOn=false;try{localFastOn=JSON.parse(localStorage.getItem("pcos_fast_isOn"));}catch(e){}Object.keys(data).forEach(function(k){if(k==="lastSync")return;if(k==="profile"&&localHasProfile&&!cloudHasProfile)return;if(k==="pcos_onboarded"&&localHasProfile&&!cloudHasProfile)return;if(localFastOn&&(k==="fast_isOn"||k==="fast_start"))return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
 function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
 function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
@@ -552,7 +552,7 @@ function FastingTimer({profile}){
   var prog=start?Math.min((el/gMs)*100,100):0;
   var done=el>=gMs;
   var t=fmt(el);var tr=fmt(Math.max(gMs-el,0));
-  useEffect(function(){SV("fast_isOn",isOn);SV("fast_start",start);SV("fast_goal",goal);},[isOn,start,goal]);
+  useEffect(function(){try{localStorage.setItem("pcos_fast_isOn",JSON.stringify(isOn));localStorage.setItem("pcos_fast_start",JSON.stringify(start));}catch(e){}SV("fast_goal",goal);},[isOn,start,goal]);
   useEffect(function(){if(isOn&&start){timerRef.current=setInterval(function(){var now=Date.now();var elapsed=now-start;setEl(elapsed);if(elapsed>=gMs&&elapsed-1000<gMs)sendNotif("🎉 Digiuno completato!","Hai completato "+goal+"h di digiuno. Bravissima!");var thirtyMin=gMs-30*60000;if(elapsed>=thirtyMin&&elapsed-1000<thirtyMin)sendNotif("⏳ 30 minuti al traguardo","Mancano solo 30 minuti per completare il digiuno!");},1000);}return function(){clearInterval(timerRef.current);};},[isOn,start]);
   var goFn=function(){var now=Date.now();setStart(now);setEl(0);setIsOn(true);};
   var stopFn=function(){setIsOn(false);clearInterval(timerRef.current);};
@@ -2195,7 +2195,7 @@ function App(){
   useEffect(function(){SV("profile",profile);requestNotifPerm();},[profile]);
 
   function doSync(){if(!user)return;setSyncing(true);syncToCloud(user.uid).then(function(){setLastSync(new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));setSyncing(false);}).catch(function(){setSyncing(false);});}
-  function doLogout(){_syncUid=null;SYNC_KEYS.forEach(function(k){localStorage.removeItem("pcos_"+k);});["fast_isOn","fast_start","fast_goal","pcos_onboarded"].forEach(function(k){localStorage.removeItem("pcos_"+k);});localStorage.removeItem("pcos_progressPhotos");fbAuth.signOut();setUser(null);}
+  function doLogout(){_syncUid=null;SYNC_KEYS.forEach(function(k){localStorage.removeItem("pcos_"+k);});["fast_isOn","fast_start","fast_goal","pcos_onboarded"].forEach(function(k){localStorage.removeItem("pcos_"+k);});localStorage.removeItem("pcos_fast_isOn");localStorage.removeItem("pcos_fast_start");localStorage.removeItem("pcos_progressPhotos");fbAuth.signOut();setUser(null);}
 
   /* View mode for doctor */
   var viewUid=getViewUid();
