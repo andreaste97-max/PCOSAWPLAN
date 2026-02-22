@@ -980,12 +980,106 @@ function GLCalculator(){
     )
   );
 }
+/* FOOD SCANNER - Open Food Facts API */
+var PCOS_BAD_INGR=["sugar","glucose","fructose","corn syrup","maltodextrin","dextrose","sucrose","aspartame","palm oil","margarine","hydrogenated","zucchero","glucosio","fruttosio","sciroppo","maltodestrina","destrosio","saccarosio","aspartame","olio di palma","margarina","idrogenato"];
+var PCOS_GOOD_INGR=["oat","quinoa","lentil","chickpea","almond","walnut","flaxseed","chia","turmeric","cinnamon","ginger","avena","quinoa","lenticch","ceci","mandorl","noce","lino","chia","curcuma","cannella","zenzero","omega","inositol","magnesio"];
+function FoodScanner(){
+  var _s1=useState(""),barcode=_s1[0],setBarcode=_s1[1];
+  var _s2=useState(null),product=_s2[0],setProduct=_s2[1];
+  var _s3=useState(false),loading=_s3[0],setLoading=_s3[1];
+  var _s4=useState(""),err=_s4[0],setErr=_s4[1];
+  function scan(){if(!barcode||barcode.length<8)return;setLoading(true);setErr("");setProduct(null);fetch("https://world.openfoodfacts.org/api/v0/product/"+barcode+".json").then(function(r){return r.json();}).then(function(data){setLoading(false);if(data.status===1){setProduct(data.product);}else{setErr(LANG_STORE==="en"?"Product not found":"Prodotto non trovato");}}).catch(function(){setLoading(false);setErr(LANG_STORE==="en"?"Connection error":"Errore di connessione");});}
+  function analyzePCOS(p){if(!p)return null;var ingr=(p.ingredients_text||"").toLowerCase();var bad=PCOS_BAD_INGR.filter(function(b){return ingr.includes(b);});var good=PCOS_GOOD_INGR.filter(function(g){return ingr.includes(g);});var ns=p.nutriscore_grade||"";var sugar100=p.nutriments&&p.nutriments.sugars_100g?p.nutriments.sugars_100g:null;var score=0;if(good.length>0)score+=good.length;if(bad.length>0)score-=bad.length;if(sugar100&&sugar100>15)score-=2;else if(sugar100&&sugar100<5)score+=1;if(ns==="a"||ns==="b")score+=1;if(ns==="d"||ns==="e")score-=1;var verdict=score>=1?"good":score<=-1?"bad":"neutral";return{bad:bad,good:good,sugar100:sugar100,verdict:verdict,ns:ns};}
+  var analysis=product?analyzePCOS(product):null;
+  var verdictColors={good:C.sage,neutral:C.amber,bad:C.rose};
+  var verdictLabels={good:LANG_STORE==="en"?"\u2705 PCOS-Friendly":"\u2705 PCOS-Friendly",neutral:LANG_STORE==="en"?"\u26a0\ufe0f Check carefully":"\u26a0\ufe0f Da valutare",bad:LANG_STORE==="en"?"\u274c Not recommended":"\u274c Sconsigliato"};
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 8px",color:C.plum}},LANG_STORE==="en"?"\ud83d\udcf7 Food Scanner":"\ud83d\udcf7 Scanner Alimenti"),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:"0 0 8px"}},LANG_STORE==="en"?"Enter barcode to check if PCOS-friendly":"Inserisci il barcode per verificare se e PCOS-friendly"),
+      React.createElement("div",{style:{display:"flex",gap:"6px"}},
+        React.createElement("input",{type:"text",inputMode:"numeric",value:barcode,onChange:function(e){setBarcode(e.target.value);},placeholder:LANG_STORE==="en"?"Barcode number...":"Numero barcode...",style:Object.assign({},iS,{flex:1}),onKeyDown:function(e){if(e.key==="Enter")scan();}}),
+        React.createElement("button",{onClick:scan,disabled:loading||barcode.length<8,style:{padding:"10px 16px",borderRadius:"10px",border:"none",background:loading||barcode.length<8?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap"}},loading?"\u23f3":"\ud83d\udd0d "+(LANG_STORE==="en"?"Scan":"Cerca"))
+      ),
+      err&&React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.rose,margin:"6px 0 0"}},err)
+    ),
+    product&&analysis&&React.createElement(Cd,{style:{borderLeft:"4px solid "+verdictColors[analysis.verdict]}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"8px"}},
+        React.createElement("div",null,
+          React.createElement("h5",{style:{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt,margin:0}},product.product_name||"--"),
+          React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},product.brands||"")
+        ),
+        analysis.ns&&React.createElement("span",{style:{padding:"2px 8px",borderRadius:"12px",background:analysis.ns==="a"||analysis.ns==="b"?C.sageP:analysis.ns==="d"||analysis.ns==="e"?C.roseP:C.amberP,fontSize:"11px",fontWeight:"700",textTransform:"uppercase",color:analysis.ns==="a"||analysis.ns==="b"?C.sageD:analysis.ns==="d"||analysis.ns==="e"?C.rose:C.amber}},"Nutri-Score "+analysis.ns)
+      ),
+      React.createElement("div",{style:{padding:"8px 12px",borderRadius:"8px",background:verdictColors[analysis.verdict]+"15",marginBottom:"8px"}},
+        React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:verdictColors[analysis.verdict],margin:0}},verdictLabels[analysis.verdict])
+      ),
+      product.nutriments&&React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"4px",marginBottom:"8px"}},
+        [{l:LANG_STORE==="en"?"Kcal":"Kcal",v:product.nutriments["energy-kcal_100g"]},{l:LANG_STORE==="en"?"Sugar":"Zuccheri",v:product.nutriments.sugars_100g,u:"g"},{l:LANG_STORE==="en"?"Protein":"Proteine",v:product.nutriments.proteins_100g,u:"g"},{l:LANG_STORE==="en"?"Fat":"Grassi",v:product.nutriments.fat_100g,u:"g"}].map(function(n,i){return React.createElement("div",{key:i,style:{textAlign:"center",padding:"6px",borderRadius:"6px",background:C.bg}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:C.txt,margin:0}},n.v!=null?n.v+(n.u||""):"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},n.l+"/100g"));})
+      ),
+      analysis.bad.length>0&&React.createElement("div",{style:{marginBottom:"4px"}},React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.rose,margin:0}},"\u26a0\ufe0f "+(LANG_STORE==="en"?"Contains":"Contiene")+": "+analysis.bad.join(", "))),
+      analysis.good.length>0&&React.createElement("div",null,React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.sage,margin:0}},"\u2705 "+(LANG_STORE==="en"?"Good ingredients":"Ingredienti buoni")+": "+analysis.good.join(", ")))
+    )
+  );
+}
+/* COSA CUCINO? - Ingredient-based recipe finder */
+var PCOS_RECIPES=[
+{n:"Bowl Proteica Quinoa",ing:["quinoa","uova","spinaci","avocado"],cal:420,p:28,c:35,f:22,steps:LANG_STORE==="en"?"Cook quinoa 15min. Sauté spinach. Top with egg and avocado.":"Cuoci quinoa 15min. Salta spinaci. Completa con uovo e avocado.",tags:["lunch","dinner"]},
+{n:"Frittata Verdure",ing:["uova","zucchine","spinaci","cipolla"],cal:320,p:24,c:8,f:22,steps:LANG_STORE==="en"?"Sauté vegetables. Pour beaten eggs. Cook 8min covered.":"Salta le verdure. Versa uova sbattute. Cuoci 8min con coperchio.",tags:["lunch","dinner"]},
+{n:"Overnight Oats PCOS",ing:["avena","latte mandorla","frutti di bosco","mandorle","cannella"],cal:380,p:14,c:42,f:18,steps:LANG_STORE==="en"?"Mix oats+milk+cinnamon. Refrigerate overnight. Top with berries and almonds.":"Mescola avena+latte+cannella. Frigo tutta la notte. Completa con frutti di bosco e mandorle.",tags:["breakfast"]},
+{n:"Salmone + Broccoli",ing:["salmone","broccoli","limone","olio evo"],cal:450,p:38,c:12,f:28,steps:LANG_STORE==="en"?"Bake salmon 18min at 200°C. Steam broccoli. Drizzle with lemon and EVO.":"Cuoci salmone 18min a 200°C. Cuoci broccoli a vapore. Condisci con limone e olio EVO.",tags:["lunch","dinner"]},
+{n:"Hummus + Verdure Crude",ing:["ceci","tahina","limone","sedano","carote"],cal:280,p:12,c:28,f:14,steps:LANG_STORE==="en"?"Blend chickpeas+tahini+lemon. Serve with raw veggie sticks.":"Frulla ceci+tahina+limone. Servi con bastoncini di verdure crude.",tags:["snack"]},
+{n:"Insalata Lenticchie Power",ing:["lenticchie","pomodori","cetrioli","feta","olio evo"],cal:380,p:22,c:35,f:16,steps:LANG_STORE==="en"?"Cook lentils 20min. Mix with chopped veggies, feta, EVO.":"Cuoci lenticchie 20min. Mescola con verdure tagliate, feta, olio EVO.",tags:["lunch"]},
+{n:"Smoothie Anti-Infiammatorio",ing:["spinaci","avocado","frutti di bosco","latte mandorla","zenzero"],cal:280,p:8,c:22,f:18,steps:LANG_STORE==="en"?"Blend all ingredients. Add ice. Enjoy!":"Frulla tutto. Aggiungi ghiaccio. Enjoy!",tags:["breakfast","snack"]},
+{n:"Pollo Grigliato + Farro",ing:["pollo","farro","zucchine","pomodori"],cal:480,p:42,c:38,f:14,steps:LANG_STORE==="en"?"Grill chicken. Cook farro 25min. Sauté zucchini and tomatoes.":"Griglia il pollo. Cuoci farro 25min. Salta zucchine e pomodori.",tags:["lunch","dinner"]},
+{n:"Yogurt Greco Bowl",ing:["yogurt greco","noci","frutti di bosco","cannella","miele"],cal:320,p:18,c:28,f:16,steps:LANG_STORE==="en"?"Combine yogurt with toppings. Drizzle minimal honey.":"Combina yogurt con toppings. Poco miele.",tags:["breakfast","snack"]},
+{n:"Zuppa Lenticchie + Curcuma",ing:["lenticchie","carote","cipolla","curcuma","olio evo"],cal:340,p:20,c:38,f:10,steps:LANG_STORE==="en"?"Sauté onion+carrots. Add lentils+water+turmeric. Simmer 25min.":"Soffriggi cipolla+carote. Aggiungi lenticchie+acqua+curcuma. Cuoci 25min.",tags:["lunch","dinner"]},
+{n:"Toast Avocado + Uovo",ing:["pane di segale","avocado","uova","semi di zucca"],cal:400,p:20,c:30,f:24,steps:LANG_STORE==="en"?"Toast bread. Mash avocado on top. Add poached egg and seeds.":"Tosta il pane. Schiaccia avocado sopra. Aggiungi uovo in camicia e semi.",tags:["breakfast"]},
+{n:"Pasta Integrale Ceci",ing:["pasta integrale","ceci","pomodori","rosmarino","olio evo"],cal:440,p:18,c:52,f:14,steps:LANG_STORE==="en"?"Cook pasta. Sauté chickpeas with tomato and rosemary. Mix.":"Cuoci pasta. Salta ceci con pomodoro e rosmarino. Mescola.",tags:["lunch","dinner"]}
+];
+function CosaCucino(){
+  var _s1=useState([]),myIng=_s1[0],setMyIng=_s1[1];
+  var _s2=useState(""),input=_s2[0],setInput=_s2[1];
+  var ALL_ING=[];PCOS_RECIPES.forEach(function(r){r.ing.forEach(function(i){if(ALL_ING.indexOf(i)===-1)ALL_ING.push(i);});});ALL_ING.sort();
+  var suggestions=input.length>=2?ALL_ING.filter(function(i){return i.includes(input.toLowerCase())&&myIng.indexOf(i)===-1;}):[];
+  function addIng(i){setMyIng(myIng.concat([i]));setInput("");}
+  function removeIng(i){setMyIng(myIng.filter(function(x){return x!==i;}));}
+  var matches=myIng.length>0?PCOS_RECIPES.map(function(r){var matched=r.ing.filter(function(i){return myIng.indexOf(i)!==-1;}).length;return{recipe:r,matched:matched,total:r.ing.length,pct:Math.round(matched/r.ing.length*100)};}).filter(function(m){return m.matched>0;}).sort(function(a,b){return b.pct-a.pct;}):[];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 8px",color:C.plum}},LANG_STORE==="en"?"\ud83e\uddd1\u200d\ud83c\udf73 What Can I Cook?":"\ud83e\uddd1\u200d\ud83c\udf73 Cosa Cucino?"),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:"0 0 8px"}},LANG_STORE==="en"?"Add ingredients you have, get PCOS-friendly recipes":"Aggiungi gli ingredienti che hai, ricevi ricette PCOS-friendly"),
+      React.createElement("div",{style:{display:"flex",gap:"6px"}},
+        React.createElement("input",{value:input,onChange:function(e){setInput(e.target.value);},placeholder:LANG_STORE==="en"?"Type an ingredient...":"Scrivi un ingrediente...",style:Object.assign({},iS,{flex:1})}),
+        input.length>=2&&suggestions.length===0&&React.createElement("button",{onClick:function(){addIng(input.toLowerCase());setInput("");},style:{padding:"8px 12px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,cursor:"pointer",whiteSpace:"nowrap"}},"+")
+      ),
+      suggestions.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px",marginTop:"6px"}},suggestions.slice(0,8).map(function(s){return React.createElement("button",{key:s,onClick:function(){addIng(s);},style:{padding:"4px 10px",borderRadius:"16px",border:"1px solid "+C.sageL,background:C.sageP,color:C.sageD,fontSize:"10px",fontFamily:F.s,cursor:"pointer"}},"+"+s);})),
+      myIng.length>0&&React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px",marginTop:"8px"}},myIng.map(function(i){return React.createElement("span",{key:i,onClick:function(){removeIng(i);},style:{padding:"4px 10px",borderRadius:"16px",background:C.plumP,color:C.plum,fontSize:"10px",fontFamily:F.s,cursor:"pointer",border:"1px solid "+C.plumL}},i+" \u2715");}))
+    ),
+    matches.length>0&&matches.map(function(m,i){return React.createElement(Cd,{key:i,style:{borderLeft:"3px solid "+(m.pct>=80?C.sage:m.pct>=50?C.amber:C.bdr)}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}},
+        React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt,margin:0}},m.recipe.n),
+        React.createElement("span",{style:{padding:"2px 8px",borderRadius:"10px",background:m.pct>=80?C.sageP:m.pct>=50?C.amberP:C.bg,fontSize:"10px",fontFamily:F.s,fontWeight:"600",color:m.pct>=80?C.sageD:m.pct>=50?C.amber:C.txtL}},m.matched+"/"+m.total+" ("+m.pct+"%)")
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"8px",marginBottom:"6px",fontSize:"9px",fontFamily:F.s,color:C.txtL}},
+        React.createElement("span",null,m.recipe.cal+" kcal"),
+        React.createElement("span",null,"P:"+m.recipe.p+"g"),
+        React.createElement("span",null,"C:"+m.recipe.c+"g"),
+        React.createElement("span",null,"F:"+m.recipe.f+"g")
+      ),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 4px",lineHeight:1.5}},m.recipe.steps),
+      React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:"3px"}},m.recipe.ing.map(function(ig){var have=myIng.indexOf(ig)!==-1;return React.createElement("span",{key:ig,style:{padding:"2px 6px",borderRadius:"8px",fontSize:"9px",fontFamily:F.s,background:have?C.sageP:C.roseP,color:have?C.sageD:C.rose}},ig);}))
+    );})
+  );
+}
 function MealIntelligence(props){
   var _s=useState("planner"),sub=_s[0],setSub=_s[1];
   return React.createElement("div",null,
-    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Meal Plan":"Piano Pasti",i:"\ud83d\udcc5"},{k:"gl",l:LANG_STORE==="en"?"GL Calc":"Calcola GL",i:"\ud83d\udcca"}],active:sub,onSel:setSub}),
+    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Meal Plan":"Piano Pasti",i:"\ud83d\udcc5"},{k:"gl",l:LANG_STORE==="en"?"GL Calc":"Calcola GL",i:"\ud83d\udcca"},{k:"scanner",l:"Scanner",i:"\ud83d\udcf7"},{k:"cucino",l:LANG_STORE==="en"?"What to cook?":"Cosa cucino?",i:"\ud83e\uddd1\u200d\ud83c\udf73"}],active:sub,onSel:setSub}),
     sub==="planner"&&React.createElement(MealPlanner,{profile:props.profile}),
-    sub==="gl"&&React.createElement(GLCalculator,null)
+    sub==="gl"&&React.createElement(GLCalculator,null),
+    sub==="scanner"&&React.createElement(FoodScanner,null),
+    sub==="cucino"&&React.createElement(CosaCucino,null)
   );
 }
 /* PHASE 8: HEALTH INTELLIGENCE */
@@ -1069,8 +1163,8 @@ function HomeDashboard(props){
   var cp=getCyclePhaseNow();var weighins=LD("weighins",[]);var habits=LD("habits",{});
   var todayH=habits[todayK()]||{};var habitsOk=HABIT_DEFS.filter(function(h){return todayH[h.k];}).length;
   var symptoms=LD("symptoms",[]);var todaySym=symptoms.find(function(s){return s.date===todayK();});
-  var challenge=getDailyChallenge();var latestW=weighins.length>0?weighins[0]:null;
-  var diff=latestW&&profile.goalW?(latestW.kg-profile.goalW).toFixed(1):null;
+  var challenge=getDailyChallenge();var latestW=weighins.length>0?weighins[weighins.length-1]:null;
+  var diff=latestW&&profile.goalW?(latestW.weight-profile.goalW).toFixed(1):null;
   var fastOn=LD("fast_isOn",false);var bodyMeas=LD("bodyMeas",[]);var latestM=bodyMeas.length>0?bodyMeas[0]:null;
   return React.createElement("div",{style:{display:"grid",gap:"10px"}},
     React.createElement("div",{style:{textAlign:"center",padding:"4px 0"}},
@@ -1084,7 +1178,7 @@ function HomeDashboard(props){
       )
     ),
     React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
-      React.createElement(Cd,{onClick:function(){setTab("garmin");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},latestW?latestW.kg+"kg":"--"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},(LANG_STORE==="en"?"Weight":"Peso")+(diff?" ("+diff+"kg)":""))),
+      React.createElement(Cd,{onClick:function(){setTab("garmin");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},latestW?latestW.weight+"kg":"--"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},(LANG_STORE==="en"?"Weight":"Peso")+(diff?" ("+diff+"kg)":""))),
       React.createElement(Cd,{onClick:function(){setTab("track");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.sage,margin:0}},habitsOk+"/"+HABIT_DEFS.length),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},LANG_STORE==="en"?"Habits":"Abitudini")),
       React.createElement(Cd,{onClick:function(){setTab("digiuno");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",margin:0}},fastOn?"\u23f3":"\u2705"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},"IF "+profile.ifH+":"+(24-profile.ifH))),
       React.createElement(Cd,{onClick:function(){setTab("ciclo");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",margin:0}},cp?CYCLE_PHASES[cp.phase].icon:"\ud83e\ude78"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},cp?CYCLE_PHASES[cp.phase].name:(LANG_STORE==="en"?"Cycle":"Ciclo")))
@@ -1109,8 +1203,8 @@ function ShareCard(props){
   var profile=props.profile;
   var _s=useState(false),show=_s[0],setShow=_s[1];
   var weighins=LD("weighins",[]);var habits=LD("habits",{});
-  var w1=weighins.length>0?weighins[0]:null;var w4=weighins.length>=4?weighins[3]:null;
-  var diff=w1&&w4?(w4.kg-w1.kg).toFixed(1):null;
+  var w1=weighins.length>0?weighins[weighins.length-1]:null;var w4=weighins.length>=4?weighins[Math.max(0,weighins.length-5)]:null;
+  var diff=w1&&w4?(w1.weight-w4.weight).toFixed(1):null;
   var habitDays=Object.keys(habits).length;var workoutDays=Object.keys(habits).filter(function(d){return habits[d].workout_ok;}).length;
   return React.createElement("div",{style:{display:"grid",gap:"8px",marginTop:"16px"}},
     React.createElement("button",{onClick:function(){setShow(!show);},style:{padding:"12px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},LANG_STORE==="en"?"\ud83d\udcf1 Generate Progress Card":"\ud83d\udcf1 Genera Card Progressi"),
@@ -1118,7 +1212,7 @@ function ShareCard(props){
       React.createElement("h3",{style:{fontFamily:F.p,fontSize:"16px",color:C.plum,margin:"0 0 4px"}},"PCOS Daily"),
       React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"0 0 12px"}},LANG_STORE==="en"?"My progress this month":"I miei progressi questo mese"),
       React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}},
-        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},w1?w1.kg+"kg":"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Current":"Attuale")),
+        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},w1?w1.weight+"kg":"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Current":"Attuale")),
         React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:diff&&parseFloat(diff)>0?C.rose:C.sage,margin:0}},diff?diff+"kg":"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Change":"Variazione")),
         React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},workoutDays),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Workouts":"Allenamenti")),
         React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.sage,margin:0}},habitDays),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Tracked days":"Giorni tracciati"))
