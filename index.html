@@ -48,7 +48,8 @@ const F={p:"'Playfair Display',serif",s:"'DM Sans',sans-serif"};
 
 /* ─── STORAGE ─── */
 function LD(k,fb){try{var d=localStorage.getItem("pcos_"+k);return d?JSON.parse(d):fb;}catch(e){return fb;}}
-function SV(k,d){try{localStorage.setItem("pcos_"+k,JSON.stringify(d));}catch(e){}}
+var _syncTimer=null;var _syncUid=null;
+function SV(k,d){try{localStorage.setItem("pcos_"+k,JSON.stringify(d));}catch(e){}if(_syncUid){clearTimeout(_syncTimer);_syncTimer=setTimeout(function(){syncToCloud(_syncUid).catch(function(){});},3000);}}
 function todayK(){return new Date().toISOString().slice(0,10);}
 function fmtD(ds){if(!ds)return"--";return new Date(ds).toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
 
@@ -58,7 +59,7 @@ var fbAuth=firebase.auth();
 var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
-var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","progressPhotos","lastPeriod","cycleLen"];
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();return fbDb.collection("users").doc(uid).set(data,{merge:true});}
 function syncFromCloud(uid){if(!uid)return Promise.resolve();return fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
@@ -791,16 +792,16 @@ function App(){
   var scrollRef=useRef(null);
 
   /* Auth listener */
-  useEffect(function(){var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);setAuthReady(true);}});return unsub;},[]);
+  useEffect(function(){var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);_syncUid=u.uid;syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);_syncUid=null;setAuthReady(true);}});return unsub;},[]);
 
   /* Auto-sync every 2 min */
   useEffect(function(){if(!user)return;var iv=setInterval(function(){syncToCloud(user.uid).catch(function(){});},120000);return function(){clearInterval(iv);};},[user]);
 
   useEffect(function(){if(scrollRef.current)scrollRef.current.scrollTop=0;},[tab]);
-  useEffect(function(){SV("profile",profile);if(user)syncToCloud(user.uid).catch(function(){});requestNotifPerm();},[profile]);
+  useEffect(function(){SV("profile",profile);requestNotifPerm();},[profile]);
 
   function doSync(){if(!user)return;setSyncing(true);syncToCloud(user.uid).then(function(){setLastSync(new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));setSyncing(false);}).catch(function(){setSyncing(false);});}
-  function doLogout(){fbAuth.signOut();setUser(null);}
+  function doLogout(){_syncUid=null;fbAuth.signOut();setUser(null);}
 
   /* View mode for doctor */
   var viewUid=getViewUid();
