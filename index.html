@@ -6,6 +6,10 @@
   <title>PCOS Daily</title>
   <meta name="description" content="Strumento quotidiano per gestire la PCOS"/>
   <meta name="theme-color" content="#8B9E7E"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+  <meta name="apple-mobile-web-app-title" content="PCOS Daily"/>
+  <link rel="manifest" href="./manifest.json"/>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>"/>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
@@ -24,6 +28,12 @@
 </head>
 <body>
 <div id="root"></div>
+<script>
+// PWA Service Worker registration
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
+</script>
 <script type="text/babel">
 const{useState,useEffect,useRef,useCallback}=React;
 
@@ -327,7 +337,7 @@ function FastingTimer({profile}){
   var prog=start?Math.min((el/gMs)*100,100):0;
   var done=el>=gMs;
   var t=fmt(el);var tr=fmt(Math.max(gMs-el,0));
-  useEffect(function(){if(isOn&&start){timerRef.current=setInterval(function(){setEl(Date.now()-start);},1000);}return function(){clearInterval(timerRef.current);};},[isOn,start]);
+  useEffect(function(){if(isOn&&start){timerRef.current=setInterval(function(){var now=Date.now();var elapsed=now-start;setEl(elapsed);if(elapsed>=gMs&&elapsed-1000<gMs)sendNotif("🎉 Digiuno completato!","Hai completato "+goal+"h di digiuno. Bravissima!");var thirtyMin=gMs-30*60000;if(elapsed>=thirtyMin&&elapsed-1000<thirtyMin)sendNotif("⏳ 30 minuti al traguardo","Mancano solo 30 minuti per completare il digiuno!");},1000);}return function(){clearInterval(timerRef.current);};},[isOn,start]);
   var goFn=function(){setStart(Date.now());setEl(0);setIsOn(true);};
   var stopFn=function(){setIsOn(false);clearInterval(timerRef.current);};
   var completeFn=function(){setIsOn(false);clearInterval(timerRef.current);var entry={date:todayK(),goal:goal,actual:Math.round(el/3600000*10)/10,completed:el>=gMs,startTime:new Date(start).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};var h=[entry].concat(history).slice(0,50);setHistory(h);SV("fasts",h);setStart(null);setEl(0);};
@@ -377,6 +387,9 @@ function Alimentazione({profile,setProfile}){
   const[lockedDays,setLockedDays]=useState({});
   const[shuffled,setShuffled]=useState(null);
   var mc=calcMacros(profile);
+  var allergyMap={"Lattosio":["latte","yogurt","fiocchi di latte","burro","panna"],"Glutine":["pane","farro","orzo","avena","spaghetti","wasa","crostini","crusca"],"Nichel":["cacao","cioccolato","pomodor","lenticch","spinac","avena","ceci","fagioli"],"Uova":["uov","frittata","omelette","albumi","pancake"],"Pesce":["salmone","merluzzo","tonno","orata","sgombro","seppie","pesce"],"Frutta secca":["mandorl","noci","pistacch","arachid","pinoli","noce"],"Soia":["soia","edamame","tofu"]};
+  var allergySubs={"Lattosio":"yogurt vegetale / latte cocco / tofu","Glutine":"riso integrale / quinoa / grano saraceno / patate dolci","Nichel":"zucchine / carote / mele / riso / pollo","Uova":"tofu strapazzato / semi chia+acqua","Pesce":"pollo / tacchino / legumi / tofu","Frutta secca":"semi di zucca / semi di girasole / cocco","Soia":"alternative senza soia"};
+  function checkAllergens(text){if(!profile.allergies||!profile.allergies.length)return[];var found=[];var lc=(text||"").toLowerCase();profile.allergies.forEach(function(a){var keys=allergyMap[a]||[];keys.forEach(function(k){if(lc.includes(k)&&found.indexOf(a)<0)found.push(a);});});return found;}
   var filtered=filter==="tutti"?RECIPES:filter==="preferiti"?RECIPES.filter(function(r){return favs.indexOf(r.n)>=0;}):RECIPES.filter(function(r){return r.cat.toLowerCase().includes(filter);});
   function toggleFav(name){var n;if(favs.indexOf(name)>=0)n=favs.filter(function(x){return x!==name;});else n=favs.concat([name]);setFavs(n);SV("favRecipes",n);}
   function shuffleMenu(){var cols=IDEAS.colazione.items.slice();var pras=IDEAS.pranzo.items.slice();var cens=IDEAS.cena.items.slice();function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}sh(cols);sh(pras);sh(cens);var r=[];for(var i=0;i<7;i++){if(lockedDays[i]){r.push(shuffled?shuffled[i]:MENU[i]);}else{r.push({day:MENU[i].day,col:{t:cols[i%cols.length].n,desc:cols[i%cols.length].d,kcal:parseInt(cols[i%cols.length].kcal)||520,p:22,c:42,f:24},pra:{t:pras[i%pras.length].n,desc:pras[i%pras.length].d,kcal:parseInt(pras[i%pras.length].kcal)||550,p:38,c:50,f:18},cen:{t:cens[i%cens.length].n,desc:cens[i%cens.length].d,kcal:parseInt(cens[i%cens.length].kcal)||350,p:30,c:16,f:14},sn:MENU[i].sn});}}setShuffled(r);}
@@ -385,6 +398,7 @@ function Alimentazione({profile,setProfile}){
   return(<div>
     <SecH title="Alimentazione PCOS" sub={"~"+mc.target+" kcal/giorno | IF "+profile.ifH+":"+(24-profile.ifH)+" | Dosi in grammi"}/>
     <ProfileEditor profile={profile} setProfile={setProfile}/>
+    <CycleCorrelationBanner/>
     <MealChecklist/>
     <WaterTracker/>
     <SubT tabs={[{k:"menu",l:"Menu IF",i:"📅"},{k:"idee",l:"Idee Pasti",i:"💡"},{k:"ricette",l:"Ricettario",i:"👩‍🍳"},{k:"guida",l:"Cibi & Dosi",i:"📋"},{k:"spesa",l:"Spesa",i:"🛒"},{k:"regole",l:"Regole"}]} active={sub} onSel={setSub}/>
@@ -393,7 +407,7 @@ function Alimentazione({profile,setProfile}){
       <div style={{display:"flex",gap:"6px",margin:"12px 0"}}><button onClick={shuffleMenu} style={{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.amber+","+C.rose+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>🔄 Genera Menu Casuale</button>{shuffled&&<button onClick={function(){setShuffled(null);setLockedDays({});}} style={{padding:"10px 14px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>↩️ Originale</button>}</div>
       <div style={{display:"flex",gap:"4px",margin:"10px 0"}}>{curMenu.map(function(d,i){return(<button key={i} onClick={function(){setSelDay(i);}} style={{flex:1,padding:"7px 2px",borderRadius:"10px",border:selDay===i?"none":"1px solid "+C.bdr,background:selDay===i?C.sage:C.white,color:selDay===i?C.white:C.txtM,fontWeight:"600",fontSize:"11px",fontFamily:F.s,cursor:"pointer",position:"relative"}}>{d.day.slice(0,3)}{shuffled&&lockedDays[i]&&<span style={{position:"absolute",top:"-6px",right:"-2px",fontSize:"10px"}}>🔒</span>}</button>);})}</div>
       {shuffled&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:"8px"}}><button onClick={function(){var u=Object.assign({},lockedDays);if(u[selDay])delete u[selDay];else u[selDay]=true;setLockedDays(u);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:lockedDays[selDay]?C.sageP:C.white,color:lockedDays[selDay]?C.sageD:C.txtM,fontSize:"10px",fontFamily:F.s,cursor:"pointer"}}>{lockedDays[selDay]?"🔒 Bloccato":"🔓 Blocca questo giorno"}</button></div>}
-      {[{k:"col",l:"Colazione | ore "+profile.ifOpen,c:C.amber,port:"~520 kcal"},{k:"pra",l:"Pranzo | ore 14:00",c:C.sage,port:"~550 kcal"},{k:"cen",l:"Cena | ore 19:30",c:C.rose,port:"~350 kcal"}].map(function(m,i){var d=curMenu[selDay][m.k];return(<Cd key={i} accent={m.c} style={{marginBottom:"10px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:m.c,margin:0}}>{m.l}</h4><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{m.port}</span></div><h5 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>{d.t}</h5><p style={{fontSize:"12px",fontFamily:F.s,color:C.txtM,margin:"0 0 4px",lineHeight:1.6}}>{d.desc}</p>{d.p&&<MacroBar p={d.p} c={d.c} f={d.f} kcal={d.kcal}/>}</Cd>);})}
+      {[{k:"col",l:"Colazione | ore "+profile.ifOpen,c:C.amber,port:"~520 kcal"},{k:"pra",l:"Pranzo | ore 14:00",c:C.sage,port:"~550 kcal"},{k:"cen",l:"Cena | ore 19:30",c:C.rose,port:"~350 kcal"}].map(function(m,i){var d=curMenu[selDay][m.k];var allergens=checkAllergens(d.desc);return(<Cd key={i} accent={m.c} style={{marginBottom:"10px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:m.c,margin:0}}>{m.l}</h4><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{m.port}</span></div><h5 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>{d.t}</h5><p style={{fontSize:"12px",fontFamily:F.s,color:C.txtM,margin:"0 0 4px",lineHeight:1.6}}>{d.desc}</p>{allergens.length>0&&(<div style={{padding:"6px 8px",borderRadius:"8px",background:C.roseP,border:"1px solid "+C.roseL,marginTop:"4px"}}><div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"3px"}}>{allergens.map(function(a){return <Pill key={a} color={C.rose}>⚠️ {a}</Pill>;})}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.roseD}}>{allergens.map(function(a){return "Sostituisci con: "+allergySubs[a];}).join(" | ")}</div></div>)}{d.p&&<MacroBar p={d.p} c={d.c} f={d.f} kcal={d.kcal}/>}</Cd>);})}
       <Cd style={{padding:"14px",opacity:0.7}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:"12px",fontFamily:F.s,color:C.txtM}}>Snack (opz.): {curMenu[selDay].sn.t}</span><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtL}}>{curMenu[selDay].sn.kcal} kcal</span></div></Cd>
       <Cd style={{marginTop:"10px",background:C.sageP,border:"1px solid "+C.sageL}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.sageD}}>Totale giornata</span><span style={{fontFamily:F.s,fontSize:"13px",fontWeight:"700",color:C.sageD}}>~{curMenu[selDay].col.kcal+curMenu[selDay].pra.kcal+curMenu[selDay].cen.kcal} kcal</span></div>{curMenu[selDay].col.p&&<MacroBar p={curMenu[selDay].col.p+curMenu[selDay].pra.p+curMenu[selDay].cen.p} c={curMenu[selDay].col.c+curMenu[selDay].pra.c+curMenu[selDay].cen.c} f={curMenu[selDay].col.f+curMenu[selDay].pra.f+curMenu[selDay].cen.f} kcal={curMenu[selDay].col.kcal+curMenu[selDay].pra.kcal+curMenu[selDay].cen.kcal}/>}</Cd>
     </div>)}
@@ -418,6 +432,7 @@ function Allenamento(){
   function getLastLog(exName){var k=exName.replace(/[^a-zA-Z]/g,"");var entries=logs[k]||[];return entries.length>0?entries[0]:null;}
   return(<div>
     <SecH title="Allenamento" sub="Sala pesi per perdere grasso e aumentare massa muscolare"/>
+    <CycleGymBanner/>
     <SubT tabs={[{k:"sched",l:"Scheda",i:"📅"},{k:"upper",l:"Upper",i:"💪"},{k:"lower",l:"Lower",i:"🦵"},{k:"core",l:"Core",i:"🎯"},{k:"progress",l:"Progressi",i:"📈"}]} active={sub} onSel={setSub}/>
     {sub==="sched"&&(<div><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Con deficit calorico, il resistance training preserva massa muscolare e accelera la perdita di grasso addominale.</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM.sched.map(function(d,i){var iColor=d.i==="Bassa"?C.sage:d.i==="Leggera"?C.amber:C.rose;return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><h4 style={{margin:"0 0 2px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{d.d}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{d.w}</p></div><Pill color={iColor}>{d.i}</Pill></div></Cd>);})}</div></div>)}
     {(sub==="upper"||sub==="lower"||sub==="core")&&(<div><Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{GYM[sub].ico} {GYM[sub].why}</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM[sub].ex.map(function(e,i){var lastLog=getLastLog(e.n);return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",gap:"8px"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}}><span style={{fontFamily:F.s,fontSize:"9px",color:C.white,background:C.sage,borderRadius:"6px",padding:"2px 6px",fontWeight:"600"}}>{i+1}</span><h5 style={{margin:0,fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{e.n}</h5></div><p style={{margin:0,fontSize:"10px",fontFamily:F.s,color:C.txtL,fontStyle:"italic"}}>{e.nt}</p>{lastLog&&<div style={{marginTop:"4px"}}><Pill color={C.amber}>Ultimo: {lastLog.weight}kg x{lastLog.reps} ({fmtD(lastLog.date)})</Pill></div>}</div><div style={{textAlign:"right",flexShrink:0}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"700",color:C.sage}}>{e.s}</div><div style={{fontFamily:F.s,fontSize:"9px",color:C.txtL}}>Rest {e.r}</div><div style={{display:"flex",gap:"4px",marginTop:"6px"}}><a href={"https://www.youtube.com/results?search_query="+e.vid} target="_blank" rel="noopener noreferrer" style={{padding:"3px 7px",borderRadius:"6px",background:C.roseP,fontSize:"9px",fontFamily:F.s,color:C.roseD,textDecoration:"none",fontWeight:"500"}}>🎬 Video</a><button onClick={function(){setShowLog(showLog===e.n?null:e.n);setLogForm({weight:"",reps:""});}} style={{padding:"3px 7px",borderRadius:"6px",border:"none",background:C.sageP,fontSize:"9px",fontFamily:F.s,color:C.sageD,cursor:"pointer",fontWeight:"500"}}>📊 Log</button></div></div></div>{showLog===e.n&&(<div style={{marginTop:"10px",padding:"10px",borderRadius:"10px",background:C.bg,display:"flex",gap:"6px",alignItems:"flex-end"}}><div style={{flex:1}}><label style={lS}>Peso (kg)</label><input type="number" step="0.5" placeholder="20" value={logForm.weight} onChange={function(ev){setLogForm(Object.assign({},logForm,{weight:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><div style={{flex:1}}><label style={lS}>Reps</label><input type="number" placeholder="12" value={logForm.reps} onChange={function(ev){setLogForm(Object.assign({},logForm,{reps:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><button onClick={function(){saveLog(e.n);}} style={{padding:"8px 12px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✓</button></div>)}</Cd>);})}</div></div>)}
@@ -526,14 +541,161 @@ function GarminSection({profile}){
 
 
 
-/* ═══════════ BENESSERE (Integratori + Sonno) ═══════════ */
+/* ═══════════ NOTIFICHE BROWSER ═══════════ */
+function requestNotifPerm(){if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();}
+function sendNotif(title,body){if("Notification" in window&&Notification.permission==="granted")new Notification(title,{body:body,icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>"});}
+
+/* ═══════════ PROGRESS PHOTOS ═══════════ */
+function ProgressPhotos(){
+  const[photos,setPhotos]=useState(function(){return LD("progressPhotos",[]);});
+  const[compare,setCompare]=useState(false);
+  const[sliderPos,setSliderPos]=useState(50);
+  const[selA,setSelA]=useState(0);
+  const[selB,setSelB]=useState(null);
+  var fileRef=useRef(null);
+  function addPhoto(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var entry={date:todayK(),data:ev.target.result,note:""};var u=[entry].concat(photos).slice(0,20);setPhotos(u);SV("progressPhotos",u);};reader.readAsDataURL(file);}
+  function delPhoto(i){var u=photos.filter(function(_,j){return j!==i;});setPhotos(u);SV("progressPhotos",u);}
+  useEffect(function(){if(photos.length>=2&&selB===null)setSelB(photos.length-1);},[photos]);
+  return(<div style={{display:"grid",gap:"12px"}}>
+    <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={addPhoto} style={{display:"none"}}/>
+    <button onClick={function(){fileRef.current.click();}} style={{width:"100%",padding:"14px",borderRadius:"12px",border:"2px dashed "+C.sage,background:C.sageP,color:C.sageD,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>📸 Aggiungi Progress Photo</button>
+    {photos.length>=2&&(<div><button onClick={function(){setCompare(!compare);}} style={{width:"100%",padding:"10px",borderRadius:"10px",border:"none",background:compare?C.roseP:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:compare?C.roseD:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",marginBottom:"10px"}}>{compare?"✕ Chiudi confronto":"🔀 Confronta Before/After"}</button>
+    {compare&&(<Cd accent={C.plum}><div style={{display:"flex",gap:"6px",marginBottom:"10px"}}><div style={{flex:1}}><label style={lS}>Prima</label><select value={selA} onChange={function(e){setSelA(parseInt(e.target.value));}} style={Object.assign({},iS,{fontSize:"11px"})}>{photos.map(function(p,i){return<option key={i} value={i}>{fmtD(p.date)}</option>;})}</select></div><div style={{flex:1}}><label style={lS}>Dopo</label><select value={selB||0} onChange={function(e){setSelB(parseInt(e.target.value));}} style={Object.assign({},iS,{fontSize:"11px"})}>{photos.map(function(p,i){return<option key={i} value={i}>{fmtD(p.date)}</option>;})}</select></div></div>
+    <div style={{position:"relative",width:"100%",height:"300px",borderRadius:"12px",overflow:"hidden",touchAction:"none"}} onPointerMove={function(e){var rect=e.currentTarget.getBoundingClientRect();var x=Math.max(0,Math.min(100,((e.clientX-rect.left)/rect.width)*100));setSliderPos(x);}} onTouchMove={function(e){var rect=e.currentTarget.getBoundingClientRect();var t=e.touches[0];var x=Math.max(0,Math.min(100,((t.clientX-rect.left)/rect.width)*100));setSliderPos(x);}}>
+      <img src={photos[selB||0].data} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
+      <div style={{position:"absolute",top:0,left:0,width:sliderPos+"%",height:"100%",overflow:"hidden"}}><img src={photos[selA].data} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover",minWidth:100/sliderPos*100+"%"}}/></div>
+      <div style={{position:"absolute",top:0,left:sliderPos+"%",width:"3px",height:"100%",background:C.white,boxShadow:"0 0 8px rgba(0,0,0,.5)",transform:"translateX(-50%)",zIndex:2}}><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"30px",height:"30px",borderRadius:"50%",background:C.white,boxShadow:"0 2px 8px rgba(0,0,0,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px"}}>↔</div></div>
+      <div style={{position:"absolute",top:"8px",left:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>PRIMA — {fmtD(photos[selA].date)}</div>
+      <div style={{position:"absolute",top:"8px",right:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>DOPO — {fmtD(photos[selB||0].date)}</div>
+    </div></Cd>)}</div>)}
+    {photos.length===0&&<Info bg={C.plumP} bdr={C.plumL} color={C.plum}>Scatta una foto al mese per vedere i tuoi progressi nel tempo! Le foto restano solo sul tuo dispositivo.</Info>}
+    <div style={{display:"grid",gap:"8px",gridTemplateColumns:"repeat(3,1fr)"}}>{photos.map(function(p,i){return(<div key={i} style={{position:"relative",borderRadius:"10px",overflow:"hidden",aspectRatio:"3/4"}}><img src={p.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,.7))",padding:"4px 6px"}}><span style={{fontSize:"9px",fontFamily:F.s,color:C.white}}>{fmtD(p.date)}</span></div><button onClick={function(){delPhoto(i);}} style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,.5)",color:C.white,fontSize:"11px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>);})}</div>
+  </div>);
+}
+
+/* ═══════════ CYCLE CORRELATION ═══════════ */
+function getCyclePhaseNow(){
+  var lp=LD("lastPeriod","");var cl=LD("cycleLen",35);
+  if(!lp)return null;
+  var d=Math.floor((new Date()-new Date(lp))/86400000)+1;
+  if(d<=5)return{phase:0,day:d};
+  if(d<=Math.floor(cl*0.46))return{phase:1,day:d};
+  if(d<=Math.floor(cl*0.57))return{phase:2,day:d};
+  return{phase:3,day:d};
+}
+var CYCLE_FOOD_TIPS=[
+  ["Ferro: spinaci, lenticchie, carne rossa magra. Zenzero per crampi. Cioccolato fondente 85% per magnesio.","Cibi caldi e confortanti. Evita caffeina (peggiora i crampi). Te allo zenzero."],
+  ["Proteine per supportare follicoli. Verdure crucifere (broccoli, cavolfiore). Cereali integrali per energia.","Fase ideale per provare nuove ricette! Energia alta = cucina creativa."],
+  ["Fibre per metabolizzare estrogeni in eccesso. Zinco (semi di zucca). Omega-3 (salmone).","Riduci sale e cibi gonfianti. Focus su anti-infiammatori."],
+  ["Carboidrati complessi per serotonina. Magnesio. Cannella. Cioccolato fondente per voglia di dolce.","La fame pre-mestruale e normale nella PCOS. Prepara snack sani in anticipo."]
+];
+var CYCLE_GYM_TIPS=[
+  ["Yoga dolce, stretching, camminate leggere. Max 30 min. Ascolta il corpo.","Se ti senti bene, una sessione leggera va bene. Ma zero sensi di colpa se riposi."],
+  ["MASSIMA intensita! Aumenta carichi, prova record personali. Forza e resistenza al top.","Approfitta di questa finestra per progressive overload. Gli estrogeni proteggono i muscoli."],
+  ["Energia al massimo. HIIT, circuit training, carichi pesanti. Vai all-out!","Finestra breve (2-3 giorni): sfruttala per gli allenamenti piu intensi della settimana."],
+  ["Prima meta: ancora buona energia, intensita moderata. Seconda meta: riduci, preferisci pilates e camminate.","Se ti senti gonfia, non pesarti. La ritenzione idrica maschera i progressi reali."]
+];
+
+function CycleCorrelationBanner(){
+  var cp=getCyclePhaseNow();
+  if(!cp)return null;
+  var ph=CYCLE_PHASES[cp.phase];
+  return(<Cd style={{marginBottom:"12px",background:ph.color+"08",border:"1px solid "+ph.color+"30"}}><div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"6px"}}><span style={{fontSize:"20px"}}>{ph.icon}</span><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:ph.color}}>Fase {ph.name} (G{cp.day})</span></div></div><div style={{fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{CYCLE_FOOD_TIPS[cp.phase][0]}</div></Cd>);
+}
+function CycleGymBanner(){
+  var cp=getCyclePhaseNow();
+  if(!cp)return null;
+  var ph=CYCLE_PHASES[cp.phase];
+  return(<Cd style={{marginBottom:"12px",background:ph.color+"08",border:"1px solid "+ph.color+"30"}}><div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"6px"}}><span style={{fontSize:"20px"}}>{ph.icon}</span><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:ph.color}}>Fase {ph.name} — Allenamento</span></div><div style={{fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{CYCLE_GYM_TIPS[cp.phase][0]}</div><div style={{fontSize:"10px",fontFamily:F.s,color:ph.color,marginTop:"4px",fontStyle:"italic"}}>{CYCLE_GYM_TIPS[cp.phase][1]}</div></Cd>);
+}
+
+/* ═══════════ WEEKLY INSIGHT ═══════════ */
+function WeeklyInsight({profile}){
+  var today=new Date();var dow=today.getDay();
+  var mc=calcMacros(profile);
+  var weighins=LD("weighins",DEF_W);
+  var fasts=LD("fasts",[]);
+  var workouts=LD("workouts",DEF_WO);
+  var last=weighins.length>0?weighins[weighins.length-1]:null;
+  var prev=weighins.length>1?weighins[weighins.length-2]:null;
+  var weightDiff=last&&prev?(last.weight-prev.weight).toFixed(1):null;
+  var bfDiff=last&&prev&&last.bf&&prev.bf?(last.bf-prev.bf).toFixed(1):null;
+  var fastsThisWeek=fasts.filter(function(f){var fd=new Date(f.date);return(today-fd)<7*86400000;});
+  var fastsDone=fastsThisWeek.filter(function(f){return f.completed;}).length;
+  var workoutsThisWeek=workouts.filter(function(w){var wd=new Date(w.date);return(today-wd)<7*86400000;});
+  var cp=getCyclePhaseNow();
+  var msgs=[];
+  if(weightDiff&&weightDiff<0)msgs.push("💪 Hai perso "+Math.abs(weightDiff)+"kg dall'ultima pesata!");
+  else if(weightDiff&&weightDiff>0)msgs.push("📊 +"+weightDiff+"kg — potrebbe essere ritenzione idrica"+(cp&&cp.phase===3?" (fase luteale!)":"")+". Non mollare.");
+  if(fastsDone>=5)msgs.push("🔥 "+fastsDone+" digiuni completati questa settimana! Streak fantastica.");
+  else if(fastsDone>=3)msgs.push("⏳ "+fastsDone+" digiuni completati. Buon ritmo, punta a 5+!");
+  if(workoutsThisWeek.length>=4)msgs.push("🏋️ "+workoutsThisWeek.length+" allenamenti! Stai costruendo massa muscolare.");
+  else if(workoutsThisWeek.length>=2)msgs.push("🏋️ "+workoutsThisWeek.length+" allenamenti. Prova ad aggiungerne uno in piu!");
+  if(last&&last.weight>profile.goalW){var remaining=(last.weight-profile.goalW).toFixed(1);var weeks=Math.round(remaining/0.5);msgs.push("🎯 Ti mancano ~"+remaining+"kg al tuo obiettivo. A 0.5kg/sett = ~"+weeks+" settimane.");}
+  if(cp)msgs.push(CYCLE_PHASES[cp.phase].icon+" Sei in fase "+CYCLE_PHASES[cp.phase].name+": "+CYCLE_PHASES[cp.phase].gym.split(".")[0]+".");
+  if(msgs.length===0)msgs.push("🌸 Questa settimana e un foglio bianco. Inizia col piede giusto!");
+  return(<Cd accent={C.sage} style={{marginBottom:"16px",background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><div style={{display:"flex",gap:"8px",alignItems:"center",marginBottom:"10px"}}><span style={{fontSize:"20px"}}>📋</span><h4 style={{fontFamily:F.p,fontSize:"14px",fontWeight:"600",color:C.sageD,margin:0}}>Insight Settimanale</h4></div><div style={{display:"grid",gap:"6px"}}>{msgs.map(function(m,i){return(<div key={i} style={{fontSize:"12px",fontFamily:F.s,color:C.txt,lineHeight:1.5,padding:"6px 8px",borderRadius:"8px",background:C.white}}>{m}</div>);})}</div></Cd>);
+}
+
+/* ═══════════ EXPORT CSV ═══════════ */
+function ExportData(){
+  function exportCSV(name,headers,rows){var csv=headers.join(";")+"\n";rows.forEach(function(r){csv+=r.join(";")+"\n";});var blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name+".csv";a.click();URL.revokeObjectURL(url);}
+  function expWeight(){var w=LD("weighins",DEF_W);exportCSV("pcos_pesate",["Data","Peso_kg","BodyFat_%","Muscolo_%","Ossa_kg","Acqua_%"],w.map(function(r){return[r.date,r.weight,r.bf,r.mm,r.bm,r.bw];}));}
+  function expWorkouts(){var w=LD("workouts",[]);exportCSV("pcos_allenamenti",["Data","Tipo","Durata_min","Calorie","FC_media"],w.map(function(r){return[r.date,r.type,r.duration,r.calories,r.hr];}));}
+  function expFasts(){var f=LD("fasts",[]);exportCSV("pcos_digiuni",["Data","Obiettivo_h","Effettivo_h","Completato","Inizio"],f.map(function(r){return[r.date,r.goal,r.actual,r.completed?"Si":"No",r.startTime||""];}));}
+  function expGym(){var logs=LD("gymLogs",{});var rows=[];Object.keys(logs).forEach(function(k){logs[k].forEach(function(e){rows.push([e.date,k,e.weight,e.reps]);});});exportCSV("pcos_carichi",["Data","Esercizio","Peso_kg","Reps"],rows);}
+  function expAll(){expWeight();setTimeout(expWorkouts,500);setTimeout(expFasts,1000);setTimeout(expGym,1500);}
+  return(<div style={{display:"grid",gap:"10px"}}>
+    <Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>📁 Esporta i tuoi dati in formato CSV per condividerli con il tuo nutrizionista, endocrinologo o ginecologo.</Info>
+    {[{l:"📊 Storico Pesate",d:"Peso, BF%, muscolo, ossa, acqua",fn:expWeight,c:C.sage},
+    {l:"🏋️ Allenamenti",d:"Tipo, durata, calorie, FC media",fn:expWorkouts,c:C.rose},
+    {l:"⏳ Digiuni",d:"Obiettivo, effettivo, completamento",fn:expFasts,c:C.plum},
+    {l:"💪 Carichi Palestra",d:"Esercizio, peso, reps per data",fn:expGym,c:C.amber}
+    ].map(function(ex,i){return(<button key={i} onClick={ex.fn} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,cursor:"pointer",textAlign:"left"}}><div><div style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{ex.l}</div><div style={{fontFamily:F.s,fontSize:"10px",color:C.txtL}}>{ex.d}</div></div><span style={{padding:"6px 12px",borderRadius:"8px",background:ex.c,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600"}}>CSV ↓</span></button>);})}
+    <button onClick={expAll} style={{width:"100%",padding:"14px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.sage+","+C.plum+")",color:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>📦 Scarica TUTTO (4 file CSV)</button>
+  </div>);
+}
+
+/* ═══════════ MEDICAL DASHBOARD ═══════════ */
+function MedicalDashboard(){
+  const[bloods,setBloods]=useState(function(){return LD("bloodwork",[]);});
+  const[showAdd,setShowAdd]=useState(false);
+  const[form,setForm]=useState({date:todayK(),insulina:"",homaIR:"",testosterone:"",dheas:"",tsh:"",vitD:"",ferritina:"",glicemia:""});
+  var markers=[
+    {k:"insulina",l:"Insulina basale",u:"μU/mL",range:"2-25",ideal:"<10",warn:"Nella PCOS spesso elevata. <10 = ottimo"},
+    {k:"homaIR",l:"HOMA-IR",u:"",range:"0.5-2.5",ideal:"<1.5",warn:"Indice di insulino-resistenza. >2.5 = resistenza"},
+    {k:"testosterone",l:"Testosterone totale",u:"ng/dL",range:"15-70",ideal:"<50",warn:"Spesso elevato nella PCOS. Causa acne e irsutismo"},
+    {k:"dheas",l:"DHEA-S",u:"μg/dL",range:"35-430",ideal:"<300",warn:"Androgeno surrenalico. Elevato nel 25% delle PCOS"},
+    {k:"tsh",l:"TSH",u:"μUI/mL",range:"0.4-4.0",ideal:"1-2.5",warn:"Tiroide. Nella PCOS controllare sempre la funzione tiroidea"},
+    {k:"vitD",l:"Vitamina D",u:"ng/mL",range:"30-100",ideal:">40",warn:"Carente nell'80% delle PCOS. Target 40-60"},
+    {k:"ferritina",l:"Ferritina",u:"ng/mL",range:"12-150",ideal:">30",warn:"Depositi di ferro. Controllare se ciclo abbondante"},
+    {k:"glicemia",l:"Glicemia a digiuno",u:"mg/dL",range:"70-100",ideal:"<90",warn:"Pre-diabete se 100-125. Diabete se >126"},
+  ];
+  function addBlood(){var entry={date:form.date};markers.forEach(function(m){if(form[m.k])entry[m.k]=parseFloat(form[m.k]);});var u=[entry].concat(bloods).slice(0,20);setBloods(u);SV("bloodwork",u);setShowAdd(false);setForm({date:todayK(),insulina:"",homaIR:"",testosterone:"",dheas:"",tsh:"",vitD:"",ferritina:"",glicemia:""});}
+  function delBlood(i){var u=bloods.filter(function(_,j){return j!==i;});setBloods(u);SV("bloodwork",u);}
+  var latest=bloods.length>0?bloods[0]:null;
+  return(<div style={{display:"grid",gap:"12px"}}>
+    <Info bg={C.berryP} bdr={C.berryL} color={C.berry}><strong>Dashboard Medica PCOS.</strong> Inserisci i valori delle tue analisi del sangue per monitorare l'andamento nel tempo. Porta questi dati al tuo medico.</Info>
+    <button onClick={function(){setShowAdd(!showAdd);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:showAdd?C.roseP:"linear-gradient(135deg,"+C.berry+","+C.rose+")",color:showAdd?C.roseD:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{showAdd?"✕ Chiudi":"🩸 Inserisci Analisi del Sangue"}</button>
+    {showAdd&&(<Cd accent={C.berry}><div style={{display:"grid",gap:"8px"}}><div><label style={lS}>Data analisi</label><input type="date" value={form.date} onChange={function(e){setForm(Object.assign({},form,{date:e.target.value}));}} style={iS}/></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}>{markers.map(function(m){return(<div key={m.k}><label style={lS}>{m.l} ({m.u||m.range})</label><input type="number" step="0.1" placeholder={m.ideal} value={form[m.k]} onChange={function(e){var u=Object.assign({},form);u[m.k]=e.target.value;setForm(u);}} style={iS}/></div>);})}</div><button onClick={addBlood} style={{width:"100%",padding:"11px",borderRadius:"12px",border:"none",background:C.berry,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva Analisi</button></div></Cd>)}
+    {latest&&(<Cd accent={C.plum}><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Ultimo Prelievo — {fmtD(latest.date)}</h4><div style={{display:"grid",gap:"6px"}}>{markers.map(function(m){var v=latest[m.k];if(!v)return null;var numV=parseFloat(v);var idealParts=m.ideal.replace(/[<>]/g,"").trim();var idealNum=parseFloat(idealParts);var isGood=m.ideal.startsWith("<")?numV<idealNum:m.ideal.startsWith(">")?numV>idealNum:numV>=idealNum*0.8&&numV<=idealNum*1.2;return(<div key={m.k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px",borderRadius:"8px",background:isGood?C.sageP:C.roseP}}><div><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{m.l}</div><div style={{fontFamily:F.s,fontSize:"9px",color:C.txtL}}>Range: {m.range} | Ideale: {m.ideal}</div></div><div style={{textAlign:"right"}}><div style={{fontFamily:F.s,fontSize:"16px",fontWeight:"700",color:isGood?C.sage:C.rose}}>{v} <span style={{fontSize:"10px",fontWeight:"400"}}>{m.u}</span></div><span style={{fontSize:"10px"}}>{isGood?"✅":"⚠️"}</span></div></div>);})}</div></Cd>)}
+    {bloods.length>1&&(<Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>📈 Trend Valori</h4>{markers.filter(function(m){return bloods.filter(function(b){return b[m.k];}).length>1;}).slice(0,4).map(function(m){var vals=bloods.filter(function(b){return b[m.k];}).slice(0,8).reverse();return(<div key={m.k} style={{marginBottom:"12px"}}><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.txt}}>{m.l}</span><div style={{display:"flex",alignItems:"flex-end",gap:"3px",height:"50px",marginTop:"4px"}}>{vals.map(function(v,i){var allV=vals.map(function(x){return x[m.k];});var mn=Math.min.apply(null,allV)-1;var mx=Math.max.apply(null,allV)+1;var h=((v[m.k]-mn)/(mx-mn))*100;var il=i===vals.length-1;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"1px"}}><span style={{fontSize:"7px",fontFamily:F.s,color:il?C.plum:C.txtL}}>{v[m.k]}</span><div style={{width:"100%",maxWidth:"20px",height:Math.max(h,5)+"%",borderRadius:"3px",background:il?C.plum:C.plumL}}/></div>);})}</div></div>);})}</Cd>)}
+    {bloods.length>0&&(<Cd><h4 style={{fontFamily:F.p,fontSize:"13px",margin:"0 0 8px",color:C.txt}}>Storico Analisi</h4><div style={{display:"grid",gap:"4px"}}>{bloods.map(function(b,i){var count=markers.filter(function(m){return b[m.k];}).length;return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:"8px",background:C.bg}}><span style={{fontSize:"12px",fontFamily:F.s,fontWeight:"600",color:C.txt}}>{fmtD(b.date)}</span><div style={{display:"flex",gap:"6px",alignItems:"center"}}><Pill color={C.plum}>{count} valori</Pill><button onClick={function(){delBlood(i);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"12px"}}>✕</button></div></div>);})}</div></Cd>)}
+  </div>);
+}
+
+
+/* ═══════════ BENESSERE (Integratori + Sonno + Medical + Export + Photos) ═══════════ */
 function Benessere(){
   const[sub,setSub]=useState("supps");
   return(<div>
-    <SecH title="Benessere PCOS" sub="Integratori, sonno e gestione dello stress"/>
-    <SubT tabs={[{k:"supps",l:"Integratori",i:"💊"},{k:"sleep",l:"Sonno",i:"😴"},{k:"tips",l:"Tips PCOS",i:"💡"}]} active={sub} onSel={setSub}/>
+    <SecH title="Benessere PCOS" sub="Integratori, sonno, analisi, export e progress photos"/>
+    <SubT tabs={[{k:"supps",l:"Integratori",i:"💊"},{k:"sleep",l:"Sonno",i:"😴"},{k:"medical",l:"Analisi",i:"🩸"},{k:"photos",l:"Foto",i:"📸"},{k:"export",l:"Export",i:"📁"},{k:"tips",l:"Tips",i:"💡"}]} active={sub} onSel={setSub}/>
     {sub==="supps"&&<SuppTracker/>}
     {sub==="sleep"&&(<div style={{display:"grid",gap:"12px"}}><SleepTracker/><Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>Perche il sonno conta nella PCOS:</strong> Dormire meno di 7 ore aumenta il cortisolo del 37%, peggiora l'insulino-resistenza e aumenta la fame il giorno dopo. Punta a 7-9 ore per notte.</Info></div>)}
+    {sub==="medical"&&<MedicalDashboard/>}
+    {sub==="photos"&&<ProgressPhotos/>}
+    {sub==="export"&&<ExportData/>}
     {sub==="tips"&&(<div style={{display:"grid",gap:"10px"}}>
       {[{t:"Cortisolo e grasso addominale",d:"Lo stress cronico alza il cortisolo, che nella PCOS e gia elevato. Il cortisolo promuove l'accumulo di grasso viscerale. Meditazione, camminate e sonno di qualita lo riducono.",ic:"🧠",c:C.plum},
       {t:"Infiammazione cronica silente",d:"La PCOS e associata a infiammazione cronica di basso grado. Gli omega-3, la curcuma, le verdure crucifere e il te verde la combattono.",ic:"🔥",c:C.rose},
@@ -553,14 +715,14 @@ function App(){
   const[profile,setProfile]=useState(function(){return LD("profile",DEF_PROF);});
   var scrollRef=useRef(null);
   useEffect(function(){if(scrollRef.current)scrollRef.current.scrollTop=0;},[tab]);
-  useEffect(function(){SV("profile",profile);},[profile]);
+  useEffect(function(){SV("profile",profile);requestNotifPerm();},[profile]);
   var mc=calcMacros(profile);
   return(
     <div style={{fontFamily:F.s,background:"linear-gradient(180deg,"+C.bg+","+C.bgW+")",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
       <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"12px 16px 8px",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
           <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,"+C.sage+","+C.rose+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>🌸</div>
-          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v2.0 | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
+          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v2.5 | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
           <div style={{textAlign:"right"}}><div style={{fontSize:"12px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"8px",color:C.txtL,fontFamily:F.s}}>goal {profile.goalW} kg</div></div>
         </div>
         <div style={{display:"flex",gap:"2px",overflowX:"auto"}}>
@@ -574,6 +736,7 @@ function App(){
       </div>
       <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <DailyQuote/>
+        <WeeklyInsight profile={profile}/>
         {tab==="alimentazione"&&<Alimentazione profile={profile} setProfile={setProfile}/>}
         {tab==="allenamento"&&<Allenamento/>}
         {tab==="digiuno"&&<Digiuno profile={profile}/>}

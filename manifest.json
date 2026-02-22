@@ -1,0 +1,16 @@
+{
+  "name": "PCOS Daily",
+  "short_name": "PCOS Daily",
+  "description": "Strumento quotidiano per gestire la PCOS",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FBF8F4",
+  "theme_color": "#8B9E7E",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
