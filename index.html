@@ -74,7 +74,7 @@ function AuthScreen({onLogin}){
   const[error,setError]=useState("");
   const[loading,setLoading]=useState(false);
   function doEmail(){setLoading(true);setError("");var fn=mode==="login"?fbAuth.signInWithEmailAndPassword.bind(fbAuth):fbAuth.createUserWithEmailAndPassword.bind(fbAuth);fn(email,pass).then(function(r){onLogin(r.user);}).catch(function(e){setError(e.code==="auth/user-not-found"?"Account non trovato":e.code==="auth/wrong-password"?"Password errata":e.code==="auth/email-already-in-use"?"Email gia registrata":e.code==="auth/weak-password"?"Password troppo corta (min 6)":e.message);setLoading(false);});}
-  function doGoogle(){setLoading(true);setError("");fbAuth.signInWithPopup(googleProvider).then(function(r){onLogin(r.user);}).catch(function(e){setError(e.message);setLoading(false);});}
+  function doGoogle(){setLoading(true);setError("");fbAuth.signInWithPopup(googleProvider).then(function(r){onLogin(r.user);}).catch(function(e){if(e.code==="auth/popup-blocked"||e.code==="auth/popup-closed-by-user"||e.code==="auth/cancelled-popup-request"){fbAuth.signInWithRedirect(googleProvider);return;}setError(e.code==="auth/unauthorized-domain"?"Dominio non autorizzato in Firebase. Aggiungi questo dominio nelle impostazioni Authentication.":e.message);setLoading(false);});}
   return(<div style={{minHeight:"100vh",background:"linear-gradient(180deg,"+C.sageP+","+C.bg+")",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
     <div style={{maxWidth:"380px",width:"100%"}}>
       <div style={{textAlign:"center",marginBottom:"30px"}}><div style={{fontSize:"48px",marginBottom:"8px"}}>🌸</div><h1 style={{fontFamily:F.p,fontSize:"28px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>PCOS Daily</h1><p style={{fontFamily:F.s,fontSize:"13px",color:C.txtL}}>Il tuo strumento quotidiano per gestire la PCOS</p></div>
@@ -791,8 +791,8 @@ function App(){
   const[showShare,setShowShare]=useState(false);
   var scrollRef=useRef(null);
 
-  /* Auth listener */
-  useEffect(function(){var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);_syncUid=u.uid;syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);_syncUid=null;setAuthReady(true);}});return unsub;},[]);
+  /* Auth listener + redirect result */
+  useEffect(function(){fbAuth.getRedirectResult().catch(function(){});var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);_syncUid=u.uid;syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);_syncUid=null;setAuthReady(true);}});return unsub;},[]);
 
   /* Auto-sync every 2 min */
   useEffect(function(){if(!user)return;var iv=setInterval(function(){syncToCloud(user.uid).catch(function(){});},120000);return function(){clearInterval(iv);};},[user]);
