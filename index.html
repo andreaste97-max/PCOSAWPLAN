@@ -32,9 +32,11 @@
 <body>
 <div id="root"></div>
 <script>
-// PWA Service Worker registration
+// PWA Service Worker registration - force update
 if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('./sw.js').catch(function(){});
+  navigator.serviceWorker.register('./sw.js').then(function(reg){
+    reg.update();
+  }).catch(function(){});
 }
 </script>
 <script type="text/babel">
@@ -394,18 +396,19 @@ function ProfileEditor({profile,setProfile}){
 
 /* ═══════════ FASTING TIMER + HISTORY ═══════════ */
 function FastingTimer({profile}){
-  const[isOn,setIsOn]=useState(false);
-  const[start,setStart]=useState(null);
-  const[goal,setGoal]=useState(profile.ifH||14);
-  const[el,setEl]=useState(0);
+  const[isOn,setIsOn]=useState(function(){return LD("fast_isOn",false);});
+  const[start,setStart]=useState(function(){return LD("fast_start",null);});
+  const[goal,setGoal]=useState(function(){return LD("fast_goal",profile.ifH||14);});
+  const[el,setEl]=useState(function(){var s=LD("fast_start",null);return s?Date.now()-s:0;});
   const[history,setHistory]=useState(function(){return LD("fasts",[]);});
   var timerRef=useRef(null);
   var gMs=goal*3600000;
   var prog=start?Math.min((el/gMs)*100,100):0;
   var done=el>=gMs;
   var t=fmt(el);var tr=fmt(Math.max(gMs-el,0));
+  useEffect(function(){SV("fast_isOn",isOn);SV("fast_start",start);SV("fast_goal",goal);},[isOn,start,goal]);
   useEffect(function(){if(isOn&&start){timerRef.current=setInterval(function(){var now=Date.now();var elapsed=now-start;setEl(elapsed);if(elapsed>=gMs&&elapsed-1000<gMs)sendNotif("🎉 Digiuno completato!","Hai completato "+goal+"h di digiuno. Bravissima!");var thirtyMin=gMs-30*60000;if(elapsed>=thirtyMin&&elapsed-1000<thirtyMin)sendNotif("⏳ 30 minuti al traguardo","Mancano solo 30 minuti per completare il digiuno!");},1000);}return function(){clearInterval(timerRef.current);};},[isOn,start]);
-  var goFn=function(){setStart(Date.now());setEl(0);setIsOn(true);};
+  var goFn=function(){var now=Date.now();setStart(now);setEl(0);setIsOn(true);};
   var stopFn=function(){setIsOn(false);clearInterval(timerRef.current);};
   var completeFn=function(){setIsOn(false);clearInterval(timerRef.current);var entry={date:todayK(),goal:goal,actual:Math.round(el/3600000*10)/10,completed:el>=gMs,startTime:new Date(start).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};var h=[entry].concat(history).slice(0,50);setHistory(h);SV("fasts",h);setStart(null);setEl(0);};
   var resetFn=function(){setIsOn(false);setStart(null);setEl(0);clearInterval(timerRef.current);};
