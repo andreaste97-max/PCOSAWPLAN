@@ -25,6 +25,9 @@
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -47,6 +50,70 @@ function SV(k,d){try{localStorage.setItem("pcos_"+k,JSON.stringify(d));}catch(e)
 function todayK(){return new Date().toISOString().slice(0,10);}
 function fmtD(ds){if(!ds)return"--";return new Date(ds).toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
 
+/* ─── FIREBASE ─── */
+var fbApp=firebase.initializeApp({apiKey:"AIzaSyAuzIEgBPNB7IM4ySF-GHeqn8GyFtkmQak",authDomain:"pcos-daily.firebaseapp.com",projectId:"pcos-daily",storageBucket:"pcos-daily.firebasestorage.app",messagingSenderId:"182447746696",appId:"1:182447746696:web:0e30e0bd1e94a232a9793d"});
+var fbAuth=firebase.auth();
+var fbDb=firebase.firestore();
+var googleProvider=new firebase.auth.GoogleAuthProvider();
+
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","progressPhotos","lastPeriod","cycleLen"];
+function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();return fbDb.collection("users").doc(uid).set(data,{merge:true});}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();return fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});}
+function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
+function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
+function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
+
+/* ─── AUTH COMPONENT ─── */
+function AuthScreen({onLogin}){
+  const[mode,setMode]=useState("login");
+  const[email,setEmail]=useState("");
+  const[pass,setPass]=useState("");
+  const[error,setError]=useState("");
+  const[loading,setLoading]=useState(false);
+  function doEmail(){setLoading(true);setError("");var fn=mode==="login"?fbAuth.signInWithEmailAndPassword.bind(fbAuth):fbAuth.createUserWithEmailAndPassword.bind(fbAuth);fn(email,pass).then(function(r){onLogin(r.user);}).catch(function(e){setError(e.code==="auth/user-not-found"?"Account non trovato":e.code==="auth/wrong-password"?"Password errata":e.code==="auth/email-already-in-use"?"Email gia registrata":e.code==="auth/weak-password"?"Password troppo corta (min 6)":e.message);setLoading(false);});}
+  function doGoogle(){setLoading(true);setError("");fbAuth.signInWithPopup(googleProvider).then(function(r){onLogin(r.user);}).catch(function(e){setError(e.message);setLoading(false);});}
+  return(<div style={{minHeight:"100vh",background:"linear-gradient(180deg,"+C.sageP+","+C.bg+")",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
+    <div style={{maxWidth:"380px",width:"100%"}}>
+      <div style={{textAlign:"center",marginBottom:"30px"}}><div style={{fontSize:"48px",marginBottom:"8px"}}>🌸</div><h1 style={{fontFamily:F.p,fontSize:"28px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>PCOS Daily</h1><p style={{fontFamily:F.s,fontSize:"13px",color:C.txtL}}>Il tuo strumento quotidiano per gestire la PCOS</p></div>
+      <Cd style={{padding:"24px"}}>
+        <button onClick={doGoogle} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txt,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",marginBottom:"16px"}}><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>{loading?"Caricamento...":"Accedi con Google"}</button>
+        <div style={{display:"flex",alignItems:"center",gap:"10px",margin:"12px 0"}}><div style={{flex:1,height:"1px",background:C.bdr}}/><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtL}}>oppure</span><div style={{flex:1,height:"1px",background:C.bdr}}/></div>
+        <div style={{display:"grid",gap:"8px"}}><input type="email" placeholder="Email" value={email} onChange={function(e){setEmail(e.target.value);}} style={Object.assign({},iS,{padding:"12px"})}/><input type="password" placeholder="Password" value={pass} onChange={function(e){setPass(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")doEmail();}} style={Object.assign({},iS,{padding:"12px"})}/></div>
+        {error&&<p style={{fontSize:"11px",fontFamily:F.s,color:C.rose,margin:"8px 0 0",textAlign:"center"}}>{error}</p>}
+        <button onClick={doEmail} disabled={loading||!email||!pass} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"none",background:!email||!pass?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:!email||!pass?C.txtL:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:!email||!pass?"default":"pointer",marginTop:"12px"}}>{loading?"Caricamento...":mode==="login"?"Accedi":"Registrati"}</button>
+        <p style={{textAlign:"center",margin:"12px 0 0"}}><button onClick={function(){setMode(mode==="login"?"register":"login");setError("");}} style={{background:"none",border:"none",color:C.sage,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",textDecoration:"underline"}}>{mode==="login"?"Non hai un account? Registrati":"Hai gia un account? Accedi"}</button></p>
+      </Cd>
+      <p style={{textAlign:"center",fontSize:"10px",fontFamily:F.s,color:C.txtL,marginTop:"16px"}}>I tuoi dati saranno sincronizzati in cloud e accessibili da ogni dispositivo.</p>
+    </div>
+  </div>);
+}
+
+/* ─── DOCTOR VIEW ─── */
+function DoctorView({uid}){
+  const[data,setData]=useState(null);
+  const[loading,setLoading]=useState(true);
+  useEffect(function(){fbDb.collection("users").doc(uid).get().then(function(doc){if(doc.exists){var d=doc.data();Object.keys(d).forEach(function(k){if(k!=="lastSync")localStorage.setItem("pcos_"+k,d[k]);});setData(d);}setLoading(false);}).catch(function(){setLoading(false);});},[uid]);
+  if(loading)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><div style={{textAlign:"center"}}><div style={{fontSize:"40px",marginBottom:"10px"}}>🌸</div><p style={{fontFamily:F.s,fontSize:"14px",color:C.txtM}}>Caricamento dati paziente...</p></div></div>);
+  if(!data)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><Cd style={{maxWidth:"400px",textAlign:"center",padding:"30px"}}><div style={{fontSize:"40px",marginBottom:"10px"}}>❌</div><h2 style={{fontFamily:F.p,fontSize:"18px",color:C.txt}}>Link non valido</h2><p style={{fontFamily:F.s,fontSize:"13px",color:C.txtM}}>Questo link di condivisione non esiste o è stato rimosso.</p></Cd></div>);
+  var profile=data.profile?JSON.parse(data.profile):DEF_PROF;
+  var weighins=data.weighins?JSON.parse(data.weighins):[];
+  var bloods=data.bloodwork?JSON.parse(data.bloodwork):[];
+  var fasts=data.fasts?JSON.parse(data.fasts):[];
+  var workouts=data.workouts?JSON.parse(data.workouts):[];
+  var mc=calcMacros(profile);
+  var latW=weighins.length>0?weighins[weighins.length-1]:null;
+  return(<div style={{minHeight:"100vh",background:"linear-gradient(180deg,"+C.bg+","+C.bgW+")"}}>
+    <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"14px 16px"}}><div style={{display:"flex",alignItems:"center",gap:"10px",maxWidth:"640px",margin:"0 auto"}}><span style={{fontSize:"22px"}}>🌸</span><div><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily — Vista Medico</h1><p style={{fontSize:"10px",color:C.txtL,fontFamily:F.s,margin:0}}>Dashboard di sola lettura | {profile.name||"Paziente"}</p></div></div></div>
+    <div style={{maxWidth:"640px",margin:"0 auto",padding:"18px 12px"}}>
+      <Cd accent={C.sage} style={{marginBottom:"12px",background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><h3 style={{fontFamily:F.p,fontSize:"16px",margin:"0 0 10px",color:C.sageD}}>Profilo Paziente</h3><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}><Pill color={C.sage}>{profile.age} anni</Pill><Pill color={C.sage}>{profile.height} cm</Pill><Pill color={C.sage}>{profile.weight} kg</Pill><Pill color={C.sage}>BF {profile.bf}%</Pill><Pill color={C.amber}>Target {mc.target} kcal</Pill><Pill color={C.plum}>IF {profile.ifH}:{24-profile.ifH}</Pill></div>{profile.allergies&&profile.allergies.length>0&&<div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginTop:"6px"}}>{profile.allergies.map(function(a){return <Pill key={a} color={C.rose}>🚫 {a}</Pill>;})}</div>}</Cd>
+      {latW&&<Cd accent={C.sage} style={{marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.sageD,margin:"0 0 8px"}}>Ultima Pesata — {fmtD(latW.date)}</h4><div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:"8px"}}>{[{l:"Peso",v:latW.weight+" kg"},{l:"Body Fat",v:latW.bf+"%"},{l:"Muscolo",v:latW.mm+"%"}].map(function(m,i){return<div key={i} style={{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.bg}}><div style={{fontSize:"16px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>;})}</div></Cd>}
+      {bloods.length>0&&<Cd accent={C.berry} style={{marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.berry,margin:"0 0 8px"}}>Ultime Analisi — {fmtD(bloods[0].date)}</h4><div style={{display:"grid",gap:"4px"}}>{Object.keys(bloods[0]).filter(function(k){return k!=="date"&&bloods[0][k];}).map(function(k){return<div key={k} style={{display:"flex",justifyContent:"space-between",padding:"6px 8px",borderRadius:"6px",background:C.bg}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.txt,textTransform:"capitalize"}}>{k}</span><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.plum}}>{bloods[0][k]}</span></div>;})}</div></Cd>}
+      <Cd accent={C.plum} style={{marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:"0 0 8px"}}>Riepilogo Attivita</h4><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div style={{textAlign:"center",padding:"10px",borderRadius:"8px",background:C.bg}}><div style={{fontSize:"18px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{weighins.length}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>Pesate</div></div><div style={{textAlign:"center",padding:"10px",borderRadius:"8px",background:C.bg}}><div style={{fontSize:"18px",fontWeight:"700",color:C.rose,fontFamily:F.s}}>{workouts.length}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>Allenamenti</div></div><div style={{textAlign:"center",padding:"10px",borderRadius:"8px",background:C.bg}}><div style={{fontSize:"18px",fontWeight:"700",color:C.plum,fontFamily:F.s}}>{fasts.filter(function(f){return f.completed;}).length}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>Digiuni</div></div></div></Cd>
+      {weighins.length>2&&<Cd style={{marginBottom:"12px"}}><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Andamento Peso</h4><div style={{display:"flex",alignItems:"flex-end",gap:"3px",height:"100px"}}>{weighins.slice(-12).map(function(w,i,arr){var mn=Math.min.apply(null,arr.map(function(x){return x.weight;}))-1;var mx=Math.max.apply(null,arr.map(function(x){return x.weight;}))+1;var h=((w.weight-mn)/(mx-mn))*100;var il=i===arr.length-1;return<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}><span style={{fontSize:"7px",fontFamily:F.s,color:il?C.sage:C.txtL,fontWeight:il?"700":"400"}}>{w.weight}</span><div style={{width:"100%",maxWidth:"24px",height:h+"%",borderRadius:"4px 4px 2px 2px",background:il?C.sage:C.sageL}}/><span style={{fontSize:"6px",fontFamily:F.s,color:C.txtL}}>{fmtD(w.date)}</span></div>;})}</div></Cd>}
+      <div style={{textAlign:"center",padding:"20px"}}><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>PCOS Daily v2.5 | Dashboard di sola lettura</p></div>
+    </div>
+  </div>);
+}
 /* ─── PROFILE ─── */
 var DEF_PROF={name:"",age:27,height:168,weight:77,bf:29,goalW:68,goalBf:23,ifOpen:"10:00",ifClose:"20:00",ifH:14,stepsG:10000,waterG:8,workoutsG:4,allergies:[]};
 function calcMacros(p){var bmr=447.6+(9.2*p.weight)+(3.1*p.height)-(4.3*p.age);var tdee=bmr*1.5;var target=Math.round(tdee-500);var prot=Math.round(p.weight*1.5);var fat=Math.round(target*0.35/9);var carb=Math.round((target-prot*4-fat*9)/4);return{bmr:Math.round(bmr),tdee:Math.round(tdee),target:target,prot:prot,fat:fat,carb:carb};}
@@ -711,20 +778,53 @@ function Benessere(){
 
 /* ═══════════ APP PRINCIPALE ═══════════ */
 function App(){
+  const[user,setUser]=useState(null);
+  const[authReady,setAuthReady]=useState(false);
   const[tab,setTab]=useState("alimentazione");
   const[profile,setProfile]=useState(function(){return LD("profile",DEF_PROF);});
+  const[syncing,setSyncing]=useState(false);
+  const[lastSync,setLastSync]=useState("");
+  const[showShare,setShowShare]=useState(false);
   var scrollRef=useRef(null);
+
+  /* Auth listener */
+  useEffect(function(){var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);setAuthReady(true);}});return unsub;},[]);
+
+  /* Auto-sync every 2 min */
+  useEffect(function(){if(!user)return;var iv=setInterval(function(){syncToCloud(user.uid).catch(function(){});},120000);return function(){clearInterval(iv);};},[user]);
+
   useEffect(function(){if(scrollRef.current)scrollRef.current.scrollTop=0;},[tab]);
-  useEffect(function(){SV("profile",profile);requestNotifPerm();},[profile]);
+  useEffect(function(){SV("profile",profile);if(user)syncToCloud(user.uid).catch(function(){});requestNotifPerm();},[profile]);
+
+  function doSync(){if(!user)return;setSyncing(true);syncToCloud(user.uid).then(function(){setLastSync(new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}));setSyncing(false);}).catch(function(){setSyncing(false);});}
+  function doLogout(){fbAuth.signOut();setUser(null);}
+
+  /* View mode for doctor */
+  var viewUid=getViewUid();
+  if(viewUid)return <DoctorView uid={viewUid}/>;
+
+  /* Auth screen */
+  if(!authReady)return(<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:C.bg}}><div style={{textAlign:"center"}}><div style={{fontSize:"40px",marginBottom:"10px",animation:"pulse 1.5s infinite"}}>🌸</div><p style={{fontFamily:F.s,fontSize:"14px",color:C.txtM}}>Caricamento...</p></div></div>);
+  if(!user)return <AuthScreen onLogin={function(u){setUser(u);}}/>;
+
   var mc=calcMacros(profile);
   return(
     <div style={{fontFamily:F.s,background:"linear-gradient(180deg,"+C.bg+","+C.bgW+")",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
       <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"12px 16px 8px",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
           <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,"+C.sage+","+C.rose+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>🌸</div>
-          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v2.5 | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
+          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v3.0 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
           <div style={{textAlign:"right"}}><div style={{fontSize:"12px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"8px",color:C.txtL,fontFamily:F.s}}>goal {profile.goalW} kg</div></div>
         </div>
+        <div style={{display:"flex",gap:"4px",alignItems:"center",marginBottom:"6px"}}>
+          <button onClick={doSync} disabled={syncing} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:syncing?C.sageP:C.white,color:C.sageD,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>{syncing?"⏳ Sync...":"☁️ Sync"}</button>
+          {lastSync&&<span style={{fontSize:"8px",fontFamily:F.s,color:C.txtL}}>✓ {lastSync}</span>}
+          <button onClick={function(){setShowShare(!showShare);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>🔗 Medico</button>
+          <div style={{flex:1}}/>
+          <span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{user.email?user.email.split("@")[0]:""}</span>
+          <button onClick={doLogout} style={{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.rose,fontSize:"9px",fontFamily:F.s,cursor:"pointer"}}>Esci</button>
+        </div>
+        {showShare&&(<Cd style={{marginBottom:"8px",padding:"12px",background:C.plumP,border:"1px solid "+C.plumL}}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}}>🔗 Condividi con il tuo medico</h5><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 8px"}}>Il medico vedra una dashboard di sola lettura con: profilo, peso, analisi del sangue, allenamenti e digiuni.</p><div style={{display:"flex",gap:"6px"}}><input readOnly value={generateShareLink(user.uid)} style={Object.assign({},iS,{fontSize:"10px",padding:"8px"})}/><button onClick={function(){navigator.clipboard.writeText(generateShareLink(user.uid));}} style={{padding:"8px 14px",borderRadius:"8px",border:"none",background:C.plum,color:C.white,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap"}}>📋 Copia</button></div></Cd>)}
         <div style={{display:"flex",gap:"2px",overflowX:"auto"}}>
           <NavTab label="Cibo" icon="🥗" active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}}/>
           <NavTab label="Gym" icon="🏋️‍♀️" active={tab==="allenamento"} onClick={function(){setTab("allenamento");}}/>
@@ -744,7 +844,7 @@ function App(){
         {tab==="garmin"&&<GarminSection profile={profile}/>}
         {tab==="benessere"&&<Benessere/>}
       </div>
-      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v2.0 | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
+      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v3.0 | Cloud ☁️ | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
     </div>
   );
 }
