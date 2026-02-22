@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>PCOS Daily</title>
-  <meta name="description" content="Strumento quotidiano per gestire la PCOS: alimentazione, allenamento, digiuno intermittente, ciclo mestruale" />
-  <meta name="theme-color" content="#8B9E7E" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <meta name="description" content="Strumento quotidiano per gestire la PCOS"/>
+  <meta name="theme-color" content="#8B9E7E"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     body{font-family:'DM Sans',sans-serif;background:#FBF8F4;overscroll-behavior:none}
-    input[type="date"]{-webkit-appearance:none}
+    input[type="date"],input[type="time"]{-webkit-appearance:none}
     ::-webkit-scrollbar{display:none}
     button{-webkit-appearance:none}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
+    @keyframes ripple{0%{box-shadow:0 0 0 0 rgba(139,158,126,.4)}100%{box-shadow:0 0 0 12px rgba(139,158,126,0)}}
   </style>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -22,454 +25,568 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const{useState,useEffect,useRef,useCallback}=React;
 
-const C = {
-  bg: "#FBF8F4", bgW: "#F5EDE4", white: "#FFFFFF",
-  sage: "#8B9E7E", sageD: "#6B7F5E", sageL: "#C5D4BC", sageP: "#E8F0E4",
-  rose: "#C4918A", roseD: "#A67069", roseL: "#E8C5C0", roseP: "#FFF0ED",
-  amber: "#D4A574", amberL: "#F0DCC8",
-  plum: "#7B6B8D", plumL: "#D8D0F0", plumP: "#F3F0FF",
-  txt: "#3A3228", txtM: "#6B5E52", txtL: "#9B8E82", bdr: "#E8DFD6",
-  berry: "#B5547A", berryL: "#F5D6E3", berryP: "#FFF0F6",
+/* ═══════════ PCOS DAILY v2.0 — FULL ROADMAP ═══════════ */
+const C={bg:"#FBF8F4",bgW:"#F5EDE4",white:"#FFFFFF",sage:"#8B9E7E",sageD:"#6B7F5E",sageL:"#C5D4BC",sageP:"#E8F0E4",rose:"#C4918A",roseD:"#A67069",roseL:"#E8C5C0",roseP:"#FFF0ED",amber:"#D4A574",amberL:"#F0DCC8",amberP:"#FFF8F0",plum:"#7B6B8D",plumL:"#D8D0F0",plumP:"#F3F0FF",txt:"#3A3228",txtM:"#6B5E52",txtL:"#9B8E82",bdr:"#E8DFD6",berry:"#B5547A",berryL:"#F5D6E3",berryP:"#FFF0F6",blue:"#5B9BD5"};
+const F={p:"'Playfair Display',serif",s:"'DM Sans',sans-serif"};
+
+/* ─── STORAGE ─── */
+function LD(k,fb){try{var d=localStorage.getItem("pcos_"+k);return d?JSON.parse(d):fb;}catch(e){return fb;}}
+function SV(k,d){try{localStorage.setItem("pcos_"+k,JSON.stringify(d));}catch(e){}}
+function todayK(){return new Date().toISOString().slice(0,10);}
+function fmtD(ds){if(!ds)return"--";return new Date(ds).toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
+
+/* ─── PROFILE ─── */
+var DEF_PROF={name:"",age:27,height:168,weight:77,bf:29,goalW:68,goalBf:23,ifOpen:"10:00",ifClose:"20:00",ifH:14,stepsG:10000,waterG:8,workoutsG:4,allergies:[]};
+function calcMacros(p){var bmr=447.6+(9.2*p.weight)+(3.1*p.height)-(4.3*p.age);var tdee=bmr*1.5;var target=Math.round(tdee-500);var prot=Math.round(p.weight*1.5);var fat=Math.round(target*0.35/9);var carb=Math.round((target-prot*4-fat*9)/4);return{bmr:Math.round(bmr),tdee:Math.round(tdee),target:target,prot:prot,fat:fat,carb:carb};}
+
+/* ─── SUPPLEMENTS ─── */
+var DEF_SUPPS=[
+  {id:"inositolo",name:"Inositolo (myo + D-chiro)",time:"Mattina",note:"Migliora insulino-resistenza"},
+  {id:"vitd",name:"Vitamina D3",time:"Pranzo",note:"Spesso carente nella PCOS"},
+  {id:"omega3",name:"Omega-3 (EPA/DHA)",time:"Pranzo",note:"Anti-infiammatorio"},
+  {id:"magnesio",name:"Magnesio",time:"Sera",note:"Riduce stress e crampi"},
+  {id:"zinco",name:"Zinco",time:"Sera",note:"Supporta ovulazione"},
+  {id:"nac",name:"NAC",time:"Mattina",note:"Antiossidante, fertilita"},
+];
+
+
+/* ─── QUOTES ─── */
+const QUOTES=[
+  {q:"La PCOS non ti definisce. Tu definisci come affrontarla, ogni giorno.",t:"mindset"},
+  {q:"Ogni pasto equilibrato e un piccolo atto di cura verso il tuo corpo.",t:"food"},
+  {q:"La verdura prima di tutto: riduce l'insulina fino al 48%.",t:"tip"},
+  {q:"Non stai seguendo una dieta. Stai costruendo un nuovo rapporto con il tuo corpo.",t:"mindset"},
+  {q:"Il resistance training non ti rende grossa: ti rende forte e brucia grasso anche a riposo.",t:"gym"},
+  {q:"I tuoi progressi non si misurano solo sulla bilancia. Energia, umore, ciclo: tutto conta.",t:"mindset"},
+  {q:"Il te verde a digiuno riduce l'insulina. Una tazza calda e un momento per te.",t:"tip"},
+  {q:"L'olio EVO non e il nemico: stabilizza la glicemia e ti sazia piu a lungo.",t:"tip"},
+  {q:"Ogni passo conta. 10.000 passi non sono un obbligo, sono un regalo al tuo metabolismo.",t:"gym"},
+  {q:"Non confrontarti con chi non ha la PCOS. Il tuo percorso e unico e merita rispetto.",t:"mindset"},
+  {q:"Dormire bene e potente quanto allenarsi: il cortisolo alto sabota la perdita di grasso.",t:"tip"},
+  {q:"Le proteine a colazione riducono la fame per tutto il giorno.",t:"food"},
+  {q:"Non serve essere perfette. Serve essere costanti, con gentilezza.",t:"mindset"},
+  {q:"La cannella nel porridge non e solo buona: migliora la sensibilita insulinica.",t:"tip"},
+  {q:"Hip Thrust e Squat: i tuoi migliori alleati contro il grasso addominale.",t:"gym"},
+  {q:"Mangiare i carboidrati per ultimi non e una regola rigida: e una strategia che funziona.",t:"food"},
+  {q:"Anche nei giorni difficili, ricorda: stai facendo qualcosa per te.",t:"mindset"},
+  {q:"I legumi sono proteine vegetali potenti: ceci, lenticchie, fagioli. Alternali nel menu.",t:"food"},
+  {q:"Lo stress cronico alza il cortisolo e peggiora la PCOS. Prenditi 10 minuti per respirare.",t:"tip"},
+  {q:"Non esistono cibi proibiti, esistono scelte consapevoli.",t:"mindset"},
+  {q:"L'acqua e fondamentale: 2 litri al giorno aiutano metabolismo e sazieta.",t:"tip"},
+  {q:"Muoversi non e una punizione per quello che hai mangiato. E un premio per il tuo corpo.",t:"gym"},
+  {q:"La PCOS e cronica ma gestibile. Ogni giorno migliore e un investimento sul tuo futuro.",t:"mindset"},
+  {q:"Il salmone e ricco di omega-3 anti-infiammatori. Prova 2-3 volte a settimana.",t:"food"},
+  {q:"La tua massa muscolare e il tuo miglior alleato: piu muscoli = piu calorie bruciate a riposo.",t:"gym"},
+  {q:"Ascolta il tuo corpo. Se un giorno hai piu fame, non e un fallimento: e biologia.",t:"mindset"},
+  {q:"I mirtilli hanno il piu basso indice glicemico tra la frutta. Perfetti per colazione.",t:"food"},
+  {q:"Il digiuno intermittente non e soffrire la fame: e dare al corpo tempo di riparare.",t:"tip"},
+  {q:"Celebra ogni piccolo traguardo: 1 kg perso, un ciclo arrivato, una settimana costante.",t:"mindset"},
+  {q:"Le noci e le mandorle stabilizzano la glicemia: 15-20g al giorno sono il tuo snack ideale.",t:"food"},
+  {q:"Oggi e un buon giorno per prenderti cura di te.",t:"mindset"},
+];
+function getDailyQuote(){var d=new Date();var i=(d.getFullYear()*366+d.getMonth()*31+d.getDate())%QUOTES.length;return QUOTES[i];}
+
+
+/* ─── CYCLE PHASES ─── */
+const CYCLE_PHASES=[
+  {name:"Mestruale",days:"Giorni 1-5",color:C.rose,icon:"\u{1FA78}",hormones:"Estrogeni e progesterone bassi",symptoms:"Crampi, stanchezza, gonfiore, mal di testa",food:"Ferro (spinaci, lenticchie, carne rossa magra), cibi caldi, zenzero per i crampi, magnesio (cioccolato fondente 85%)",gym:"Attivita leggera: camminate, yoga dolce, stretching. Evita allenamenti intensi.",pcos:"Nella PCOS il flusso puo essere irregolare o assente. Non giudicarti: ogni ciclo che arriva e un segnale positivo."},
+  {name:"Follicolare",days:"Giorni 6-13",color:C.sage,icon:"\u{1F331}",hormones:"Estrogeni in crescita, energia in aumento",symptoms:"Energia alta, umore positivo, pelle migliore",food:"Proteine per supportare i follicoli, verdure crucifere (broccoli, cavolfiore), cereali integrali",gym:"Fase MIGLIORE per allenarsi intensamente. Aumenta i carichi, prova nuovi esercizi.",pcos:"Nella PCOS questa fase puo essere prolungata. I follicoli faticano a maturare."},
+  {name:"Ovulatoria",days:"Giorni 14-16",color:C.amber,icon:"\u{1F315}",hormones:"Picco di estrogeni e LH",symptoms:"Massima energia, libido alta, pelle luminosa",food:"Fibre per eliminare estrogeni in eccesso, verdure a foglia verde, zinco (semi di zucca), omega-3",gym:"Energia al MASSIMO. Allenamenti ad alta intensita, carichi pesanti, circuit training.",pcos:"L'ovulazione nella PCOS non e sempre presente. Nota muco cervicale e temperatura basale."},
+  {name:"Luteale",days:"Giorni 17-28",color:C.plum,icon:"\u{1F319}",hormones:"Progesterone alto, poi calo pre-mestruale",symptoms:"SPM, gonfiore, voglia di dolce, ansia, ritenzione idrica",food:"Carboidrati complessi (per serotonina), magnesio, vitamina B6. Usa cannella e cioccolato fondente.",gym:"Riduci intensita gradualmente. Preferisci pilates, yoga, camminate.",pcos:"La fase luteale nella PCOS puo essere insufficiente (basso progesterone)."},
+];
+
+/* ─── MENU 7 GIORNI ─── */
+const MENU=[
+  {day:"Lunedi",col:{t:"Avocado Toast + Uovo",desc:"Pane di segale tostato (40g) + 1/2 avocado (60g) + 1 uovo in camicia + semi di chia (10g) + spinacini (30g)",kcal:510,p:22,c:42,f:28},pra:{t:"Pollo & Quinoa Mediterranea",desc:"Rucola e pomodori (200g) + olio EVO (10ml) \u2192 pollo grigliato (150g) \u2192 quinoa (60g cruda) al limone",kcal:555,p:42,c:48,f:18},cen:{t:"Salmone al Forno",desc:"Crema di zucchine e porri (250g) \u2192 salmone al forno (120g) con erbe \u2192 pane integrale (25g)",kcal:360,p:32,c:18,f:16},sn:{t:"10 mandorle (15g)",kcal:90}},
+  {day:"Martedi",col:{t:"Porridge Proteico",desc:"Fiocchi d'avena larghi (40g) + burro di mandorle (15g) + mirtilli (80g) + semi canapa (10g) + cannella",kcal:480,p:18,c:52,f:22},pra:{t:"Lenticchie & Riso Integrale",desc:"Broccoli al vapore (250g) + curcuma \u2192 lenticchie rosse (70g crude) in umido \u2192 riso basmati integrale (50g crudo)",kcal:540,p:28,c:72,f:10},cen:{t:"Frittata Spinaci & Zucchine",desc:"Insalata verde e finocchi (200g) + olio EVO (8ml) \u2192 frittata (2 uova) con spinaci (100g) e zucchine (80g) \u2192 pane segale (30g)",kcal:370,p:24,c:22,f:20},sn:{t:"1 kiwi (80g)",kcal:45}},
+  {day:"Mercoledi",col:{t:"Colazione Salata Completa",desc:"Fette Wasa (2, ~30g) + fiocchi di latte (100g) + fesa di tacchino (40g) + carote crude (80g) + 5 noci (15g)",kcal:490,p:32,c:38,f:20},pra:{t:"Merluzzo & Patate Dolci",desc:"Insalata pomodori e sedano (200g) + olio EVO (10ml) \u2192 merluzzo al forno (150g) con olive (15g) \u2192 patate dolci (120g) al rosmarino",kcal:530,p:36,c:50,f:16},cen:{t:"Ceci in Insalata",desc:"Minestrone di verdure (300ml) \u2192 ceci (50g secchi = ~120g cotti) in insalata con cipolla rossa e prezzemolo + olio EVO (8ml)",kcal:340,p:18,c:38,f:12},sn:{t:"Bastoncini sedano + hummus (30g)",kcal:75}},
+  {day:"Giovedi",col:{t:"Budino di Chia Tropicale",desc:"Semi chia (25g) in latte di cocco (150ml) + cocco rape (10g) + lamponi (80g) + pistacchi (15g) + pane segale (30g) + tacchino (30g)",kcal:520,p:22,c:44,f:28},pra:{t:"Tacchino al Limone & Farro",desc:"Valeriana e carote julienne (200g) + olio EVO (10ml) \u2192 tacchino (150g) al limone \u2192 farro integrale (55g crudo)",kcal:545,p:40,c:52,f:16},cen:{t:"Zuppa Grano Saraceno & Sgombro",desc:"Zuppa grano saraceno (40g), porri e broccoli (200g) \u2192 sgombro al forno (100g) con pomodorini (80g)",kcal:360,p:26,c:30,f:14},sn:{t:"Mela verde (150g)",kcal:75}},
+  {day:"Venerdi",col:{t:"Toast Salmone & Avocado",desc:"Pane integrale tostato (40g) + salmone affumicato (50g) + 1/2 avocado (60g) + semi sesamo (5g) + rucola (20g)",kcal:500,p:24,c:34,f:30},pra:{t:"Riso Venere & Seppie",desc:"Rucola e radicchio (200g) + olio EVO (10ml) \u2192 seppie (150g) con fagioli borlotti (50g secchi) \u2192 riso venere (50g crudo)",kcal:560,p:38,c:54,f:16},cen:{t:"Orata al Cartoccio",desc:"Cavoletti di Bruxelles saltati (200g) + olio EVO (5ml) \u2192 orata al cartoccio (150g) con erbe e limone",kcal:330,p:36,c:10,f:14},sn:{t:"Yogurt greco 0% (80g) + 3 noci",kcal:95}},
+  {day:"Sabato",col:{t:"Omelette Ricca di Verdure",desc:"Omelette (2 uova + 1 albume) con zucchine (80g) e peperoni (60g) + pane segale (35g) + 1/4 avocado (35g)",kcal:510,p:28,c:32,f:26},pra:{t:"Polpette Merluzzo & Orzo",desc:"Spinacini (100g), noci (10g), mela verde (80g) \u2192 polpette merluzzo (150g) su crema porri \u2192 orzo (55g crudo)",kcal:555,p:36,c:56,f:18},cen:{t:"Vellutata Cannellini al Timo",desc:"Insalata verde (150g) \u2192 vellutata fagioli cannellini (60g secchi) con cipolle e crostini segale (20g) al timo",kcal:340,p:20,c:40,f:10},sn:{t:"Cioccolato fondente 85% (10g)",kcal:55}},
+  {day:"Domenica",col:{t:"Pancake Proteici",desc:"Farina d'avena (35g) + 2 albumi + 1 uovo + frutti di bosco (100g) + burro arachidi (10g) + cannella",kcal:480,p:26,c:48,f:18},pra:{t:"Pollo & Patate in Insalata",desc:"Pomodori, cetrioli e rucola (200g) + olio EVO (10ml) \u2192 petto pollo al forno (150g) \u2192 patate novelle (100g) tiepide con aceto",kcal:550,p:42,c:48,f:16},cen:{t:"Crema di Zucca & Uova Sode",desc:"Crema zucca al forno (200g) con porri e crusca d'avena (8g) \u2192 2 uova sode \u2192 insalata verde (100g)",kcal:340,p:22,c:24,f:16},sn:{t:"Fiocchi di latte (60g) + pinoli",kcal:70}},
+];
+
+
+/* ─── IDEE PASTI ─── */
+const IDEAS={
+  colazione:{intro:"Pasto PRINCIPALE (~520 kcal) ore 10:00. Rapporto 2:1 proteine:carboidrati.",items:[
+    {n:"Avocado Toast Proteico",d:"Pane segale tostato (40g) + 1/2 avocado (60g) + 1 uovo in camicia + semi sesamo (5g)",i:"\u{1F951}",kcal:"~510"},
+    {n:"Toast Salmone & Fiocchi di Latte",d:"Fette Wasa (2x15g) + fiocchi di latte (100g) + salmone affumicato (40g) + pomodorini (50g)",i:"\u{1F41F}",kcal:"~470"},
+    {n:"Omelette Verdure",d:"2 uova + 1 albume + zucchine (80g) e peperoni (60g) + pane integrale (35g) + 1/4 avocado (35g)",i:"\u{1F373}",kcal:"~510"},
+    {n:"Porridge Power",d:"Avena fiocchi larghi (40g) + burro mandorle (15g) + mirtilli (80g) + semi canapa (10g) + cannella",i:"\u{1F963}",kcal:"~480"},
+    {n:"Budino di Chia",d:"Semi chia (25g) in latte cocco (150ml) + lamponi (80g) + pistacchi (15g)",i:"\u{1F965}",kcal:"~460"},
+    {n:"Pancake Proteici",d:"Farina avena (35g) + 2 albumi + 1 uovo + frutti di bosco (100g) + burro arachidi (10g)",i:"\u{1F95E}",kcal:"~480"},
+  ]},
+  pranzo:{intro:"Pasto equilibrato (~550 kcal) ore 14:00. Ordine: VERDURA \u2192 PROTEINE \u2192 CARBO.",items:[
+    {n:"Bowl Mediterranea",d:"Rucola e pomodori (200g) + olio EVO (10ml) \u2192 pollo grigliato (150g) \u2192 quinoa (60g cruda)",i:"\u{1F957}",kcal:"~555"},
+    {n:"Salmone & Riso Integrale",d:"Cavolfiore al vapore (250g) \u2192 salmone al forno (130g) \u2192 riso basmati integrale (50g crudo)",i:"\u{1F41F}",kcal:"~540"},
+    {n:"Polpette Merluzzo & Porri",d:"Insalata (spinacini 100g, noci 10g, mela 80g) \u2192 polpette merluzzo (150g) \u2192 orzo (55g crudo)",i:"\u{1F41F}",kcal:"~555"},
+    {n:"Riso Venere & Salmone",d:"Insalata mista (200g) \u2192 riso venere (50g crudo) con salmone (80g), olive (15g), capperi",i:"\u{1F35A}",kcal:"~530"},
+    {n:"Tacchino & Farro",d:"Valeriana e carote (200g) + olio EVO (10ml) \u2192 tacchino (150g) al limone \u2192 farro integrale (55g crudo)",i:"\u{1F357}",kcal:"~545"},
+  ]},
+  cena:{intro:"Pasto LEGGERO (~350 kcal) entro le 19:30. Proteine + verdure, pochi carboidrati.",items:[
+    {n:"Orata al Cartoccio",d:"Cavoletti (200g) saltati + olio EVO (5ml) \u2192 orata al cartoccio (150g) con erbe e limone",i:"\u{1F41F}",kcal:"~330"},
+    {n:"Vellutata Cannellini",d:"Insalata verde (150g) \u2192 vellutata fagioli cannellini (60g secchi) con crostini segale (20g)",i:"\u{1F372}",kcal:"~340"},
+    {n:"Salmone Yogurt & Spinaci",d:"Spinacini (150g) \u2192 salmone (120g) in salsa yogurt (60g) con pinoli (8g)",i:"\u{1F41F}",kcal:"~350"},
+    {n:"Frittata Leggera",d:"Insalata verde (200g) + olio EVO (5ml) \u2192 frittata (2 uova) con spinaci (100g) e funghi (80g)",i:"\u{1F373}",kcal:"~330"},
+    {n:"Tonno & Crema Avocado",d:"Insalata verde (200g) \u2192 tonno fresco scottato (120g) con crema avocado (40g) e lime",i:"\u{1F41F}",kcal:"~340"},
+  ]},
 };
-const F = { p: "'Playfair Display',serif", s: "'DM Sans',sans-serif" };
-const WIN = { open: "10:00", close: "20:00", fast: 14, eat: 10 };
 
-const QUOTES = [
-  { q: "La PCOS non ti definisce. Tu definisci come affrontarla, ogni giorno.", t: "mindset" },
-  { q: "Ogni pasto equilibrato e un piccolo atto di cura verso il tuo corpo.", t: "food" },
-  { q: "La verdura prima di tutto: riduce l'insulina fino al 48%. Un gesto semplice, un impatto enorme.", t: "tip" },
-  { q: "Non stai seguendo una dieta. Stai costruendo un nuovo rapporto con il tuo corpo.", t: "mindset" },
-  { q: "Il resistance training non ti rende grossa: ti rende forte e brucia grasso anche a riposo.", t: "gym" },
-  { q: "I tuoi progressi non si misurano solo sulla bilancia. Energia, umore, ciclo: tutto conta.", t: "mindset" },
-  { q: "Il te verde a digiuno riduce l'insulina. Una tazza calda e un momento per te.", t: "tip" },
-  { q: "L'olio EVO non e il nemico: stabilizza la glicemia e ti sazia piu a lungo.", t: "tip" },
-  { q: "Ogni passo conta. 10.000 passi non sono un obbligo, sono un regalo al tuo metabolismo.", t: "gym" },
-  { q: "Non confrontarti con chi non ha la PCOS. Il tuo percorso e unico e merita rispetto.", t: "mindset" },
-  { q: "Dormire bene e potente quanto allenarsi: il cortisolo alto sabota la perdita di grasso.", t: "tip" },
-  { q: "Le proteine a colazione riducono la fame per tutto il giorno. Inizia con cura.", t: "food" },
-  { q: "Non serve essere perfette. Serve essere costanti, con gentilezza.", t: "mindset" },
-  { q: "La cannella nel porridge non e solo buona: migliora la sensibilita insulinica.", t: "tip" },
-  { q: "Hip Thrust e Squat: i tuoi migliori alleati contro il grasso addominale.", t: "gym" },
-  { q: "Mangiare i carboidrati per ultimi non e una regola rigida: e una strategia che funziona.", t: "food" },
-  { q: "Anche nei giorni difficili, ricorda: stai facendo qualcosa per te. E questo e molto.", t: "mindset" },
-  { q: "I legumi sono proteine vegetali potenti: ceci, lenticchie, fagioli. Alternali nel menu.", t: "food" },
-  { q: "Lo stress cronico alza il cortisolo e peggiora la PCOS. Prenditi 10 minuti per respirare.", t: "tip" },
-  { q: "Non esistono cibi proibiti, esistono scelte consapevoli. Tu stai scegliendo bene.", t: "mindset" },
-  { q: "L'acqua e fondamentale: 2 litri al giorno aiutano metabolismo e sazieta.", t: "tip" },
-  { q: "Muoversi non e una punizione per quello che hai mangiato. E un premio per il tuo corpo.", t: "gym" },
-  { q: "La PCOS e cronica ma gestibile. Ogni giorno migliore e un investimento sul tuo futuro.", t: "mindset" },
-  { q: "Il salmone e ricco di omega-3 anti-infiammatori. Prova ad inserirlo 2-3 volte a settimana.", t: "food" },
-  { q: "La tua massa muscolare e il tuo miglior alleato: piu muscoli = piu calorie bruciate a riposo.", t: "gym" },
-  { q: "Ascolta il tuo corpo. Se un giorno hai piu fame, non e un fallimento: e biologia.", t: "mindset" },
-  { q: "I mirtilli hanno il piu basso indice glicemico tra la frutta. Perfetti per colazione.", t: "food" },
-  { q: "Il digiuno intermittente non e soffrire la fame: e dare al corpo tempo di riparare.", t: "tip" },
-  { q: "Celebra ogni piccolo traguardo: 1 kg perso, un ciclo arrivato, una settimana costante.", t: "mindset" },
-  { q: "Le noci e le mandorle stabilizzano la glicemia: 15-20g al giorno sono il tuo snack ideale.", t: "food" },
-  { q: "Oggi e un buon giorno per prenderti cura di te.", t: "mindset" },
+/* ─── RICETTE ─── */
+const RECIPES=[
+  {n:"Salmone in salsa di yogurt e spinaci",cat:"Secondo",url:"https://www.lotusflowerpcos.com/salmone-in-salsa-di-yogurt-e-spinaci/",ing:"Salmone 150g + spinacini 125g + yogurt 60g + pinoli 10g",kcal:"~360",tag:"Omega-3"},
+  {n:"Polpette di ceci con salsa di capperi",cat:"Secondo",url:"https://www.lotusflowerpcos.com/polpette-ceci-salsa-capperi/",ing:"Ceci secchi 60g + 1 uovo + crusca avena + capperi",kcal:"~280",tag:"Legumi"},
+  {n:"Polpette di merluzzo con arancia e porri",cat:"Secondo",url:"https://www.lotusflowerpcos.com/polpette-di-merluzzo-arancia-crema-di-porri/",ing:"Merluzzo 125g + 1 uovo + porri 200g",kcal:"~300",tag:"Omega-3"},
+  {n:"Riso venere con salmone e capperi",cat:"Primo",url:"https://www.lotusflowerpcos.com/riso-venere-salmone-affumicato-olive-capperi-limone/",ing:"Riso venere 60g + salmone 50g + olive 10g",kcal:"~380",tag:"Integrale"},
+  {n:"Spaghetti integrali ragu di orata",cat:"Primo",url:"https://www.lotusflowerpcos.com/spaghetti-integrali-ragu-bianco-orata/",ing:"Spaghetti integrali 60g + orata 150g + sedano",kcal:"~420",tag:"Integrale"},
+  {n:"Timballini quinoa con verdure",cat:"Primo",url:"https://www.lotusflowerpcos.com/timballini-di-quinoa-con-verdurine-e-curcuma/",ing:"Quinoa 60g + verdure miste 150g + curcuma",kcal:"~350",tag:"Anti-infiamm."},
+  {n:"Tonno scottato con crema di avocado",cat:"Secondo",url:"https://www.lotusflowerpcos.com/tonno-scottato-con-crema-di-avocado/",ing:"Tonno fresco 130g + avocado 50g + lime",kcal:"~340",tag:"Omega-3"},
+  {n:"Risotto integrale funghi e rosmarino",cat:"Primo",url:"https://www.lotusflowerpcos.com/risotto-integrale-leggero-funghi-rosmarino/",ing:"Riso integrale 60g + funghi misti 150g",kcal:"~350",tag:"Integrale"},
+  {n:"Vellutata cannellini con crostini timo",cat:"Primo",url:"https://www.lotusflowerpcos.com/vellutata-fagioli-cannellini-cipolle-crostini-al-timo/",ing:"Cannellini secchi 60g + pane segale 25g",kcal:"~310",tag:"Legumi"},
+  {n:"Zuppa farro ai funghi",cat:"Primo",url:"https://www.lotusflowerpcos.com/zuppa-farro-ai-funghi/",ing:"Farro 60g + funghi misti 200g",kcal:"~320",tag:"Integrale"},
+  {n:"Polpettone pollo erbe provenzali",cat:"Secondo",url:"https://www.lotusflowerpcos.com/polpettone-pollo-umido-alle-erbe-provenzali/",ing:"Petto pollo 150g + crusca avena + pomodoro 200g",kcal:"~300",tag:"Proteine"},
+  {n:"Insalata cavoletti mandorle pompelmo",cat:"Contorno",url:"https://www.lotusflowerpcos.com/insalata-cavoletti-brasati-mandorle-pompelmo-rosa/",ing:"Cavoletti 175g + pompelmo rosa + mandorle 10g",kcal:"~160",tag:"Fibre"},
+  {n:"Grigliata verdure con chimichurri",cat:"Contorno",url:"https://www.lotusflowerpcos.com/grigliata-verdure-invernale-salsa-chimichurri/",ing:"Radicchio + finocchio + funghi 150g",kcal:"~120",tag:"Fibre"},
 ];
 
-function getDailyQuote() {
-  var d = new Date();
-  var idx = (d.getFullYear() * 366 + d.getMonth() * 31 + d.getDate()) % QUOTES.length;
-  return QUOTES[idx];
-}
-
-const CYCLE_PHASES = [
-  { name: "Mestruale", days: "Giorni 1-5", color: C.rose, icon: "\u{1FA78}", hormones: "Estrogeni e progesterone bassi", symptoms: "Crampi, stanchezza, gonfiore, mal di testa, umore basso", food: "Ferro (spinaci, lenticchie, carne rossa magra), cibi caldi e confortanti, zenzero per i crampi, magnesio (cioccolato fondente 85%)", gym: "Attivita leggera: camminate, yoga dolce, stretching. Evita allenamenti intensi. Ascolta il tuo corpo.", pcos: "Nella PCOS il flusso puo essere irregolare, scarso o assente. Non giudicarti: ogni ciclo che arriva e un segnale positivo." },
-  { name: "Follicolare", days: "Giorni 6-13", color: C.sage, icon: "\u{1F331}", hormones: "Estrogeni in crescita, energia in aumento", symptoms: "Energia alta, umore positivo, pelle migliore, creativita", food: "Proteine per supportare i follicoli, verdure crucifere (broccoli, cavolfiore) per metabolizzare gli estrogeni, cereali integrali", gym: "Fase MIGLIORE per allenarsi intensamente. Aumenta i carichi, prova nuovi esercizi. Forza e resistenza al massimo.", pcos: "Nella PCOS questa fase puo essere prolungata. I follicoli faticano a maturare: alimentazione e esercizio aiutano l'ovulazione." },
-  { name: "Ovulatoria", days: "Giorni 14-16", color: C.amber, icon: "\u{1F315}", hormones: "Picco di estrogeni e LH", symptoms: "Massima energia, libido alta, pelle luminosa, possibile dolore ovarico", food: "Fibre per eliminare estrogeni in eccesso, verdure a foglia verde, zinco (semi di zucca), omega-3", gym: "Energia al MASSIMO. Allenamenti ad alta intensita, carichi pesanti, circuit training. Approfitta di questa finestra.", pcos: "L'ovulazione nella PCOS non e sempre presente. Se stai tracciando, nota muco cervicale e temperatura basale." },
-  { name: "Luteale", days: "Giorni 17-28", color: C.plum, icon: "\u{1F319}", hormones: "Progesterone alto, poi calo pre-mestruale", symptoms: "SPM, gonfiore, voglia di dolce, ansia, ritenzione idrica, acne", food: "Carboidrati complessi (per serotonina), magnesio, vitamina B6. Evita eccesso di sale e caffeina. Nella PCOS la voglia di dolce e piu intensa: usa cannella e cioccolato fondente.", gym: "Riduci intensita gradualmente. Preferisci pilates, yoga, camminate. Nella seconda meta, recupero attivo.", pcos: "La fase luteale nella PCOS puo essere insufficiente (basso progesterone). Lo stile di vita aiuta a sostenerla." },
+/* ─── CIBI ─── */
+const FOODS=[
+  {cat:"Verdure",items:["Broccoli","Cavolfiore","Zucchine","Spinaci","Rucola","Sedano","Finocchi","Funghi","Asparagi","Peperoni"],note:"PRIMA portata. 200-250g cotte, 80-100g crude.",ico:"\u{1F96C}"},
+  {cat:"Proteine",items:["Pollo/tacchino 120-150g","Pesce 120-150g","2 uova (fino 12/sett)","Fiocchi di latte 100g","Legumi 50-70g secchi","Fesa tacchino 40-60g"],note:"Seconda portata. Target ~112g/giorno.",ico:"\u{1F969}"},
+  {cat:"Carboidrati",items:["Avena 35-40g","Riso integrale 50-60g","Quinoa 50-60g","Farro 50-60g","Pane segale 30-40g","Fette Wasa 2-3"],note:"ULTIMA portata, mai soli. Grammi a crudo.",ico:"\u{1F33E}"},
+  {cat:"Grassi buoni",items:["Olio EVO 10-15ml/pasto","Avocado mezzo (60g)","Mandorle/noci 15-20g","Semi chia/lino 10g","Burro arachidi 10-15g"],note:"Non eliminare mai. Target ~58g/giorno.",ico:"\u{1F951}"},
+  {cat:"Frutta",items:["Mirtilli 80g","Fragole/lamponi 100g","Mela verde 150g","Kiwi 1 medio","Pompelmo mezzo"],note:"Sempre INTERA, mai frullata.",ico:"\u{1F353}"},
+  {cat:"Bevande",items:["Te verde 2-3 tazze","Te menta piperita","Te cannella","Camomilla","Caffe max 2/giorno"],note:"Ok anche a digiuno (senza zucchero).",ico:"\u{1F375}"},
 ];
 
-const MENU = [
-  { day: "Lunedi", col: { t: "Avocado Toast + Uovo", desc: "Pane di segale tostato (40g) + 1/2 avocado (60g) + 1 uovo in camicia + semi di chia (10g) + spinacini (30g)", kcal: 510, p: 22, c: 42, f: 28 }, pra: { t: "Pollo & Quinoa Mediterranea", desc: "Rucola e pomodori (200g) + olio EVO (10ml) \u2192 pollo grigliato (150g) \u2192 quinoa (60g cruda) al limone", kcal: 555, p: 42, c: 48, f: 18 }, cen: { t: "Salmone al Forno", desc: "Crema di zucchine e porri (250g) \u2192 salmone al forno (120g) con erbe \u2192 pane integrale (25g)", kcal: 360, p: 32, c: 18, f: 16 }, sn: { t: "10 mandorle (15g)", kcal: 90 } },
-  { day: "Martedi", col: { t: "Porridge Proteico", desc: "Fiocchi d'avena larghi (40g) + burro di mandorle (15g) + mirtilli (80g) + semi canapa (10g) + cannella", kcal: 480, p: 18, c: 52, f: 22 }, pra: { t: "Lenticchie & Riso Integrale", desc: "Broccoli al vapore (250g) + curcuma \u2192 lenticchie rosse (70g crude) in umido \u2192 riso basmati integrale (50g crudo)", kcal: 540, p: 28, c: 72, f: 10 }, cen: { t: "Frittata Spinaci & Zucchine", desc: "Insalata verde e finocchi (200g) + olio EVO (8ml) \u2192 frittata (2 uova) con spinaci (100g) e zucchine (80g) \u2192 pane segale (30g)", kcal: 370, p: 24, c: 22, f: 20 }, sn: { t: "1 kiwi (80g)", kcal: 45 } },
-  { day: "Mercoledi", col: { t: "Colazione Salata Completa", desc: "Fette Wasa (2, ~30g) + fiocchi di latte (100g) + fesa di tacchino (40g) + carote crude (80g) + 5 noci (15g)", kcal: 490, p: 32, c: 38, f: 20 }, pra: { t: "Merluzzo & Patate Dolci", desc: "Insalata pomodori e sedano (200g) + olio EVO (10ml) \u2192 merluzzo al forno (150g) con olive (15g) \u2192 patate dolci (120g) al rosmarino", kcal: 530, p: 36, c: 50, f: 16 }, cen: { t: "Ceci in Insalata", desc: "Minestrone di verdure (300ml) \u2192 ceci (50g secchi = ~120g cotti) in insalata con cipolla rossa e prezzemolo + olio EVO (8ml)", kcal: 340, p: 18, c: 38, f: 12 }, sn: { t: "Bastoncini sedano + hummus (30g)", kcal: 75 } },
-  { day: "Giovedi", col: { t: "Budino di Chia Tropicale", desc: "Semi chia (25g) in latte di cocco (150ml) + cocco rape (10g) + lamponi (80g) + pistacchi (15g) + pane segale (30g) + tacchino (30g)", kcal: 520, p: 22, c: 44, f: 28 }, pra: { t: "Tacchino al Limone & Farro", desc: "Valeriana e carote julienne (200g) + olio EVO (10ml) \u2192 tacchino (150g) al limone \u2192 farro integrale (55g crudo)", kcal: 545, p: 40, c: 52, f: 16 }, cen: { t: "Zuppa Grano Saraceno & Sgombro", desc: "Zuppa grano saraceno (40g), porri e broccoli (200g) \u2192 sgombro al forno (100g) con pomodorini (80g)", kcal: 360, p: 26, c: 30, f: 14 }, sn: { t: "Mela verde (150g)", kcal: 75 } },
-  { day: "Venerdi", col: { t: "Toast Salmone & Avocado", desc: "Pane integrale tostato (40g) + salmone affumicato (50g) + 1/2 avocado (60g) + semi sesamo (5g) + rucola (20g)", kcal: 500, p: 24, c: 34, f: 30 }, pra: { t: "Riso Venere & Seppie", desc: "Rucola e radicchio (200g) + olio EVO (10ml) \u2192 seppie (150g) con fagioli borlotti (50g secchi) \u2192 riso venere (50g crudo)", kcal: 560, p: 38, c: 54, f: 16 }, cen: { t: "Orata al Cartoccio", desc: "Cavoletti di Bruxelles saltati (200g) + olio EVO (5ml) \u2192 orata al cartoccio (150g) con erbe e limone", kcal: 330, p: 36, c: 10, f: 14 }, sn: { t: "Yogurt greco 0% (80g) + 3 noci", kcal: 95 } },
-  { day: "Sabato", col: { t: "Omelette Ricca di Verdure", desc: "Omelette (2 uova + 1 albume) con zucchine (80g) e peperoni (60g) + pane segale (35g) + 1/4 avocado (35g)", kcal: 510, p: 28, c: 32, f: 26 }, pra: { t: "Polpette Merluzzo & Orzo", desc: "Spinacini (100g), noci (10g), mela verde (80g) \u2192 polpette merluzzo (150g) su crema porri \u2192 orzo (55g crudo)", kcal: 555, p: 36, c: 56, f: 18 }, cen: { t: "Vellutata Cannellini al Timo", desc: "Insalata verde (150g) \u2192 vellutata fagioli cannellini (60g secchi) con cipolle e crostini segale (20g) al timo", kcal: 340, p: 20, c: 40, f: 10 }, sn: { t: "Cioccolato fondente 85% (10g)", kcal: 55 } },
-  { day: "Domenica", col: { t: "Pancake Proteici", desc: "Farina d'avena (35g) + 2 albumi + 1 uovo + frutti di bosco (100g) + burro arachidi (10g) + cannella", kcal: 480, p: 26, c: 48, f: 18 }, pra: { t: "Pollo & Patate in Insalata", desc: "Pomodori, cetrioli e rucola (200g) + olio EVO (10ml) \u2192 petto pollo al forno (150g) \u2192 patate novelle (100g) tiepide con aceto", kcal: 550, p: 42, c: 48, f: 16 }, cen: { t: "Crema di Zucca & Uova Sode", desc: "Crema zucca al forno (200g) con porri e crusca d'avena (8g) \u2192 2 uova sode \u2192 insalata verde (100g)", kcal: 340, p: 22, c: 24, f: 16 }, sn: { t: "Fiocchi di latte (60g) + pinoli", kcal: 70 } },
-];
 
-const IDEAS = {
-  colazione: { intro: "Pasto PRINCIPALE (~520 kcal) ore 10:00. Rapporto 2:1 proteine:carboidrati.", items: [
-    { n: "Avocado Toast Proteico", d: "Pane segale tostato (40g) + 1/2 avocado (60g) + 1 uovo in camicia + semi sesamo (5g)", i: "\u{1F951}", kcal: "~510" },
-    { n: "Toast Salmone & Fiocchi di Latte", d: "Fette Wasa (2x15g) + fiocchi di latte (100g) + salmone affumicato (40g) + pomodorini (50g)", i: "\u{1F41F}", kcal: "~470" },
-    { n: "Omelette Verdure", d: "2 uova + 1 albume + zucchine (80g) e peperoni (60g) + pane integrale (35g) + 1/4 avocado (35g)", i: "\u{1F373}", kcal: "~510" },
-    { n: "Porridge Power", d: "Avena fiocchi larghi (40g) + burro mandorle (15g) + mirtilli (80g) + semi canapa (10g) + cannella", i: "\u{1F963}", kcal: "~480" },
-    { n: "Budino di Chia", d: "Semi chia (25g) in latte cocco (150ml) + lamponi (80g) + pistacchi (15g)", i: "\u{1F965}", kcal: "~460" },
-    { n: "Pancake Proteici", d: "Farina avena (35g) + 2 albumi + 1 uovo + frutti di bosco (100g) + burro arachidi (10g)", i: "\u{1F95E}", kcal: "~480" },
+/* ─── GYM ─── */
+const GYM={
+  upper:{t:"Upper Body",ico:"\u{1F4AA}",why:"Piu massa muscolare = metabolismo basale alto = piu calorie bruciate a riposo.",ex:[
+    {n:"Lat Pulldown",s:"3x12",r:"60s",nt:"Presa larga, squeeze scapole",vid:"lat+pulldown+tutorial"},
+    {n:"Chest Press manubri",s:"3x12",r:"60s",nt:"3s eccentrica",vid:"chest+press+manubri"},
+    {n:"Shoulder Press",s:"3x10",r:"60s",nt:"Schiena dritta",vid:"shoulder+press+tutorial"},
+    {n:"Cable Row",s:"3x12",r:"60s",nt:"Gomiti al corpo",vid:"cable+row+tutorial"},
+    {n:"Curl bicipiti",s:"2x15",r:"45s",nt:"Alternati",vid:"curl+bicipiti"},
+    {n:"Tricep Pushdown",s:"2x15",r:"45s",nt:"Gomiti fermi",vid:"tricep+pushdown"},
+    {n:"Face Pull",s:"3x15",r:"45s",nt:"Per postura",vid:"face+pull+tutorial"},
   ]},
-  pranzo: { intro: "Pasto equilibrato (~550 kcal) ore 14:00. Ordine: VERDURA \u2192 PROTEINE \u2192 CARBO.", items: [
-    { n: "Bowl Mediterranea", d: "Rucola e pomodori (200g) + olio EVO (10ml) \u2192 pollo grigliato (150g) \u2192 quinoa (60g cruda)", i: "\u{1F957}", kcal: "~555" },
-    { n: "Salmone & Riso Integrale", d: "Cavolfiore al vapore (250g) \u2192 salmone al forno (130g) \u2192 riso basmati integrale (50g crudo)", i: "\u{1F41F}", kcal: "~540" },
-    { n: "Polpette Merluzzo & Porri", d: "Insalata (spinacini 100g, noci 10g, mela 80g) \u2192 polpette merluzzo (150g) \u2192 orzo (55g crudo)", i: "\u{1F41F}", kcal: "~555" },
-    { n: "Riso Venere & Salmone", d: "Insalata mista (200g) \u2192 riso venere (50g crudo) con salmone (80g), olive (15g), capperi", i: "\u{1F35A}", kcal: "~530" },
-    { n: "Tacchino & Farro", d: "Valeriana e carote (200g) + olio EVO (10ml) \u2192 tacchino (150g) al limone \u2192 farro integrale (55g crudo)", i: "\u{1F357}", kcal: "~545" },
+  lower:{t:"Lower Body",ico:"\u{1F9B5}",why:"Muscoli grandi consumano piu glicogeno. Fondamentale per grasso addominale.",ex:[
+    {n:"Squat bilanciere/goblet",s:"4x10",r:"90s",nt:"Parallelo, schiena neutra",vid:"squat+donna+tutorial"},
+    {n:"Hip Thrust",s:"3x12",r:"75s",nt:"Pausa in alto, squeeze",vid:"hip+thrust+donna"},
+    {n:"Leg Press 45",s:"3x12",r:"75s",nt:"Piedi alti per glutei",vid:"leg+press+tutorial"},
+    {n:"Affondi camminati",s:"3x10/g",r:"60s",nt:"Passo lungo",vid:"affondi+camminati"},
+    {n:"Leg Curl",s:"3x12",r:"60s",nt:"Eccentrica lenta",vid:"leg+curl+tutorial"},
+    {n:"Calf Raise",s:"3x15",r:"45s",nt:"Pausa 2s basso",vid:"calf+raise"},
+    {n:"Abductor",s:"3x15",r:"45s",nt:"Contrazione controllata",vid:"abductor+machine"},
   ]},
-  cena: { intro: "Pasto LEGGERO (~350 kcal) entro le 19:30. Proteine + verdure, pochi carboidrati.", items: [
-    { n: "Orata al Cartoccio", d: "Cavoletti (200g) saltati + olio EVO (5ml) \u2192 orata al cartoccio (150g) con erbe e limone", i: "\u{1F41F}", kcal: "~330" },
-    { n: "Vellutata Cannellini", d: "Insalata verde (150g) \u2192 vellutata fagioli cannellini (60g secchi) con crostini segale (20g)", i: "\u{1F372}", kcal: "~340" },
-    { n: "Salmone Yogurt & Spinaci", d: "Spinacini (150g) \u2192 salmone (120g) in salsa yogurt (60g) con pinoli (8g)", i: "\u{1F41F}", kcal: "~350" },
-    { n: "Frittata Leggera", d: "Insalata verde (200g) + olio EVO (5ml) \u2192 frittata (2 uova) con spinaci (100g) e funghi (80g)", i: "\u{1F373}", kcal: "~330" },
-    { n: "Tonno & Crema Avocado", d: "Insalata verde (200g) \u2192 tonno fresco scottato (120g) con crema avocado (40g) e lime", i: "\u{1F41F}", kcal: "~340" },
+  core:{t:"Core & Addome",ico:"\u{1F3AF}",why:"Core forte migliora postura e riduce cortisolo. Non si dimagrisce localmente.",ex:[
+    {n:"Plank",s:"3x30-45s",r:"45s",nt:"Corpo in linea",vid:"plank+corretto"},
+    {n:"Dead Bug",s:"3x10/lato",r:"45s",nt:"Schiena piatta",vid:"dead+bug+esercizio"},
+    {n:"Pallof Press",s:"3x10/lato",r:"45s",nt:"Anti-rotazione",vid:"pallof+press"},
+    {n:"Crunch palla svizzera",s:"3x15",r:"45s",nt:"Non tirare collo",vid:"crunch+palla+svizzera"},
+    {n:"Bird Dog",s:"3x10/lato",r:"30s",nt:"Stabilita",vid:"bird+dog+esercizio"},
+    {n:"Russian Twist",s:"3x12/lato",r:"45s",nt:"Controllare",vid:"russian+twist"},
+    {n:"Vacuum addominale",s:"3x10s",r:"30s",nt:"Trasverso",vid:"vacuum+addominale"},
   ]},
-};
-
-const RECIPES = [
-  { n: "Salmone in salsa di yogurt e spinaci", cat: "Secondo", url: "https://www.lotusflowerpcos.com/salmone-in-salsa-di-yogurt-e-spinaci/", ing: "Salmone 150g + spinacini 125g + yogurt 60g + pinoli 10g", kcal: "~360", tag: "Omega-3" },
-  { n: "Polpette di ceci con salsa di capperi", cat: "Secondo", url: "https://www.lotusflowerpcos.com/polpette-ceci-salsa-capperi/", ing: "Ceci secchi 60g + 1 uovo + crusca avena + capperi", kcal: "~280", tag: "Legumi" },
-  { n: "Polpette di merluzzo con arancia e porri", cat: "Secondo", url: "https://www.lotusflowerpcos.com/polpette-di-merluzzo-arancia-crema-di-porri/", ing: "Merluzzo 125g + 1 uovo + porri 200g", kcal: "~300", tag: "Omega-3" },
-  { n: "Riso venere con salmone e capperi", cat: "Primo", url: "https://www.lotusflowerpcos.com/riso-venere-salmone-affumicato-olive-capperi-limone/", ing: "Riso venere 60g + salmone 50g + olive 10g", kcal: "~380", tag: "Integrale" },
-  { n: "Spaghetti integrali ragu di orata", cat: "Primo", url: "https://www.lotusflowerpcos.com/spaghetti-integrali-ragu-bianco-orata/", ing: "Spaghetti integrali 60g + orata 150g + sedano", kcal: "~420", tag: "Integrale" },
-  { n: "Timballini quinoa con verdure", cat: "Primo", url: "https://www.lotusflowerpcos.com/timballini-di-quinoa-con-verdurine-e-curcuma/", ing: "Quinoa 60g + verdure miste 150g + curcuma", kcal: "~350", tag: "Anti-infiamm." },
-  { n: "Tonno scottato con crema di avocado", cat: "Secondo", url: "https://www.lotusflowerpcos.com/tonno-scottato-con-crema-di-avocado/", ing: "Tonno fresco 130g + avocado 50g + lime", kcal: "~340", tag: "Omega-3" },
-  { n: "Risotto integrale funghi e rosmarino", cat: "Primo", url: "https://www.lotusflowerpcos.com/risotto-integrale-leggero-funghi-rosmarino/", ing: "Riso integrale 60g + funghi misti 150g", kcal: "~350", tag: "Integrale" },
-  { n: "Vellutata cannellini con crostini timo", cat: "Primo", url: "https://www.lotusflowerpcos.com/vellutata-fagioli-cannellini-cipolle-crostini-al-timo/", ing: "Cannellini secchi 60g + pane segale 25g", kcal: "~310", tag: "Legumi" },
-  { n: "Zuppa farro ai funghi", cat: "Primo", url: "https://www.lotusflowerpcos.com/zuppa-farro-ai-funghi/", ing: "Farro 60g + funghi misti 200g", kcal: "~320", tag: "Integrale" },
-  { n: "Polpettone pollo erbe provenzali", cat: "Secondo", url: "https://www.lotusflowerpcos.com/polpettone-pollo-umido-alle-erbe-provenzali/", ing: "Petto pollo 150g + crusca avena + pomodoro 200g", kcal: "~300", tag: "Proteine" },
-  { n: "Insalata cavoletti mandorle pompelmo", cat: "Contorno", url: "https://www.lotusflowerpcos.com/insalata-cavoletti-brasati-mandorle-pompelmo-rosa/", ing: "Cavoletti 175g + pompelmo rosa + mandorle 10g", kcal: "~160", tag: "Fibre" },
-  { n: "Grigliata verdure con chimichurri", cat: "Contorno", url: "https://www.lotusflowerpcos.com/grigliata-verdure-invernale-salsa-chimichurri/", ing: "Radicchio + finocchio + funghi 150g", kcal: "~120", tag: "Fibre" },
-];
-
-const FOODS = [
-  { cat: "Verdure", items: ["Broccoli","Cavolfiore","Zucchine","Spinaci","Rucola","Sedano","Finocchi","Funghi","Asparagi","Peperoni"], note: "PRIMA portata. 200-250g cotte, 80-100g crude.", ico: "\u{1F96C}" },
-  { cat: "Proteine", items: ["Pollo/tacchino 120-150g","Pesce 120-150g","2 uova (fino 12/sett)","Fiocchi di latte 100g","Legumi 50-70g secchi","Fesa tacchino 40-60g"], note: "Seconda portata. Target ~112g/giorno.", ico: "\u{1F969}" },
-  { cat: "Carboidrati", items: ["Avena 35-40g","Riso integrale 50-60g","Quinoa 50-60g","Farro 50-60g","Pane segale 30-40g","Fette Wasa 2-3"], note: "ULTIMA portata, mai soli. Grammi a crudo.", ico: "\u{1F33E}" },
-  { cat: "Grassi buoni", items: ["Olio EVO 10-15ml/pasto","Avocado mezzo (60g)","Mandorle/noci 15-20g","Semi chia/lino 10g","Burro arachidi 10-15g"], note: "Non eliminare mai. Target ~58g/giorno.", ico: "\u{1F951}" },
-  { cat: "Frutta", items: ["Mirtilli 80g","Fragole/lamponi 100g","Mela verde 150g","Kiwi 1 medio","Pompelmo mezzo"], note: "Sempre INTERA, mai frullata.", ico: "\u{1F353}" },
-  { cat: "Bevande", items: ["Te verde 2-3 tazze","Te menta piperita","Te cannella","Camomilla","Caffe max 2/giorno"], note: "Ok anche a digiuno (senza zucchero).", ico: "\u{1F375}" },
-];
-
-const GYM = {
-  upper: { t: "Upper Body", ico: "\u{1F4AA}", why: "Piu massa muscolare = metabolismo basale alto = piu calorie bruciate a riposo.", ex: [
-    { n: "Lat Pulldown", s: "3x12", r: "60s", nt: "Presa larga, squeeze scapole" },
-    { n: "Chest Press manubri", s: "3x12", r: "60s", nt: "3s eccentrica" },
-    { n: "Shoulder Press", s: "3x10", r: "60s", nt: "Schiena dritta" },
-    { n: "Cable Row", s: "3x12", r: "60s", nt: "Gomiti al corpo" },
-    { n: "Curl bicipiti", s: "2x15", r: "45s", nt: "Alternati" },
-    { n: "Tricep Pushdown", s: "2x15", r: "45s", nt: "Gomiti fermi" },
-    { n: "Face Pull", s: "3x15", r: "45s", nt: "Per postura" },
-  ]},
-  lower: { t: "Lower Body", ico: "\u{1F9B5}", why: "Muscoli grandi consumano piu glicogeno. Fondamentale per grasso addominale.", ex: [
-    { n: "Squat bilanciere/goblet", s: "4x10", r: "90s", nt: "Parallelo, schiena neutra" },
-    { n: "Hip Thrust", s: "3x12", r: "75s", nt: "Pausa in alto, squeeze" },
-    { n: "Leg Press 45", s: "3x12", r: "75s", nt: "Piedi alti per glutei" },
-    { n: "Affondi camminati", s: "3x10/g", r: "60s", nt: "Passo lungo" },
-    { n: "Leg Curl", s: "3x12", r: "60s", nt: "Eccentrica lenta" },
-    { n: "Calf Raise", s: "3x15", r: "45s", nt: "Pausa 2s basso" },
-    { n: "Abductor", s: "3x15", r: "45s", nt: "Contrazione controllata" },
-  ]},
-  core: { t: "Core & Addome", ico: "\u{1F3AF}", why: "Core forte migliora postura e riduce cortisolo. Non si dimagrisce localmente.", ex: [
-    { n: "Plank", s: "3x30-45s", r: "45s", nt: "Corpo in linea" },
-    { n: "Dead Bug", s: "3x10/lato", r: "45s", nt: "Schiena piatta" },
-    { n: "Pallof Press", s: "3x10/lato", r: "45s", nt: "Anti-rotazione" },
-    { n: "Crunch palla svizzera", s: "3x15", r: "45s", nt: "Non tirare collo" },
-    { n: "Bird Dog", s: "3x10/lato", r: "30s", nt: "Stabilita" },
-    { n: "Russian Twist", s: "3x12/lato", r: "45s", nt: "Controllare" },
-    { n: "Vacuum addominale", s: "3x10s", r: "30s", nt: "Trasverso" },
-  ]},
-  sched: [
-    { d: "Lunedi", w: "Upper Body", i: "Moderata" },
-    { d: "Martedi", w: "Camminata + Stretching", i: "Leggera" },
-    { d: "Mercoledi", w: "Lower Body", i: "Mod-Alta" },
-    { d: "Giovedi", w: "Riposo attivo / Yoga", i: "Bassa" },
-    { d: "Venerdi", w: "Core + Upper Body", i: "Moderata" },
-    { d: "Sabato", w: "Lower Body + Camminata", i: "Moderata" },
-    { d: "Domenica", w: "Riposo / Passeggiata", i: "Bassa" },
+  sched:[
+    {d:"Lunedi",w:"Upper Body",i:"Moderata"},
+    {d:"Martedi",w:"Camminata + Stretching",i:"Leggera"},
+    {d:"Mercoledi",w:"Lower Body",i:"Mod-Alta"},
+    {d:"Giovedi",w:"Riposo attivo / Yoga",i:"Bassa"},
+    {d:"Venerdi",w:"Core + Upper Body",i:"Moderata"},
+    {d:"Sabato",w:"Lower Body + Camminata",i:"Moderata"},
+    {d:"Domenica",w:"Riposo / Passeggiata",i:"Bassa"},
   ],
 };
 
-function loadData(k,fb){try{var d=localStorage.getItem(k);return d?JSON.parse(d):fb;}catch(e){return fb;}}
-function saveData(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch(e){}}
+/* ─── GARMIN DEFAULTS ─── */
 var DEF_W=[{date:"2025-01-06",weight:79.2,bf:30.5,mm:25.8,bm:2.5,bw:47.0},{date:"2025-01-13",weight:78.8,bf:30.2,mm:25.9,bm:2.5,bw:47.2},{date:"2025-01-20",weight:78.5,bf:30.0,mm:26.0,bm:2.5,bw:47.5},{date:"2025-01-27",weight:78.1,bf:29.7,mm:26.1,bm:2.6,bw:47.6},{date:"2025-02-03",weight:77.8,bf:29.5,mm:26.2,bm:2.6,bw:47.8},{date:"2025-02-10",weight:77.5,bf:29.3,mm:26.3,bm:2.6,bw:48.0},{date:"2025-02-17",weight:77.2,bf:29.1,mm:26.4,bm:2.6,bw:48.1},{date:"2025-02-21",weight:77.0,bf:29.0,mm:26.5,bm:2.6,bw:48.2}];
-var DEF_WO=[];var DEF_D={steps:0,rhr:0,stress:0,bb:0,vo2:0};
+var DEF_WO=[];var DEF_DD={steps:0,rhr:0,stress:0,bb:0,vo2:0};
 
-function fmt(ms) {
-  if (ms <= 0) return { h: "00", m: "00", s: "00" };
-  var ts = Math.floor(ms / 1000);
-  return { h: String(Math.floor(ts / 3600)).padStart(2, "0"), m: String(Math.floor((ts % 3600) / 60)).padStart(2, "0"), s: String(ts % 60).padStart(2, "0") };
-}
-
-function Cd({ children, style, accent }) {
-  return (<div style={{ background: C.white, borderRadius: "14px", padding: "18px", border: "1px solid " + C.bdr, borderTop: accent ? "3px solid " + accent : undefined, ...style }}>{children}</div>);
-}
-function Pill({ children, color }) {
-  var c = color || C.sage;
-  return (<span style={{ display: "inline-block", padding: "3px 9px", borderRadius: "20px", fontSize: "10px", fontWeight: "500", fontFamily: F.s, background: c + "18", color: c }}>{children}</span>);
-}
-function Bar({ v, mx, color }) {
-  var c = color || C.sage;
-  return (<div style={{ height: "5px", borderRadius: "3px", background: C.bdr, width: "100%", overflow: "hidden" }}><div style={{ height: "100%", borderRadius: "3px", background: c, width: Math.min((v / mx) * 100, 100) + "%", transition: "width .8s" }} /></div>);
-}
-function Info({ bg, bdr, color, children }) {
-  return (<Cd style={{ background: bg, border: "1px solid " + bdr }}><div style={{ fontSize: "12px", fontFamily: F.s, color: color, margin: 0, lineHeight: 1.6 }}>{children}</div></Cd>);
-}
-function MacroBar({ p, c, f, kcal }) {
-  var tot = p + c + f;
-  return (<div style={{ marginTop: "8px" }}><div style={{ display: "flex", height: "6px", borderRadius: "3px", overflow: "hidden", gap: "2px" }}><div style={{ width: ((p/tot)*100)+"%", background: C.rose, borderRadius: "3px" }} /><div style={{ width: ((c/tot)*100)+"%", background: C.amber, borderRadius: "3px" }} /><div style={{ width: ((f/tot)*100)+"%", background: C.sage, borderRadius: "3px" }} /></div><div style={{ display: "flex", justifyContent: "space-between", marginTop: "4px", fontSize: "10px", fontFamily: F.s, color: C.txtL }}><span style={{ color: C.rose }}>P {p}g</span><span style={{ color: C.amber }}>C {c}g</span><span style={{ color: C.sage }}>G {f}g</span><span style={{ fontWeight: "600", color: C.txt }}>{kcal} kcal</span></div></div>);
-}
-function SubT({ tabs, active, onSel }) {
-  return (<div style={{ display: "flex", gap: "4px", flexWrap: "wrap", marginBottom: "18px" }}>{tabs.map(function(t){ return (<button key={t.k} onClick={function(){onSel(t.k);}} style={{ padding: "6px 12px", borderRadius: "10px", border: active===t.k ? "none" : "1px solid "+C.bdr, background: active===t.k ? C.sageP : C.white, color: active===t.k ? C.sageD : C.txtM, fontWeight: active===t.k ? "600" : "400", fontSize: "11px", fontFamily: F.s, cursor: "pointer" }}>{t.i ? t.i+" " : ""}{t.l}</button>);})}</div>);
-}
-function NavTab({ label, icon, active, onClick }) {
-  return (<button onClick={onClick} style={{ display: "flex", alignItems: "center", gap: "5px", padding: "10px 12px", borderRadius: "50px", border: "none", cursor: "pointer", fontSize: "11px", fontWeight: active ? "600" : "400", fontFamily: F.s, background: active ? C.sage : "transparent", color: active ? C.white : C.txtM, transition: "all .3s", whiteSpace: "nowrap" }}><span style={{ fontSize: "14px" }}>{icon}</span><span>{label}</span></button>);
+/* ─── SHOPPING LIST GENERATOR ─── */
+function genShoppingList(dayIdxs){
+  var cats={frutta:[],verdura:[],proteine:[],carboidrati:[],dispensa:[],latticini:[]};
+  var verdK=["rucola","pomodor","spinac","zucchin","brocco","cavol","insalata","finocch","peperoni","sedano","porri","fungh","valeriana","carot","radicchio"];
+  var protK=["pollo","salmone","merluzzo","tacchino","uov","tonno","orata","seppie","sgombro"];
+  var carbK=["pane","riso","quinoa","farro","orzo","avena","wasa","patate","grano saraceno"];
+  var fruttK=["mirtill","lamponi","fragol","mela","kiwi","pompelmo","frutti di bosco"];
+  var lattK=["yogurt","fiocchi di latte","latte"];
+  dayIdxs.forEach(function(di){
+    var m=MENU[di];if(!m)return;
+    [m.col,m.pra,m.cen].forEach(function(meal){
+      var d=(meal.desc||"").toLowerCase();
+      verdK.forEach(function(k){if(d.includes(k)&&cats.verdura.indexOf(k)<0)cats.verdura.push(k);});
+      protK.forEach(function(k){if(d.includes(k)&&cats.proteine.indexOf(k)<0)cats.proteine.push(k);});
+      carbK.forEach(function(k){if(d.includes(k)&&cats.carboidrati.indexOf(k)<0)cats.carboidrati.push(k);});
+      fruttK.forEach(function(k){if(d.includes(k)&&cats.frutta.indexOf(k)<0)cats.frutta.push(k);});
+      lattK.forEach(function(k){if(d.includes(k)&&cats.latticini.indexOf(k)<0)cats.latticini.push(k);});
+    });
+  });
+  cats.dispensa=["olio EVO","semi di chia","semi canapa","semi sesamo","cannella","curcuma","mandorle","noci","pistacchi","burro di mandorle"];
+  return cats;
 }
 
-function DailyQuote() {
-  var dq = getDailyQuote();
-  var tagColors = { mindset: C.plum, food: C.sage, tip: C.amber, gym: C.rose };
-  var tagLabels = { mindset: "Mindset", food: "Nutrizione", tip: "Consiglio", gym: "Fitness" };
-  var tc = tagColors[dq.t] || C.sage;
-  return (<Cd style={{ marginBottom: "16px", background: "linear-gradient(135deg,"+tc+"10,"+C.white+")", borderLeft: "4px solid "+tc }}><div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}><span style={{ fontSize: "22px", flexShrink: 0 }}>{"\u{1F338}"}</span><div style={{ flex: 1 }}><p style={{ margin: "0 0 6px", fontFamily: F.p, fontSize: "13px", fontStyle: "italic", color: C.txt, lineHeight: 1.5 }}>"{dq.q}"</p><Pill color={tc}>{tagLabels[dq.t]}</Pill></div></div></Cd>);
+
+/* ═══════════ UI COMPONENTS ═══════════ */
+function fmt(ms){if(ms<=0)return{h:"00",m:"00",s:"00"};var ts=Math.floor(ms/1000);return{h:String(Math.floor(ts/3600)).padStart(2,"0"),m:String(Math.floor((ts%3600)/60)).padStart(2,"0"),s:String(ts%60).padStart(2,"0")};}
+
+function Cd({children,style,accent}){return(<div style={{background:C.white,borderRadius:"14px",padding:"18px",border:"1px solid "+C.bdr,borderTop:accent?"3px solid "+accent:undefined,...style}}>{children}</div>);}
+function Pill({children,color}){var c=color||C.sage;return(<span style={{display:"inline-block",padding:"3px 9px",borderRadius:"20px",fontSize:"10px",fontWeight:"500",fontFamily:F.s,background:c+"18",color:c}}>{children}</span>);}
+function Bar({v,mx,color}){var c=color||C.sage;return(<div style={{height:"5px",borderRadius:"3px",background:C.bdr,width:"100%",overflow:"hidden"}}><div style={{height:"100%",borderRadius:"3px",background:c,width:Math.min((v/mx)*100,100)+"%",transition:"width .8s"}}/></div>);}
+function Info({bg,bdr,color,children}){return(<Cd style={{background:bg,border:"1px solid "+bdr}}><div style={{fontSize:"12px",fontFamily:F.s,color:color,margin:0,lineHeight:1.6}}>{children}</div></Cd>);}
+function MacroBar({p,c,f,kcal}){var tot=p+c+f;return(<div style={{marginTop:"8px"}}><div style={{display:"flex",height:"6px",borderRadius:"3px",overflow:"hidden",gap:"2px"}}><div style={{width:((p/tot)*100)+"%",background:C.rose,borderRadius:"3px"}}/><div style={{width:((c/tot)*100)+"%",background:C.amber,borderRadius:"3px"}}/><div style={{width:((f/tot)*100)+"%",background:C.sage,borderRadius:"3px"}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:"4px",fontSize:"10px",fontFamily:F.s,color:C.txtL}}><span style={{color:C.rose}}>P {p}g</span><span style={{color:C.amber}}>C {c}g</span><span style={{color:C.sage}}>G {f}g</span><span style={{fontWeight:"600",color:C.txt}}>{kcal} kcal</span></div></div>);}
+function SubT({tabs,active,onSel}){return(<div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"18px"}}>{tabs.map(function(t){return(<button key={t.k} onClick={function(){onSel(t.k);}} style={{padding:"6px 12px",borderRadius:"10px",border:active===t.k?"none":"1px solid "+C.bdr,background:active===t.k?C.sageP:C.white,color:active===t.k?C.sageD:C.txtM,fontWeight:active===t.k?"600":"400",fontSize:"11px",fontFamily:F.s,cursor:"pointer"}}>{t.i?t.i+" ":""}{t.l}</button>);})}</div>);}
+function NavTab({label,icon,active,onClick}){return(<button onClick={onClick} style={{display:"flex",alignItems:"center",gap:"5px",padding:"10px 12px",borderRadius:"50px",border:"none",cursor:"pointer",fontSize:"11px",fontWeight:active?"600":"400",fontFamily:F.s,background:active?C.sage:"transparent",color:active?C.white:C.txtM,transition:"all .3s",whiteSpace:"nowrap"}}><span style={{fontSize:"14px"}}>{icon}</span><span>{label}</span></button>);}
+function SecH({title,sub}){return(<div style={{marginBottom:"20px"}}><h2 style={{fontFamily:F.p,fontSize:"24px",fontWeight:"600",color:C.txt,margin:0}}>{title}</h2><p style={{fontFamily:F.s,fontSize:"12px",color:C.txtL,marginTop:"5px"}}>{sub}</p></div>);}
+var iS={width:"100%",padding:"10px",borderRadius:"10px",border:"1px solid "+C.bdr,fontFamily:F.s,fontSize:"13px",boxSizing:"border-box",background:C.white};
+var lS={fontSize:"10px",fontFamily:F.s,color:C.txtM,display:"block",marginBottom:"3px",fontWeight:"500"};
+
+
+/* ═══════════ WATER TRACKER ═══════════ */
+function WaterTracker(){
+  const[glasses,setGlasses]=useState(function(){var d=LD("water_"+todayK(),0);return d;});
+  var goal=LD("profile",DEF_PROF).waterG||8;
+  useEffect(function(){SV("water_"+todayK(),glasses);},[glasses]);
+  var pct=Math.min(Math.round((glasses/goal)*100),100);
+  return(<Cd accent={C.blue} style={{marginBottom:"12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}><div><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.blue,margin:0}}>💧 Acqua Oggi</h4><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{glasses}/{goal} bicchieri ({glasses*250}ml)</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}><button onClick={function(){if(glasses>0)setGlasses(glasses-1);}} style={{width:"30px",height:"30px",borderRadius:"50%",border:"1px solid "+C.bdr,background:C.white,fontSize:"16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",color:C.txtM}}>−</button><span style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.blue,minWidth:"30px",textAlign:"center"}}>{glasses}</span><button onClick={function(){setGlasses(glasses+1);}} style={{width:"36px",height:"36px",borderRadius:"50%",border:"none",background:pct>=100?"linear-gradient(135deg,#4CAF50,#66BB6A)":"linear-gradient(135deg,"+C.blue+",#7BB3E0)",color:C.white,fontSize:"18px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontWeight:"700",animation:pct>=100?"":"ripple 1.5s infinite"}}>+</button></div></div><Bar v={glasses} mx={goal} color={pct>=100?"#4CAF50":C.blue}/>{pct>=100&&<p style={{fontSize:"10px",fontFamily:F.s,color:"#4CAF50",marginTop:"6px",fontWeight:"600",textAlign:"center"}}>✅ Obiettivo raggiunto!</p>}</Cd>);
 }
 
-function ProfileCard() {
-  return (<Cd accent={C.sage} style={{ marginBottom: "16px", background: "linear-gradient(135deg,"+C.sageP+","+C.white+")" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}><div><h3 style={{ fontFamily: F.p, fontSize: "16px", margin: "0 0 6px", color: C.sageD }}>Il Tuo Profilo</h3><div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}><Pill color={C.sage}>27 anni</Pill><Pill color={C.sage}>168 cm</Pill><Pill color={C.sage}>77 kg</Pill><Pill color={C.sage}>BF 29%</Pill></div></div><div style={{ textAlign: "right" }}><div style={{ fontFamily: F.s, fontSize: "22px", fontWeight: "700", color: C.sage }}>~1500</div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtL }}>kcal/giorno</div></div></div><div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>{[{l:"Proteine",v:"112g",c:C.rose},{l:"Carboidrati",v:"131g",c:C.amber},{l:"Grassi",v:"58g",c:C.sage}].map(function(m,i){return (<div key={i} style={{ flex: 1, textAlign: "center", padding: "8px", borderRadius: "10px", background: C.white }}><div style={{ fontSize: "14px", fontWeight: "700", color: m.c, fontFamily: F.s }}>{m.v}</div><div style={{ fontSize: "9px", color: C.txtL, fontFamily: F.s }}>{m.l}</div></div>);})}</div><div style={{ marginTop: "10px", padding: "8px 10px", borderRadius: "8px", background: C.plumP, display: "flex", alignItems: "center", gap: "8px" }}><span style={{ fontSize: "11px", fontFamily: F.s, color: C.plum, fontWeight: "500" }}>IF 14:10 | Finestra {WIN.open}-{WIN.close} | Digiuno 20:00-10:00</span></div></Cd>);
+/* ═══════════ MEAL CHECKLIST ═══════════ */
+function MealChecklist(){
+  var dk=todayK();
+  const[checks,setChecks]=useState(function(){return LD("meals_"+dk,{col:false,pra:false,cen:false,sn:false});});
+  useEffect(function(){SV("meals_"+dk,checks);},[checks]);
+  var done=Object.values(checks).filter(Boolean).length;
+  var meals=[{k:"col",l:"Colazione",t:"10:00",c:C.amber},{k:"pra",l:"Pranzo",t:"14:00",c:C.sage},{k:"cen",l:"Cena",t:"19:30",c:C.rose},{k:"sn",l:"Snack",t:"~16:30",c:C.plum}];
+  return(<Cd accent={C.sage} style={{marginBottom:"12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.sage,margin:0}}>✅ Pasti Oggi</h4><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:done===4?"#4CAF50":C.txtL}}>{done}/4</span></div><div style={{display:"flex",gap:"6px"}}>{meals.map(function(m){var ck=checks[m.k];return(<button key={m.k} onClick={function(){var u=Object.assign({},checks);u[m.k]=!u[m.k];setChecks(u);}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",border:ck?"2px solid "+m.c:"1px solid "+C.bdr,background:ck?m.c+"15":C.white,cursor:"pointer",textAlign:"center",transition:"all .2s"}}><div style={{fontSize:"14px",marginBottom:"2px"}}>{ck?"✅":"⬜"}</div><div style={{fontSize:"9px",fontFamily:F.s,fontWeight:"600",color:ck?m.c:C.txtL}}>{m.l}</div><div style={{fontSize:"8px",fontFamily:F.s,color:C.txtL}}>{m.t}</div></button>);})}</div><div style={{marginTop:"8px"}}><Bar v={done} mx={4} color={done===4?"#4CAF50":C.sage}/></div></Cd>);
 }
 
-function FastingTimer() {
-  const [isOn, setIsOn] = useState(false);
-  const [start, setStart] = useState(null);
-  const [goal, setGoal] = useState(14);
-  const [el, setEl] = useState(0);
-  var timerRef = useRef(null);
-  var gMs = goal * 3600000;
-  var prog = start ? Math.min((el / gMs) * 100, 100) : 0;
-  var done = el >= gMs;
-  var t = fmt(el);
-  var tr = fmt(Math.max(gMs - el, 0));
-  useEffect(function () { if (isOn && start) { timerRef.current = setInterval(function () { setEl(Date.now() - start); }, 1000); } return function () { clearInterval(timerRef.current); }; }, [isOn, start]);
-  var goFn = function () { setStart(Date.now()); setEl(0); setIsOn(true); };
-  var stopFn = function () { setIsOn(false); clearInterval(timerRef.current); };
-  var resetFn = function () { setIsOn(false); setStart(null); setEl(0); clearInterval(timerRef.current); };
-  var circ = 2 * Math.PI * 88;
-  var off = circ - (prog / 100) * circ;
-  var sL = start ? new Date(start).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : "--:--";
-  var eL = start ? new Date(start + gMs).toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }) : "--:--";
-  return (
-    <Cd style={{ textAlign: "center", padding: "24px 18px" }} accent={done ? C.sage : C.plum}>
-      <h3 style={{ fontFamily: F.p, fontSize: "17px", margin: "0 0 4px", color: done ? C.sage : C.txt }}>{done ? "Digiuno completato!" : isOn ? "Digiuno in corso..." : "Timer Digiuno"}</h3>
-      <p style={{ fontSize: "11px", fontFamily: F.s, color: C.txtL, margin: "0 0 14px" }}>{isOn ? sL+" \u2192 "+eL : "Finestra alimentare: "+WIN.open+" - "+WIN.close}</p>
-      {!isOn && !start && (<div style={{ display: "flex", justifyContent: "center", gap: "6px", marginBottom: "16px" }}>{[12,14,16].map(function(h){return (<button key={h} onClick={function(){setGoal(h);}} style={{ padding: "7px 16px", borderRadius: "10px", fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer", border: goal===h ? "none" : "1px solid "+C.bdr, background: goal===h ? C.plum : C.white, color: goal===h ? C.white : C.txtM }}>{h+":"+(24-h)}{h===14?" *":""}</button>);})}</div>)}
-      <div style={{ position: "relative", width: "190px", height: "190px", margin: "0 auto 14px" }}>
-        <svg width="190" height="190" style={{ transform: "rotate(-90deg)" }}><circle cx="95" cy="95" r="88" fill="none" stroke={C.bdr} strokeWidth="7" /><circle cx="95" cy="95" r="88" fill="none" stroke={done ? C.sage : C.plum} strokeWidth="7" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off} style={{ transition: "stroke-dashoffset 1s" }} /></svg>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><div style={{ fontFamily: F.s, fontSize: "30px", fontWeight: "700", color: C.txt }}>{t.h}<span style={{ color: C.txtL, fontSize: "16px" }}>h </span>{t.m}<span style={{ color: C.txtL, fontSize: "16px" }}>m</span></div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtL, marginTop: "3px" }}>{isOn ? Math.round(prog)+"%" : "Obiettivo: "+goal+"h"}</div></div>
-      </div>
-      {isOn && !done && (<p style={{ fontSize: "12px", fontFamily: F.s, color: C.plum, fontWeight: "600", margin: "0 0 12px" }}>Mancano {tr.h}h {tr.m}m {tr.s}s</p>)}
-      {isOn && (<div style={{ display: "flex", gap: "4px", justifyContent: "center", marginBottom: "14px" }}>{[{l:"Digestione",h:4,c:C.amber},{l:"Chetosi",h:8,c:C.rose},{l:"Fat Burn",h:12,c:C.sage},{l:"Autofagia",h:16,c:C.plum}].map(function(ph,i){var starts=[0,4,8,12];var ac=el>=starts[i]*3600000&&el<ph.h*3600000;var dn=el>=ph.h*3600000;return (<div key={i} style={{ flex: 1, padding: "5px 3px", borderRadius: "8px", fontSize: "9px", fontFamily: F.s, fontWeight: "500", background: dn ? ph.c+"20" : ac ? ph.c+"30" : C.bdr+"60", color: dn||ac ? ph.c : C.txtL, border: ac ? "1.5px solid "+ph.c : "1.5px solid transparent" }}><div>{dn?"V":ac?"\u25CF":"-"}</div><div style={{ marginTop: "1px" }}>{ph.l}</div></div>);})}</div>)}
-      <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-        {!isOn && !start && <button onClick={goFn} style={{ padding: "11px 28px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg,"+C.plum+","+C.rose+")", color: C.white, fontSize: "14px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Inizia Digiuno</button>}
-        {isOn && !done && <button onClick={stopFn} style={{ padding: "9px 20px", borderRadius: "12px", border: "1.5px solid "+C.rose, background: C.roseP, color: C.roseD, fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Pausa</button>}
-        {!isOn && start && (<><button onClick={function(){setIsOn(true);}} style={{ padding: "9px 20px", borderRadius: "12px", border: "none", background: C.plum, color: C.white, fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Riprendi</button><button onClick={resetFn} style={{ padding: "9px 20px", borderRadius: "12px", border: "1.5px solid "+C.bdr, background: C.white, color: C.txtM, fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Reset</button></>)}
-        {isOn && done && <button onClick={resetFn} style={{ padding: "9px 20px", borderRadius: "12px", border: "none", background: C.sage, color: C.white, fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Completa</button>}
-      </div>
+/* ═══════════ SUPPLEMENT TRACKER ═══════════ */
+function SuppTracker(){
+  var dk=todayK();
+  const[supps,setSupps]=useState(function(){return LD("supps_"+dk,DEF_SUPPS.map(function(s){return{id:s.id,checked:false};}));});
+  useEffect(function(){SV("supps_"+dk,supps);},[supps]);
+  function toggle(id){setSupps(supps.map(function(s){return s.id===id?{id:s.id,checked:!s.checked}:s;}));}
+  var done=supps.filter(function(s){return s.checked;}).length;
+  var byTime={Mattina:[],Pranzo:[],Sera:[]};
+  DEF_SUPPS.forEach(function(s){if(byTime[s.time])byTime[s.time].push(s);});
+  return(<div style={{display:"grid",gap:"10px"}}><Cd accent={C.plum}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:0}}>💊 Integratori Oggi</h4><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:done===DEF_SUPPS.length?"#4CAF50":C.txtL}}>{done}/{DEF_SUPPS.length}</span></div><Bar v={done} mx={DEF_SUPPS.length} color={C.plum}/></Cd>
+  {Object.keys(byTime).map(function(time){return(<Cd key={time}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.txtM,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:".5px"}}>{time==="Mattina"?"☀️":time==="Pranzo"?"🌤️":"🌙"} {time}</h5><div style={{display:"grid",gap:"6px"}}>{byTime[time].map(function(s){var st=supps.find(function(x){return x.id===s.id;});var ck=st?st.checked:false;return(<button key={s.id} onClick={function(){toggle(s.id);}} style={{display:"flex",gap:"10px",alignItems:"center",padding:"10px",borderRadius:"10px",border:ck?"2px solid "+C.plum:"1px solid "+C.bdr,background:ck?C.plumP:C.white,cursor:"pointer",textAlign:"left",width:"100%"}}><span style={{fontSize:"16px",flexShrink:0}}>{ck?"✅":"⬜"}</span><div style={{flex:1}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:ck?C.plum:C.txt}}>{s.name}</div><div style={{fontFamily:F.s,fontSize:"10px",color:C.txtL}}>{s.note}</div></div></button>);})}</div></Cd>);})}</div>);
+}
+
+/* ═══════════ SLEEP TRACKER ═══════════ */
+function SleepTracker(){
+  var dk=todayK();
+  const[sleep,setSleep]=useState(function(){return LD("sleep_"+dk,{hours:0,quality:0,bedtime:"",waketime:""});});
+  const[editing,setEditing]=useState(false);
+  const[form,setForm]=useState(Object.assign({},sleep));
+  function save(){var s={hours:parseFloat(form.hours)||0,quality:parseInt(form.quality)||0,bedtime:form.bedtime,waketime:form.waketime};setSleep(s);SV("sleep_"+dk,s);setEditing(false);}
+  var qLabels=["","😫 Pessima","😕 Scarsa","😐 Sufficiente","🙂 Buona","😊 Ottima"];
+  return(<Cd accent={C.plum} style={{marginBottom:"12px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:0}}>😴 Sonno</h4>{!editing&&<button onClick={function(){setForm(Object.assign({},sleep));setEditing(true);}} style={{padding:"4px 12px",borderRadius:"8px",border:"none",background:C.plumP,color:C.plum,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Modifica</button>}</div>{!editing?(<div>{sleep.hours>0?(<div style={{display:"flex",gap:"10px"}}><div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:"10px",background:C.plumP}}><div style={{fontFamily:F.s,fontSize:"20px",fontWeight:"700",color:C.plum}}>{sleep.hours}h</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Durata</div></div><div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:"10px",background:C.bg}}><div style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.txt}}>{qLabels[sleep.quality]||"--"}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Qualita</div></div>{sleep.bedtime&&<div style={{flex:1,textAlign:"center",padding:"10px",borderRadius:"10px",background:C.bg}}><div style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.txt}}>{sleep.bedtime}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>A letto</div></div>}</div>):(<p style={{fontSize:"11px",fontFamily:F.s,color:C.txtL,textAlign:"center",padding:"8px"}}>Registra il sonno di stanotte</p>)}</div>):(<div style={{display:"grid",gap:"8px"}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Ore dormite</label><input type="number" step="0.5" placeholder="7.5" value={form.hours} onChange={function(e){setForm(Object.assign({},form,{hours:e.target.value}));}} style={iS}/></div><div><label style={lS}>A letto</label><input type="time" value={form.bedtime} onChange={function(e){setForm(Object.assign({},form,{bedtime:e.target.value}));}} style={iS}/></div><div><label style={lS}>Sveglia</label><input type="time" value={form.waketime} onChange={function(e){setForm(Object.assign({},form,{waketime:e.target.value}));}} style={iS}/></div></div><div><label style={lS}>Qualita (1-5)</label><div style={{display:"flex",gap:"4px"}}>{[1,2,3,4,5].map(function(q){return(<button key={q} onClick={function(){setForm(Object.assign({},form,{quality:q}));}} style={{flex:1,padding:"8px",borderRadius:"10px",border:form.quality==q?"2px solid "+C.plum:"1px solid "+C.bdr,background:form.quality==q?C.plumP:C.white,fontSize:"12px",cursor:"pointer"}}>{qLabels[q].split(" ")[0]}</button>);})}</div></div><div style={{display:"flex",gap:"8px"}}><button onClick={save} style={{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:C.plum,color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva</button><button onClick={function(){setEditing(false);}} style={{padding:"10px 16px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>Annulla</button></div></div>)}</Cd>);
+}
+
+
+/* ═══════════ PROFILE EDITOR ═══════════ */
+function ProfileEditor({profile,setProfile}){
+  const[editing,setEditing]=useState(false);
+  const[f,setF]=useState(Object.assign({},profile));
+  var mc=calcMacros(profile);
+  var allergies=["Lattosio","Glutine","Nichel","Uova","Pesce","Frutta secca","Soia"];
+  function save(){var p=Object.assign({},f,{age:parseInt(f.age)||27,height:parseInt(f.height)||168,weight:parseFloat(f.weight)||77,bf:parseFloat(f.bf)||29,goalW:parseFloat(f.goalW)||68,goalBf:parseFloat(f.goalBf)||23,stepsG:parseInt(f.stepsG)||10000,waterG:parseInt(f.waterG)||8,workoutsG:parseInt(f.workoutsG)||4,ifH:parseInt(f.ifH)||14});setProfile(p);SV("profile",p);setEditing(false);}
+  function toggleAllergy(a){var al=f.allergies||[];if(al.indexOf(a)>=0){setF(Object.assign({},f,{allergies:al.filter(function(x){return x!==a;})}));}else{setF(Object.assign({},f,{allergies:al.concat([a])}));}}
+  if(!editing)return(
+    <Cd accent={C.sage} style={{marginBottom:"16px",background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><div><h3 style={{fontFamily:F.p,fontSize:"16px",margin:"0 0 6px",color:C.sageD}}>Il Tuo Profilo</h3><div style={{display:"flex",gap:"6px",flexWrap:"wrap"}}>{profile.name&&<Pill color={C.berry}>{profile.name}</Pill>}<Pill color={C.sage}>{profile.age} anni</Pill><Pill color={C.sage}>{profile.height} cm</Pill><Pill color={C.sage}>{profile.weight} kg</Pill><Pill color={C.sage}>BF {profile.bf}%</Pill></div>{profile.allergies&&profile.allergies.length>0&&<div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginTop:"6px"}}>{profile.allergies.map(function(a){return <Pill key={a} color={C.rose}>🚫 {a}</Pill>;})}</div>}</div><div style={{textAlign:"right"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.sage}}>~{mc.target}</div><div style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>kcal/giorno</div></div></div><div style={{display:"flex",gap:"10px",marginTop:"12px"}}>{[{l:"Proteine",v:mc.prot+"g",c:C.rose},{l:"Carboidrati",v:mc.carb+"g",c:C.amber},{l:"Grassi",v:mc.fat+"g",c:C.sage}].map(function(m,i){return(<div key={i} style={{flex:1,textAlign:"center",padding:"8px",borderRadius:"10px",background:C.white}}><div style={{fontSize:"14px",fontWeight:"700",color:m.c,fontFamily:F.s}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div><div style={{display:"flex",gap:"8px",marginTop:"10px"}}><div style={{flex:1,padding:"8px 10px",borderRadius:"8px",background:C.plumP}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.plum,fontWeight:"500"}}>IF {profile.ifH}:{24-profile.ifH} | {profile.ifOpen}-{profile.ifClose}</span></div><button onClick={function(){setF(Object.assign({},profile));setEditing(true);}} style={{padding:"8px 14px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>⚙️ Modifica</button></div></Cd>
+  );
+  return(
+    <Cd accent={C.sage} style={{marginBottom:"16px"}}><h3 style={{fontFamily:F.p,fontSize:"16px",margin:"0 0 14px",color:C.sageD}}>⚙️ Modifica Profilo</h3><div style={{display:"grid",gap:"10px"}}>
+      <div><label style={lS}>Nome</label><input value={f.name||""} onChange={function(e){setF(Object.assign({},f,{name:e.target.value}));}} placeholder="Il tuo nome" style={iS}/></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Eta</label><input type="number" value={f.age} onChange={function(e){setF(Object.assign({},f,{age:e.target.value}));}} style={iS}/></div><div><label style={lS}>Altezza (cm)</label><input type="number" value={f.height} onChange={function(e){setF(Object.assign({},f,{height:e.target.value}));}} style={iS}/></div><div><label style={lS}>Peso (kg)</label><input type="number" step="0.1" value={f.weight} onChange={function(e){setF(Object.assign({},f,{weight:e.target.value}));}} style={iS}/></div></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>BF%</label><input type="number" step="0.1" value={f.bf} onChange={function(e){setF(Object.assign({},f,{bf:e.target.value}));}} style={iS}/></div><div><label style={lS}>Obiettivo kg</label><input type="number" step="0.1" value={f.goalW} onChange={function(e){setF(Object.assign({},f,{goalW:e.target.value}));}} style={iS}/></div><div><label style={lS}>Obiettivo BF%</label><input type="number" step="0.1" value={f.goalBf} onChange={function(e){setF(Object.assign({},f,{goalBf:e.target.value}));}} style={iS}/></div><div><label style={lS}>IF ore</label><input type="number" value={f.ifH} onChange={function(e){setF(Object.assign({},f,{ifH:e.target.value}));}} style={iS}/></div></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Finestra apre</label><input type="time" value={f.ifOpen} onChange={function(e){setF(Object.assign({},f,{ifOpen:e.target.value}));}} style={iS}/></div><div><label style={lS}>Finestra chiude</label><input type="time" value={f.ifClose} onChange={function(e){setF(Object.assign({},f,{ifClose:e.target.value}));}} style={iS}/></div></div>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Passi/gg</label><input type="number" value={f.stepsG} onChange={function(e){setF(Object.assign({},f,{stepsG:e.target.value}));}} style={iS}/></div><div><label style={lS}>Bicchieri acqua</label><input type="number" value={f.waterG} onChange={function(e){setF(Object.assign({},f,{waterG:e.target.value}));}} style={iS}/></div><div><label style={lS}>Allenamenti/sett</label><input type="number" value={f.workoutsG} onChange={function(e){setF(Object.assign({},f,{workoutsG:e.target.value}));}} style={iS}/></div></div>
+      <div><label style={lS}>🚫 Intolleranze / Allergie</label><div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>{allergies.map(function(a){var sel=(f.allergies||[]).indexOf(a)>=0;return(<button key={a} onClick={function(){toggleAllergy(a);}} style={{padding:"6px 12px",borderRadius:"10px",border:sel?"2px solid "+C.rose:"1px solid "+C.bdr,background:sel?C.roseP:C.white,color:sel?C.roseD:C.txtM,fontSize:"11px",fontFamily:F.s,fontWeight:sel?"600":"400",cursor:"pointer"}}>{sel?"🚫 ":""}{a}</button>);})}</div></div>
+      <div style={{display:"flex",gap:"8px"}}><button onClick={save} style={{flex:1,padding:"12px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✅ Salva Profilo</button><button onClick={function(){setEditing(false);}} style={{padding:"12px 18px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"13px",fontFamily:F.s,cursor:"pointer"}}>Annulla</button></div>
+    </div></Cd>
+  );
+}
+
+
+/* ═══════════ FASTING TIMER + HISTORY ═══════════ */
+function FastingTimer({profile}){
+  const[isOn,setIsOn]=useState(false);
+  const[start,setStart]=useState(null);
+  const[goal,setGoal]=useState(profile.ifH||14);
+  const[el,setEl]=useState(0);
+  const[history,setHistory]=useState(function(){return LD("fasts",[]);});
+  var timerRef=useRef(null);
+  var gMs=goal*3600000;
+  var prog=start?Math.min((el/gMs)*100,100):0;
+  var done=el>=gMs;
+  var t=fmt(el);var tr=fmt(Math.max(gMs-el,0));
+  useEffect(function(){if(isOn&&start){timerRef.current=setInterval(function(){setEl(Date.now()-start);},1000);}return function(){clearInterval(timerRef.current);};},[isOn,start]);
+  var goFn=function(){setStart(Date.now());setEl(0);setIsOn(true);};
+  var stopFn=function(){setIsOn(false);clearInterval(timerRef.current);};
+  var completeFn=function(){setIsOn(false);clearInterval(timerRef.current);var entry={date:todayK(),goal:goal,actual:Math.round(el/3600000*10)/10,completed:el>=gMs,startTime:new Date(start).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};var h=[entry].concat(history).slice(0,50);setHistory(h);SV("fasts",h);setStart(null);setEl(0);};
+  var resetFn=function(){setIsOn(false);setStart(null);setEl(0);clearInterval(timerRef.current);};
+  var streak=0;for(var i=0;i<history.length;i++){if(history[i].completed)streak++;else break;}
+  var bestStreak=0;var cur=0;history.forEach(function(h){if(h.completed){cur++;if(cur>bestStreak)bestStreak=cur;}else cur=0;});
+  var totalDone=history.filter(function(h){return h.completed;}).length;
+  var circ=2*Math.PI*88;var off=circ-(prog/100)*circ;
+  var sL=start?new Date(start).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"--:--";
+  var eL=start?new Date(start+gMs).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}):"--:--";
+  return(<div style={{display:"grid",gap:"14px"}}>
+    <Cd style={{textAlign:"center",padding:"24px 18px"}} accent={done?C.sage:C.plum}>
+      <h3 style={{fontFamily:F.p,fontSize:"17px",margin:"0 0 4px",color:done?C.sage:C.txt}}>{done?"Digiuno completato! 🎉":isOn?"Digiuno in corso...":"Timer Digiuno"}</h3>
+      <p style={{fontSize:"11px",fontFamily:F.s,color:C.txtL,margin:"0 0 14px"}}>{isOn?sL+" → "+eL:"Finestra alimentare: "+profile.ifOpen+" - "+profile.ifClose}</p>
+      {!isOn&&!start&&(<div style={{display:"flex",justifyContent:"center",gap:"6px",marginBottom:"16px"}}>{[12,14,16,18].map(function(h){return(<button key={h} onClick={function(){setGoal(h);}} style={{padding:"7px 16px",borderRadius:"10px",fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",border:goal===h?"none":"1px solid "+C.bdr,background:goal===h?C.plum:C.white,color:goal===h?C.white:C.txtM}}>{h+":"+(24-h)}{h===profile.ifH?" ★":""}</button>);})}</div>)}
+      <div style={{position:"relative",width:"190px",height:"190px",margin:"0 auto 14px"}}><svg width="190" height="190" style={{transform:"rotate(-90deg)"}}><circle cx="95" cy="95" r="88" fill="none" stroke={C.bdr} strokeWidth="7"/><circle cx="95" cy="95" r="88" fill="none" stroke={done?C.sage:C.plum} strokeWidth="7" strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={off} style={{transition:"stroke-dashoffset 1s"}}/></svg><div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}><div style={{fontFamily:F.s,fontSize:"30px",fontWeight:"700",color:C.txt}}>{t.h}<span style={{color:C.txtL,fontSize:"16px"}}>h </span>{t.m}<span style={{color:C.txtL,fontSize:"16px"}}>m</span></div><div style={{fontSize:"10px",fontFamily:F.s,color:C.txtL,marginTop:"3px"}}>{isOn?Math.round(prog)+"%":"Obiettivo: "+goal+"h"}</div></div></div>
+      {isOn&&!done&&(<p style={{fontSize:"12px",fontFamily:F.s,color:C.plum,fontWeight:"600",margin:"0 0 12px"}}>Mancano {tr.h}h {tr.m}m {tr.s}s</p>)}
+      {isOn&&(<div style={{display:"flex",gap:"4px",justifyContent:"center",marginBottom:"14px"}}>{[{l:"Digestione",h:4,c:C.amber},{l:"Chetosi",h:8,c:C.rose},{l:"Fat Burn",h:12,c:C.sage},{l:"Autofagia",h:16,c:C.plum}].map(function(ph,i){var starts=[0,4,8,12];var ac=el>=starts[i]*3600000&&el<ph.h*3600000;var dn=el>=ph.h*3600000;return(<div key={i} style={{flex:1,padding:"5px 3px",borderRadius:"8px",fontSize:"9px",fontFamily:F.s,fontWeight:"500",background:dn?ph.c+"20":ac?ph.c+"30":C.bdr+"60",color:dn||ac?ph.c:C.txtL,border:ac?"1.5px solid "+ph.c:"1.5px solid transparent"}}><div>{dn?"✓":ac?"●":"-"}</div><div style={{marginTop:"1px"}}>{ph.l}</div></div>);})}</div>)}
+      <div style={{display:"flex",gap:"8px",justifyContent:"center"}}>{!isOn&&!start&&<button onClick={goFn} style={{padding:"11px 28px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Inizia Digiuno</button>}{isOn&&!done&&<button onClick={stopFn} style={{padding:"9px 20px",borderRadius:"12px",border:"1.5px solid "+C.rose,background:C.roseP,color:C.roseD,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Pausa</button>}{!isOn&&start&&(<><button onClick={function(){setIsOn(true);}} style={{padding:"9px 20px",borderRadius:"12px",border:"none",background:C.plum,color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Riprendi</button><button onClick={function(){completeFn();}} style={{padding:"9px 20px",borderRadius:"12px",border:"1.5px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva & Reset</button></>)}{isOn&&done&&<button onClick={completeFn} style={{padding:"9px 20px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✅ Completa</button>}</div>
     </Cd>
-  );
+    {/* STATS */}
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.sage}}>🔥 {streak}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Streak attuale</div></Cd><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.amber}}>🏆 {bestStreak}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Record streak</div></Cd><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.plum}}>{totalDone}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Totali completati</div></Cd></div>
+    {/* HISTORY */}
+    {history.length>0&&<Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Storico Digiuni</h4><div style={{display:"grid",gap:"6px"}}>{history.slice(0,10).map(function(h,i){return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:"8px",background:h.completed?C.sageP:C.roseP}}><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fmtD(h.date)}</span><span style={{fontFamily:F.s,fontSize:"11px",color:C.txtM,marginLeft:"8px"}}>{h.startTime}</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{h.actual}h / {h.goal}h</span><span style={{fontSize:"14px"}}>{h.completed?"✅":"❌"}</span></div></div>);})}</div></Cd>}
+  </div>);
 }
 
-function CicloMestruale() {
-  const [sub, setSub] = useState("tracker");
-  const [lastPeriod, setLastPeriod] = useState("");
-  const [cycleLen, setCycleLen] = useState(35);
-  const [showResult, setShowResult] = useState(false);
-  var today = new Date();
-  var lpDate = lastPeriod ? new Date(lastPeriod) : null;
-  var dayOfCycle = lpDate ? Math.floor((today - lpDate) / 86400000) + 1 : null;
-  var nextPeriod = lpDate ? new Date(lpDate.getTime() + cycleLen * 86400000) : null;
-  var daysToNext = nextPeriod ? Math.max(0, Math.floor((nextPeriod - today) / 86400000)) : null;
-  var currentPhase = null;
-  if (dayOfCycle) { if (dayOfCycle <= 5) currentPhase = 0; else if (dayOfCycle <= Math.floor(cycleLen * 0.46)) currentPhase = 1; else if (dayOfCycle <= Math.floor(cycleLen * 0.57)) currentPhase = 2; else currentPhase = 3; }
-  function formatDate(d) { if (!d) return "--"; return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" }); }
-  return (
-    <div>
-      <div style={{ marginBottom: "20px" }}><h2 style={{ fontFamily: F.p, fontSize: "24px", fontWeight: "600", color: C.txt, margin: 0 }}>Ciclo Mestruale</h2><p style={{ fontFamily: F.s, fontSize: "12px", color: C.txtL, marginTop: "5px" }}>Tracker, fasi e consigli PCOS-specifici</p></div>
-      <SubT tabs={[{k:"tracker",l:"Tracker",i:"\u{1F4C5}"},{k:"fasi",l:"Fasi",i:"\u{1F319}"},{k:"pcos",l:"PCOS & Ciclo",i:"\u{1FA7A}"}]} active={sub} onSel={setSub} />
-      {sub === "tracker" && (<div style={{ display: "grid", gap: "12px" }}>
-        <Cd accent={C.berry}><h3 style={{ fontFamily: F.p, fontSize: "15px", margin: "0 0 12px", color: C.berry }}>Inserisci i tuoi dati</h3><div style={{ marginBottom: "10px" }}><label style={{ fontSize: "11px", fontFamily: F.s, color: C.txtM, display: "block", marginBottom: "4px" }}>Primo giorno dell'ultimo ciclo</label><input type="date" value={lastPeriod} onChange={function(e){setLastPeriod(e.target.value);setShowResult(false);}} style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid "+C.bdr, fontFamily: F.s, fontSize: "14px", boxSizing: "border-box" }} /></div><div style={{ marginBottom: "12px" }}><label style={{ fontSize: "11px", fontFamily: F.s, color: C.txtM, display: "block", marginBottom: "4px" }}>Durata media del ciclo (giorni)</label><div style={{ display: "flex", gap: "4px" }}>{[28,30,32,35,40,45].map(function(d){return (<button key={d} onClick={function(){setCycleLen(d);setShowResult(false);}} style={{ flex: 1, padding: "8px 4px", borderRadius: "10px", fontSize: "12px", fontFamily: F.s, fontWeight: "600", cursor: "pointer", border: cycleLen===d ? "none" : "1px solid "+C.bdr, background: cycleLen===d ? C.berry : C.white, color: cycleLen===d ? C.white : C.txtM }}>{d}</button>);})}</div><p style={{ fontSize: "9px", fontFamily: F.s, color: C.txtL, margin: "4px 0 0" }}>Nella PCOS i cicli sono spesso 35-45 giorni o irregolari</p></div>{lastPeriod && (<button onClick={function(){setShowResult(true);}} style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg,"+C.berry+","+C.rose+")", color: C.white, fontSize: "14px", fontFamily: F.s, fontWeight: "600", cursor: "pointer" }}>Calcola</button>)}</Cd>
-        {showResult && dayOfCycle && (<><Cd accent={CYCLE_PHASES[currentPhase].color} style={{ background: CYCLE_PHASES[currentPhase].color+"08" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}><div><span style={{ fontSize: "28px" }}>{CYCLE_PHASES[currentPhase].icon}</span><h3 style={{ fontFamily: F.p, fontSize: "18px", margin: "4px 0 0", color: C.txt }}>Fase {CYCLE_PHASES[currentPhase].name}</h3></div><div style={{ textAlign: "right" }}><div style={{ fontFamily: F.s, fontSize: "28px", fontWeight: "700", color: CYCLE_PHASES[currentPhase].color }}>G{dayOfCycle}</div><div style={{ fontSize: "9px", fontFamily: F.s, color: C.txtL }}>del ciclo</div></div></div><div style={{ height: "6px", borderRadius: "3px", background: C.bdr, overflow: "hidden", marginBottom: "10px" }}><div style={{ height: "100%", borderRadius: "3px", background: CYCLE_PHASES[currentPhase].color, width: Math.min((dayOfCycle/cycleLen)*100,100)+"%", transition: "width .5s" }} /></div><div style={{ display: "flex", gap: "8px" }}><div style={{ flex: 1, padding: "8px", borderRadius: "8px", background: C.white, textAlign: "center" }}><div style={{ fontSize: "14px", fontWeight: "700", color: C.berry, fontFamily: F.s }}>{formatDate(nextPeriod)}</div><div style={{ fontSize: "9px", color: C.txtL, fontFamily: F.s }}>Prossimo ciclo</div></div><div style={{ flex: 1, padding: "8px", borderRadius: "8px", background: C.white, textAlign: "center" }}><div style={{ fontSize: "14px", fontWeight: "700", color: C.plum, fontFamily: F.s }}>{daysToNext}gg</div><div style={{ fontSize: "9px", color: C.txtL, fontFamily: F.s }}>Mancano</div></div></div></Cd>
-        <Cd><h4 style={{ fontFamily: F.s, fontSize: "13px", fontWeight: "600", margin: "0 0 8px", color: CYCLE_PHASES[currentPhase].color }}>Consigli per questa fase</h4>{[{l:"Alimentazione",v:CYCLE_PHASES[currentPhase].food,ic:"\u{1F957}"},{l:"Allenamento",v:CYCLE_PHASES[currentPhase].gym,ic:"\u{1F3CB}\uFE0F"},{l:"Note PCOS",v:CYCLE_PHASES[currentPhase].pcos,ic:"\u{1FA7A}"}].map(function(tip,i){return (<div key={i} style={{ display: "flex", gap: "8px", marginBottom: "10px", alignItems: "flex-start" }}><span style={{ fontSize: "16px", flexShrink: 0 }}>{tip.ic}</span><div><div style={{ fontSize: "10px", fontWeight: "600", fontFamily: F.s, color: C.txt, marginBottom: "2px" }}>{tip.l}</div><div style={{ fontSize: "11px", fontFamily: F.s, color: C.txtM, lineHeight: 1.5 }}>{tip.v}</div></div></div>);})}</Cd></>)}
-      </div>)}
-      {sub === "fasi" && (<div style={{ display: "grid", gap: "10px" }}>{CYCLE_PHASES.map(function(ph,i){return (<Cd key={i} accent={ph.color}><div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px" }}><span style={{ fontSize: "24px" }}>{ph.icon}</span><div><h3 style={{ fontFamily: F.p, fontSize: "15px", margin: 0, color: C.txt }}>Fase {ph.name}</h3><span style={{ fontSize: "10px", fontFamily: F.s, color: C.txtL }}>{ph.days}</span></div></div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtM, marginBottom: "4px" }}><strong>Ormoni:</strong> {ph.hormones}</div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtM, marginBottom: "4px" }}><strong>Sintomi:</strong> {ph.symptoms}</div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtM, marginBottom: "4px" }}><strong>Alimentazione:</strong> {ph.food}</div><div style={{ fontSize: "10px", fontFamily: F.s, color: C.txtM, marginBottom: "4px" }}><strong>Allenamento:</strong> {ph.gym}</div><div style={{ padding: "6px 8px", borderRadius: "8px", background: ph.color+"10", marginTop: "6px" }}><div style={{ fontSize: "10px", fontFamily: F.s, color: ph.color, fontWeight: "500" }}>{ph.pcos}</div></div></Cd>);})}</div>)}
-      {sub === "pcos" && (<div style={{ display: "grid", gap: "10px" }}><Info bg={C.berryP} bdr={C.berryL} color={C.berry}><strong>Nella PCOS il ciclo e spesso irregolare</strong>: oligomenorrea (cicli lunghi 35-90 giorni) o amenorrea (assenza di ciclo). Non e colpa tua: e una conseguenza dell'iperandrogenismo e della disfunzione ovulatoria.</Info>{[{t:"Perche il ciclo e irregolare",d:"L'eccesso di androgeni e l'iperinsulinemia interferiscono con la maturazione dei follicoli. L'ovulazione puo non avvenire o essere ritardata, allungando il ciclo.",ic:"\u{1F52C}"},{t:"La fase luteale insufficiente",d:"Nella PCOS il corpo luteo puo produrre poco progesterone, accorciando la fase luteale. Questo puo causare spotting pre-mestruale e difficolta di impianto.",ic:"\u{1F319}"},{t:"SPM amplificata nella PCOS",d:"Gonfiore, voglia di dolce, ansia e abbuffate pre-mestruali sono piu intense. La fame emotiva colpisce 1 donna PCOS su 3. Non sei debole: e biologia.",ic:"\u{1F49B}"},{t:"Cosa migliora il ciclo",d:"Perdita del 5-10% del peso, esercizio regolare (come il tuo programma in sala pesi), alimentazione anti-infiammatoria e gestione dello stress. Ogni chilo perso aiuta.",ic:"\u{1F331}"},{t:"Quando preoccuparsi",d:"Assenza di ciclo per oltre 3 mesi, sanguinamento molto abbondante, dolore pelvico forte. Consulta il tuo ginecologo di riferimento.",ic:"\u{1FA7A}"}].map(function(item,i){return (<Cd key={i}><div style={{ display: "flex", gap: "10px", alignItems: "flex-start" }}><span style={{ fontSize: "20px", flexShrink: 0 }}>{item.ic}</span><div><h4 style={{ margin: "0 0 3px", fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: C.txt }}>{item.t}</h4><p style={{ margin: 0, fontSize: "11px", fontFamily: F.s, color: C.txtM, lineHeight: 1.5 }}>{item.d}</p></div></div></Cd>);})}</div>)}
-    </div>
-  );
+/* ═══════════ DAILY QUOTE ═══════════ */
+function DailyQuote(){
+  var dq=getDailyQuote();
+  var tagColors={mindset:C.plum,food:C.sage,tip:C.amber,gym:C.rose};
+  var tagLabels={mindset:"Mindset",food:"Nutrizione",tip:"Consiglio",gym:"Fitness"};
+  var tc=tagColors[dq.t]||C.sage;
+  return(<Cd style={{marginBottom:"16px",background:"linear-gradient(135deg,"+tc+"10,"+C.white+")",borderLeft:"4px solid "+tc}}><div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><span style={{fontSize:"22px",flexShrink:0}}>🌸</span><div style={{flex:1}}><p style={{margin:"0 0 6px",fontFamily:F.p,fontSize:"13px",fontStyle:"italic",color:C.txt,lineHeight:1.5}}>"{dq.q}"</p><Pill color={tc}>{tagLabels[dq.t]}</Pill></div></div></Cd>);
 }
 
-function Alimentazione() {
-  const [sub, setSub] = useState("menu");
-  const [meal, setMeal] = useState("colazione");
-  const [selDay, setSelDay] = useState(function(){ var d=new Date().getDay(); return d===0?6:d-1; });
-  const [filter, setFilter] = useState("tutti");
-  var filtered = filter==="tutti" ? RECIPES : RECIPES.filter(function(r){return r.cat.toLowerCase().includes(filter);});
-  return (
-    <div>
-      <div style={{ marginBottom: "20px" }}><h2 style={{ fontFamily: F.p, fontSize: "24px", fontWeight: "600", color: C.txt, margin: 0 }}>Alimentazione PCOS</h2><p style={{ fontFamily: F.s, fontSize: "12px", color: C.txtL, marginTop: "5px" }}>~1500 kcal/giorno | IF 14:10 | Dosi in grammi</p></div>
-      <ProfileCard />
-      <SubT tabs={[{k:"menu",l:"Menu IF",i:"\u{1F4C5}"},{k:"idee",l:"Idee Pasti",i:"\u{1F4A1}"},{k:"ricette",l:"Ricettario",i:"\u{1F469}\u200D\u{1F373}"},{k:"guida",l:"Cibi & Dosi",i:"\u{1F4CB}"},{k:"regole",l:"Regole",i:""}]} active={sub} onSel={setSub} />
-      {sub === "menu" && (<div>
-        <Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>IF 14:10 | Finestra 10:00-20:00</strong>: colazione ore 10 (~520 kcal) | pranzo ore 14 (~550 kcal) | cena ore 19:30 (~350 kcal) | digiuno 20:00{"\u2192"}10:00</Info>
-        <div style={{ display: "flex", gap: "4px", margin: "14px 0" }}>{MENU.map(function(d,i){return (<button key={i} onClick={function(){setSelDay(i);}} style={{ flex: 1, padding: "7px 2px", borderRadius: "10px", border: selDay===i ? "none" : "1px solid "+C.bdr, background: selDay===i ? C.sage : C.white, color: selDay===i ? C.white : C.txtM, fontWeight: "600", fontSize: "11px", fontFamily: F.s, cursor: "pointer" }}>{d.day.slice(0,3)}</button>);})}</div>
-        {[{k:"col",l:"Colazione | ore 10:00",c:C.amber,port:"~520 kcal"},{k:"pra",l:"Pranzo | ore 14:00",c:C.sage,port:"~550 kcal"},{k:"cen",l:"Cena | ore 19:30",c:C.rose,port:"~350 kcal"}].map(function(m,i){var d=MENU[selDay][m.k];return (<Cd key={i} accent={m.c} style={{ marginBottom: "10px" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}><h4 style={{ fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: m.c, margin: 0 }}>{m.l}</h4><span style={{ fontSize: "10px", fontFamily: F.s, color: C.txtL }}>{m.port}</span></div><h5 style={{ fontFamily: F.s, fontSize: "14px", fontWeight: "600", color: C.txt, margin: "0 0 4px" }}>{d.t}</h5><p style={{ fontSize: "12px", fontFamily: F.s, color: C.txtM, margin: "0 0 4px", lineHeight: 1.6 }}>{d.desc}</p><MacroBar p={d.p} c={d.c} f={d.f} kcal={d.kcal} /></Cd>);})}
-        <Cd style={{ padding: "14px", opacity: 0.7 }}><div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: "12px", fontFamily: F.s, color: C.txtM }}>Snack (opz.): {MENU[selDay].sn.t}</span><span style={{ fontSize: "11px", fontFamily: F.s, color: C.txtL }}>{MENU[selDay].sn.kcal} kcal</span></div></Cd>
-        <Cd style={{ marginTop: "10px", background: C.sageP, border: "1px solid "+C.sageL }}><div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: C.sageD }}>Totale giornata</span><span style={{ fontFamily: F.s, fontSize: "13px", fontWeight: "700", color: C.sageD }}>~{MENU[selDay].col.kcal+MENU[selDay].pra.kcal+MENU[selDay].cen.kcal} kcal</span></div><MacroBar p={MENU[selDay].col.p+MENU[selDay].pra.p+MENU[selDay].cen.p} c={MENU[selDay].col.c+MENU[selDay].pra.c+MENU[selDay].cen.c} f={MENU[selDay].col.f+MENU[selDay].pra.f+MENU[selDay].cen.f} kcal={MENU[selDay].col.kcal+MENU[selDay].pra.kcal+MENU[selDay].cen.kcal} /></Cd>
-      </div>)}
-      {sub === "idee" && (<div>
-        <div style={{ display: "flex", gap: "5px", marginBottom: "14px" }}>{["colazione","pranzo","cena"].map(function(k){var labels={colazione:"Col ~520",pranzo:"Pra ~550",cena:"Cen ~350"};return <button key={k} onClick={function(){setMeal(k);}} style={{ flex: 1, padding: "9px 4px", borderRadius: "12px", border: meal===k ? "none" : "1px solid "+C.bdr, background: meal===k ? C.rose : C.white, color: meal===k ? C.white : C.txtM, fontWeight: meal===k ? "600" : "400", fontSize: "12px", fontFamily: F.s, cursor: "pointer" }}>{labels[k]}</button>;})}</div>
-        <Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{IDEAS[meal].intro}</Info>
-        <div style={{ display: "grid", gap: "8px", marginTop: "10px" }}>{IDEAS[meal].items.map(function(it,i){return (<Cd key={i} style={{ padding: "14px" }}><div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}><span style={{ fontSize: "20px", flexShrink: 0 }}>{it.i}</span><div style={{ flex: 1 }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: "2px" }}><h5 style={{ margin: 0, fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: C.txt }}>{it.n}</h5><Pill color={C.rose}>{it.kcal}</Pill></div><p style={{ margin: 0, fontSize: "11px", fontFamily: F.s, color: C.txtM, lineHeight: 1.5 }}>{it.d}</p></div></div></Cd>);})}</div>
-      </div>)}
-      {sub === "ricette" && (<div>
-        <Info bg={C.amberL} bdr={C.amber} color={C.txt}>Ricette da <strong>lotusflowerpcos.com</strong>. Tocca per aprire la ricetta completa.</Info>
-        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap", margin: "10px 0" }}>{["tutti","primo","secondo","contorno"].map(function(flt){return <button key={flt} onClick={function(){setFilter(flt);}} style={{ padding: "4px 10px", borderRadius: "8px", border: filter===flt ? "none" : "1px solid "+C.bdr, background: filter===flt ? C.sage : C.white, color: filter===flt ? C.white : C.txtM, fontSize: "10px", fontFamily: F.s, fontWeight: "500", cursor: "pointer", textTransform: "capitalize" }}>{flt}</button>;})}</div>
-        <div style={{ display: "grid", gap: "8px" }}>{filtered.map(function(r,i){return (<a key={i} href={r.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}><Cd style={{ padding: "14px" }}><h5 style={{ margin: "0 0 3px", fontFamily: F.s, fontSize: "12px", fontWeight: "600", color: C.txt }}>{r.n}</h5><p style={{ margin: "0 0 5px", fontSize: "10px", fontFamily: F.s, color: C.txtL }}>{r.ing}</p><div style={{ display: "flex", gap: "4px" }}><Pill color={C.rose}>{r.kcal}</Pill><Pill color={C.sage}>{r.tag}</Pill></div></Cd></a>);})}</div>
-      </div>)}
-      {sub === "guida" && (<div style={{ display: "grid", gap: "10px" }}>
-        <Info bg={C.amberL} bdr={C.amber} color={C.txt}>Dosi calibrate su <strong>~1500 kcal/giorno</strong>. Grammature a CRUDO.</Info>
-        {FOODS.map(function(f,i){var accents=[C.sage,C.rose,C.amber,C.sage,C.rose,C.amber];return (<Cd key={i} accent={accents[i%6]}><h3 style={{ fontFamily: F.p, fontSize: "15px", margin: "0 0 6px", color: C.txt }}>{f.ico} {f.cat}</h3><div style={{ display: "flex", flexWrap: "wrap", gap: "4px", marginBottom: "8px" }}>{f.items.map(function(it,j){return <span key={j} style={{ padding: "4px 9px", borderRadius: "8px", background: C.bgW, fontSize: "11px", fontFamily: F.s, color: C.txt }}>{it}</span>;})}</div><p style={{ fontSize: "10px", fontFamily: F.s, color: C.txtL, margin: 0, fontStyle: "italic" }}>{f.note}</p></Cd>);})}
-      </div>)}
-      {sub === "regole" && (<div style={{ display: "grid", gap: "8px" }}>
-        {[{i:"1",t:"Verdura PRIMA (200-250g)",d:"Riduce il picco glicemico fino al 48%."},{i:"2",t:"Proteine 120-150g a pasto",d:"Target giornaliero ~112g."},{i:"3",t:"Carboidrati 50-60g crudi, per ultimi",d:"Sempre integrali, mai da soli."},{i:"4",t:"Colazione ore 10 = pasto principale",d:"~520 kcal. Riduce insulina del 53%."},{i:"5",t:"Cena leggera entro le 19:30",d:"~350 kcal. Proteine + verdure."},{i:"6",t:"IF 14:10: finestra 10:00-20:00",d:"Te verde e camomilla ok a digiuno."},{i:"7",t:"Grassi buoni 10-15ml olio EVO/pasto",d:"Target ~58g/giorno."},{i:"8",t:"No zuccheri nascosti",d:"Sciroppo glucosio e maltodestrine = insulino-resistenza."}].map(function(r,i){return (<Cd key={i}><div style={{ display: "flex", gap: "10px" }}><span style={{ width: "24px", height: "24px", borderRadius: "50%", background: C.sage, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700", fontFamily: F.s, flexShrink: 0 }}>{r.i}</span><div><h4 style={{ margin: "0 0 2px", fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: C.txt }}>{r.t}</h4><p style={{ margin: 0, fontSize: "11px", fontFamily: F.s, color: C.txtM }}>{r.d}</p></div></div></Cd>);})}
-      </div>)}
-    </div>
-  );
+
+/* ═══════════ ALIMENTAZIONE ═══════════ */
+function Alimentazione({profile,setProfile}){
+  const[sub,setSub]=useState("menu");
+  const[meal,setMeal]=useState("colazione");
+  const[selDay,setSelDay]=useState(function(){var d=new Date().getDay();return d===0?6:d-1;});
+  const[filter,setFilter]=useState("tutti");
+  const[favs,setFavs]=useState(function(){return LD("favRecipes",[]);});
+  const[showList,setShowList]=useState(false);
+  const[listChecks,setListChecks]=useState({});
+  const[lockedDays,setLockedDays]=useState({});
+  const[shuffled,setShuffled]=useState(null);
+  var mc=calcMacros(profile);
+  var filtered=filter==="tutti"?RECIPES:filter==="preferiti"?RECIPES.filter(function(r){return favs.indexOf(r.n)>=0;}):RECIPES.filter(function(r){return r.cat.toLowerCase().includes(filter);});
+  function toggleFav(name){var n;if(favs.indexOf(name)>=0)n=favs.filter(function(x){return x!==name;});else n=favs.concat([name]);setFavs(n);SV("favRecipes",n);}
+  function shuffleMenu(){var cols=IDEAS.colazione.items.slice();var pras=IDEAS.pranzo.items.slice();var cens=IDEAS.cena.items.slice();function sh(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}sh(cols);sh(pras);sh(cens);var r=[];for(var i=0;i<7;i++){if(lockedDays[i]){r.push(shuffled?shuffled[i]:MENU[i]);}else{r.push({day:MENU[i].day,col:{t:cols[i%cols.length].n,desc:cols[i%cols.length].d,kcal:parseInt(cols[i%cols.length].kcal)||520,p:22,c:42,f:24},pra:{t:pras[i%pras.length].n,desc:pras[i%pras.length].d,kcal:parseInt(pras[i%pras.length].kcal)||550,p:38,c:50,f:18},cen:{t:cens[i%cens.length].n,desc:cens[i%cens.length].d,kcal:parseInt(cens[i%cens.length].kcal)||350,p:30,c:16,f:14},sn:MENU[i].sn});}}setShuffled(r);}
+  var curMenu=shuffled||MENU;
+  var shopList=genShoppingList([0,1,2,3,4,5,6]);
+  return(<div>
+    <SecH title="Alimentazione PCOS" sub={"~"+mc.target+" kcal/giorno | IF "+profile.ifH+":"+(24-profile.ifH)+" | Dosi in grammi"}/>
+    <ProfileEditor profile={profile} setProfile={setProfile}/>
+    <MealChecklist/>
+    <WaterTracker/>
+    <SubT tabs={[{k:"menu",l:"Menu IF",i:"📅"},{k:"idee",l:"Idee Pasti",i:"💡"},{k:"ricette",l:"Ricettario",i:"👩‍🍳"},{k:"guida",l:"Cibi & Dosi",i:"📋"},{k:"spesa",l:"Spesa",i:"🛒"},{k:"regole",l:"Regole"}]} active={sub} onSel={setSub}/>
+    {sub==="menu"&&(<div>
+      <Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>IF {profile.ifH}:{24-profile.ifH} | Finestra {profile.ifOpen}-{profile.ifClose}</strong>: colazione ore {profile.ifOpen} | cena entro {profile.ifClose}</Info>
+      <div style={{display:"flex",gap:"6px",margin:"12px 0"}}><button onClick={shuffleMenu} style={{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.amber+","+C.rose+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>🔄 Genera Menu Casuale</button>{shuffled&&<button onClick={function(){setShuffled(null);setLockedDays({});}} style={{padding:"10px 14px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>↩️ Originale</button>}</div>
+      <div style={{display:"flex",gap:"4px",margin:"10px 0"}}>{curMenu.map(function(d,i){return(<button key={i} onClick={function(){setSelDay(i);}} style={{flex:1,padding:"7px 2px",borderRadius:"10px",border:selDay===i?"none":"1px solid "+C.bdr,background:selDay===i?C.sage:C.white,color:selDay===i?C.white:C.txtM,fontWeight:"600",fontSize:"11px",fontFamily:F.s,cursor:"pointer",position:"relative"}}>{d.day.slice(0,3)}{shuffled&&lockedDays[i]&&<span style={{position:"absolute",top:"-6px",right:"-2px",fontSize:"10px"}}>🔒</span>}</button>);})}</div>
+      {shuffled&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:"8px"}}><button onClick={function(){var u=Object.assign({},lockedDays);if(u[selDay])delete u[selDay];else u[selDay]=true;setLockedDays(u);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:lockedDays[selDay]?C.sageP:C.white,color:lockedDays[selDay]?C.sageD:C.txtM,fontSize:"10px",fontFamily:F.s,cursor:"pointer"}}>{lockedDays[selDay]?"🔒 Bloccato":"🔓 Blocca questo giorno"}</button></div>}
+      {[{k:"col",l:"Colazione | ore "+profile.ifOpen,c:C.amber,port:"~520 kcal"},{k:"pra",l:"Pranzo | ore 14:00",c:C.sage,port:"~550 kcal"},{k:"cen",l:"Cena | ore 19:30",c:C.rose,port:"~350 kcal"}].map(function(m,i){var d=curMenu[selDay][m.k];return(<Cd key={i} accent={m.c} style={{marginBottom:"10px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"6px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:m.c,margin:0}}>{m.l}</h4><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{m.port}</span></div><h5 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>{d.t}</h5><p style={{fontSize:"12px",fontFamily:F.s,color:C.txtM,margin:"0 0 4px",lineHeight:1.6}}>{d.desc}</p>{d.p&&<MacroBar p={d.p} c={d.c} f={d.f} kcal={d.kcal}/>}</Cd>);})}
+      <Cd style={{padding:"14px",opacity:0.7}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:"12px",fontFamily:F.s,color:C.txtM}}>Snack (opz.): {curMenu[selDay].sn.t}</span><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtL}}>{curMenu[selDay].sn.kcal} kcal</span></div></Cd>
+      <Cd style={{marginTop:"10px",background:C.sageP,border:"1px solid "+C.sageL}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.sageD}}>Totale giornata</span><span style={{fontFamily:F.s,fontSize:"13px",fontWeight:"700",color:C.sageD}}>~{curMenu[selDay].col.kcal+curMenu[selDay].pra.kcal+curMenu[selDay].cen.kcal} kcal</span></div>{curMenu[selDay].col.p&&<MacroBar p={curMenu[selDay].col.p+curMenu[selDay].pra.p+curMenu[selDay].cen.p} c={curMenu[selDay].col.c+curMenu[selDay].pra.c+curMenu[selDay].cen.c} f={curMenu[selDay].col.f+curMenu[selDay].pra.f+curMenu[selDay].cen.f} kcal={curMenu[selDay].col.kcal+curMenu[selDay].pra.kcal+curMenu[selDay].cen.kcal}/>}</Cd>
+    </div>)}
+    {sub==="idee"&&(<div><div style={{display:"flex",gap:"5px",marginBottom:"14px"}}>{["colazione","pranzo","cena"].map(function(k){var labels={colazione:"Col ~520",pranzo:"Pra ~550",cena:"Cen ~350"};return<button key={k} onClick={function(){setMeal(k);}} style={{flex:1,padding:"9px 4px",borderRadius:"12px",border:meal===k?"none":"1px solid "+C.bdr,background:meal===k?C.rose:C.white,color:meal===k?C.white:C.txtM,fontWeight:meal===k?"600":"400",fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>{labels[k]}</button>;})}</div><Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{IDEAS[meal].intro}</Info><div style={{display:"grid",gap:"8px",marginTop:"10px"}}>{IDEAS[meal].items.map(function(it,i){return(<Cd key={i} style={{padding:"14px"}}><div style={{display:"flex",gap:"8px",alignItems:"flex-start"}}><span style={{fontSize:"20px",flexShrink:0}}>{it.i}</span><div style={{flex:1}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"2px"}}><h5 style={{margin:0,fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{it.n}</h5><Pill color={C.rose}>{it.kcal}</Pill></div><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{it.d}</p></div></div></Cd>);})}</div></div>)}
+    {sub==="ricette"&&(<div><Info bg={C.amberL} bdr={C.amber} color={C.txt}>Ricette da <strong>lotusflowerpcos.com</strong>. Tocca ❤️ per salvare nei preferiti.</Info><div style={{display:"flex",gap:"4px",flexWrap:"wrap",margin:"10px 0"}}>{["tutti","primo","secondo","contorno","preferiti"].map(function(flt){return<button key={flt} onClick={function(){setFilter(flt);}} style={{padding:"4px 10px",borderRadius:"8px",border:filter===flt?"none":"1px solid "+C.bdr,background:filter===flt?flt==="preferiti"?C.roseP:C.sage:C.white,color:filter===flt?flt==="preferiti"?C.roseD:C.white:C.txtM,fontSize:"10px",fontFamily:F.s,fontWeight:"500",cursor:"pointer",textTransform:"capitalize"}}>{flt==="preferiti"?"❤️ Preferiti":flt}</button>;})}</div><div style={{display:"grid",gap:"8px"}}>{filtered.length===0&&<p style={{fontSize:"12px",fontFamily:F.s,color:C.txtL,textAlign:"center",padding:"20px"}}>Nessuna ricetta nei preferiti. Tocca ❤️ per aggiungerne!</p>}{filtered.map(function(r,i){var isFav=favs.indexOf(r.n)>=0;return(<Cd key={i} style={{padding:"14px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}><a href={r.url} target="_blank" rel="noopener noreferrer" style={{textDecoration:"none",flex:1}}><h5 style={{margin:"0 0 3px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{r.n}</h5><p style={{margin:"0 0 5px",fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{r.ing}</p><div style={{display:"flex",gap:"4px"}}><Pill color={C.rose}>{r.kcal}</Pill><Pill color={C.sage}>{r.tag}</Pill></div></a><button onClick={function(){toggleFav(r.n);}} style={{background:"none",border:"none",fontSize:"18px",cursor:"pointer",padding:"4px",flexShrink:0}}>{isFav?"❤️":"🤍"}</button></div></Cd>);})}</div></div>)}
+    {sub==="guida"&&(<div style={{display:"grid",gap:"10px"}}><Info bg={C.amberL} bdr={C.amber} color={C.txt}>Dosi calibrate su <strong>~{mc.target} kcal/giorno</strong>. Grammature a CRUDO.</Info>{FOODS.map(function(f,i){var accents=[C.sage,C.rose,C.amber,C.sage,C.rose,C.amber];return(<Cd key={i} accent={accents[i%6]}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 6px",color:C.txt}}>{f.ico} {f.cat}</h3><div style={{display:"flex",flexWrap:"wrap",gap:"4px",marginBottom:"8px"}}>{f.items.map(function(it,j){return<span key={j} style={{padding:"4px 9px",borderRadius:"8px",background:C.bgW,fontSize:"11px",fontFamily:F.s,color:C.txt}}>{it}</span>;})}</div><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:0,fontStyle:"italic"}}>{f.note}</p></Cd>);})}
+    </div>)}
+    {sub==="spesa"&&(<div style={{display:"grid",gap:"10px"}}><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Lista della spesa generata automaticamente dal menu settimanale. Spunta quello che hai gia!</Info>{Object.keys(shopList).map(function(cat){var items=shopList[cat];if(items.length===0)return null;var icons={frutta:"🍎",verdura:"🥬",proteine:"🥩",carboidrati:"🌾",dispensa:"🏪",latticini:"🧀"};return(<Cd key={cat}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt,margin:"0 0 8px",textTransform:"capitalize"}}>{icons[cat]||"📦"} {cat}</h4><div style={{display:"grid",gap:"4px"}}>{items.map(function(item,i){var ck=listChecks[cat+"_"+i];return(<button key={i} onClick={function(){var u=Object.assign({},listChecks);u[cat+"_"+i]=!ck;setListChecks(u);}} style={{display:"flex",gap:"8px",alignItems:"center",padding:"8px 10px",borderRadius:"8px",border:"none",background:ck?C.sageP:C.bg,cursor:"pointer",width:"100%",textAlign:"left"}}><span style={{fontSize:"14px"}}>{ck?"✅":"⬜"}</span><span style={{fontFamily:F.s,fontSize:"12px",color:ck?C.txtL:C.txt,textDecoration:ck?"line-through":"none",textTransform:"capitalize"}}>{item}</span></button>);})}</div></Cd>);})}</div>)}
+    {sub==="regole"&&(<div style={{display:"grid",gap:"8px"}}>{[{i:"1",t:"Verdura PRIMA (200-250g)",d:"Riduce il picco glicemico fino al 48%."},{i:"2",t:"Proteine 120-150g a pasto",d:"Target giornaliero ~"+mc.prot+"g."},{i:"3",t:"Carboidrati 50-60g crudi, per ultimi",d:"Sempre integrali, mai da soli."},{i:"4",t:"Colazione ore "+profile.ifOpen+" = pasto principale",d:"~520 kcal. Riduce insulina del 53%."},{i:"5",t:"Cena leggera entro le "+profile.ifClose,d:"~350 kcal. Proteine + verdure."},{i:"6",t:"IF "+profile.ifH+":"+(24-profile.ifH)+": finestra "+profile.ifOpen+"-"+profile.ifClose,d:"Te verde e camomilla ok a digiuno."},{i:"7",t:"Grassi buoni 10-15ml olio EVO/pasto",d:"Target ~"+mc.fat+"g/giorno."},{i:"8",t:"No zuccheri nascosti",d:"Sciroppo glucosio e maltodestrine = insulino-resistenza."}].map(function(r,i){return(<Cd key={i}><div style={{display:"flex",gap:"10px"}}><span style={{width:"24px",height:"24px",borderRadius:"50%",background:C.sage,color:C.white,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px",fontWeight:"700",fontFamily:F.s,flexShrink:0}}>{r.i}</span><div><h4 style={{margin:"0 0 2px",fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{r.t}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{r.d}</p></div></div></Cd>);})}
+    </div>)}
+  </div>);
 }
 
-function Allenamento() {
-  const [sub, setSub] = useState("sched");
-  return (
-    <div>
-      <div style={{ marginBottom: "20px" }}><h2 style={{ fontFamily: F.p, fontSize: "24px", fontWeight: "600", color: C.txt, margin: 0 }}>Allenamento</h2><p style={{ fontFamily: F.s, fontSize: "12px", color: C.txtL, marginTop: "5px" }}>Sala pesi per perdere grasso e aumentare massa muscolare</p></div>
-      <SubT tabs={[{k:"sched",l:"Scheda",i:"\u{1F4C5}"},{k:"upper",l:"Upper",i:"\u{1F4AA}"},{k:"lower",l:"Lower",i:"\u{1F9B5}"},{k:"core",l:"Core",i:"\u{1F3AF}"}]} active={sub} onSel={setSub} />
-      {sub === "sched" && (<div><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Con 29% BF e deficit calorico, il resistance training preserva massa muscolare.</Info><div style={{ display: "grid", gap: "7px", marginTop: "10px" }}>{GYM.sched.map(function(d,i){var iColor=d.i==="Bassa"?C.sage:d.i==="Leggera"?C.amber:C.rose;return (<Cd key={i} style={{ padding: "13px" }}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div><h4 style={{ margin: "0 0 2px", fontFamily: F.s, fontSize: "12px", fontWeight: "600", color: C.txt }}>{d.d}</h4><p style={{ margin: 0, fontSize: "11px", fontFamily: F.s, color: C.txtM }}>{d.w}</p></div><Pill color={iColor}>{d.i}</Pill></div></Cd>);})}</div></div>)}
-      {(sub==="upper"||sub==="lower"||sub==="core") && (<div><Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{GYM[sub].ico} {GYM[sub].why}</Info><div style={{ display: "grid", gap: "7px", marginTop: "10px" }}>{GYM[sub].ex.map(function(e,i){return (<Cd key={i} style={{ padding: "13px" }}><div style={{ display: "flex", justifyContent: "space-between", gap: "8px" }}><div style={{ flex: 1 }}><div style={{ display: "flex", alignItems: "center", gap: "5px", marginBottom: "2px" }}><span style={{ fontFamily: F.s, fontSize: "9px", color: C.white, background: C.sage, borderRadius: "6px", padding: "2px 6px", fontWeight: "600" }}>{i+1}</span><h5 style={{ margin: 0, fontFamily: F.s, fontSize: "12px", fontWeight: "600", color: C.txt }}>{e.n}</h5></div><p style={{ margin: 0, fontSize: "10px", fontFamily: F.s, color: C.txtL, fontStyle: "italic" }}>{e.nt}</p></div><div style={{ textAlign: "right", flexShrink: 0 }}><div style={{ fontFamily: F.s, fontSize: "12px", fontWeight: "700", color: C.sage }}>{e.s}</div><div style={{ fontFamily: F.s, fontSize: "9px", color: C.txtL }}>Rest {e.r}</div></div></div></Cd>);})}</div></div>)}
-    </div>
-  );
+
+/* ═══════════ ALLENAMENTO ═══════════ */
+function Allenamento(){
+  const[sub,setSub]=useState("sched");
+  const[logs,setLogs]=useState(function(){return LD("gymLogs",{});});
+  const[showLog,setShowLog]=useState(null);
+  const[logForm,setLogForm]=useState({weight:"",reps:""});
+  function saveLog(exName){if(!logForm.weight&&!logForm.reps)return;var k=exName.replace(/[^a-zA-Z]/g,"");var entries=logs[k]||[];var entry={date:todayK(),weight:parseFloat(logForm.weight)||0,reps:parseInt(logForm.reps)||0};entries=[entry].concat(entries).slice(0,20);var u=Object.assign({},logs);u[k]=entries;setLogs(u);SV("gymLogs",u);setShowLog(null);setLogForm({weight:"",reps:""});}
+  function getLastLog(exName){var k=exName.replace(/[^a-zA-Z]/g,"");var entries=logs[k]||[];return entries.length>0?entries[0]:null;}
+  return(<div>
+    <SecH title="Allenamento" sub="Sala pesi per perdere grasso e aumentare massa muscolare"/>
+    <SubT tabs={[{k:"sched",l:"Scheda",i:"📅"},{k:"upper",l:"Upper",i:"💪"},{k:"lower",l:"Lower",i:"🦵"},{k:"core",l:"Core",i:"🎯"},{k:"progress",l:"Progressi",i:"📈"}]} active={sub} onSel={setSub}/>
+    {sub==="sched"&&(<div><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Con deficit calorico, il resistance training preserva massa muscolare e accelera la perdita di grasso addominale.</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM.sched.map(function(d,i){var iColor=d.i==="Bassa"?C.sage:d.i==="Leggera"?C.amber:C.rose;return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><h4 style={{margin:"0 0 2px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{d.d}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{d.w}</p></div><Pill color={iColor}>{d.i}</Pill></div></Cd>);})}</div></div>)}
+    {(sub==="upper"||sub==="lower"||sub==="core")&&(<div><Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{GYM[sub].ico} {GYM[sub].why}</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM[sub].ex.map(function(e,i){var lastLog=getLastLog(e.n);return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",gap:"8px"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}}><span style={{fontFamily:F.s,fontSize:"9px",color:C.white,background:C.sage,borderRadius:"6px",padding:"2px 6px",fontWeight:"600"}}>{i+1}</span><h5 style={{margin:0,fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{e.n}</h5></div><p style={{margin:0,fontSize:"10px",fontFamily:F.s,color:C.txtL,fontStyle:"italic"}}>{e.nt}</p>{lastLog&&<div style={{marginTop:"4px"}}><Pill color={C.amber}>Ultimo: {lastLog.weight}kg x{lastLog.reps} ({fmtD(lastLog.date)})</Pill></div>}</div><div style={{textAlign:"right",flexShrink:0}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"700",color:C.sage}}>{e.s}</div><div style={{fontFamily:F.s,fontSize:"9px",color:C.txtL}}>Rest {e.r}</div><div style={{display:"flex",gap:"4px",marginTop:"6px"}}><a href={"https://www.youtube.com/results?search_query="+e.vid} target="_blank" rel="noopener noreferrer" style={{padding:"3px 7px",borderRadius:"6px",background:C.roseP,fontSize:"9px",fontFamily:F.s,color:C.roseD,textDecoration:"none",fontWeight:"500"}}>🎬 Video</a><button onClick={function(){setShowLog(showLog===e.n?null:e.n);setLogForm({weight:"",reps:""});}} style={{padding:"3px 7px",borderRadius:"6px",border:"none",background:C.sageP,fontSize:"9px",fontFamily:F.s,color:C.sageD,cursor:"pointer",fontWeight:"500"}}>📊 Log</button></div></div></div>{showLog===e.n&&(<div style={{marginTop:"10px",padding:"10px",borderRadius:"10px",background:C.bg,display:"flex",gap:"6px",alignItems:"flex-end"}}><div style={{flex:1}}><label style={lS}>Peso (kg)</label><input type="number" step="0.5" placeholder="20" value={logForm.weight} onChange={function(ev){setLogForm(Object.assign({},logForm,{weight:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><div style={{flex:1}}><label style={lS}>Reps</label><input type="number" placeholder="12" value={logForm.reps} onChange={function(ev){setLogForm(Object.assign({},logForm,{reps:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><button onClick={function(){saveLog(e.n);}} style={{padding:"8px 12px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✓</button></div>)}</Cd>);})}</div></div>)}
+    {sub==="progress"&&(<div style={{display:"grid",gap:"10px"}}><Info bg={C.amberP} bdr={C.amberL} color={C.amber}>📈 Progressive overload: quando riesci a fare tutte le reps con buona forma, aumenta il peso del 5-10%.</Info>{Object.keys(logs).filter(function(k){return logs[k].length>1;}).map(function(k){var entries=logs[k].slice().reverse();var exName=entries[0]?k:"";var first=entries[0];var last=entries[entries.length-1];var diff=last.weight-first.weight;return(<Cd key={k}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt,margin:"0 0 8px",textTransform:"capitalize"}}>{k}</h4><div style={{display:"flex",gap:"3px",alignItems:"flex-end",height:"60px",marginBottom:"6px"}}>{entries.slice(-8).map(function(e,i){var mx=Math.max.apply(null,entries.map(function(x){return x.weight||1;}));var h=((e.weight||1)/mx)*100;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}><span style={{fontSize:"7px",fontFamily:F.s,color:C.txtL}}>{e.weight}</span><div style={{width:"100%",maxWidth:"20px",height:h+"%",borderRadius:"3px",background:i===entries.length-1?C.sage:C.sageL}}/></div>);})}</div><div style={{display:"flex",gap:"10px"}}><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>Prima: {first.weight}kg x{first.reps}</span><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>→</span><span style={{fontSize:"10px",fontFamily:F.s,color:diff>0?C.sage:C.txt,fontWeight:"600"}}>Ora: {last.weight}kg x{last.reps} {diff>0?"(+"+diff+"kg) 💪":""}</span></div></Cd>);})}{Object.keys(logs).filter(function(k){return logs[k].length>1;}).length===0&&<Cd style={{textAlign:"center",padding:"30px"}}><p style={{fontSize:"13px",fontFamily:F.s,color:C.txtL}}>Registra i carichi negli esercizi per vedere i tuoi progressi qui!</p></Cd>}</div>)}
+  </div>);
 }
 
-function Digiuno() {
-  const [sub, setSub] = useState("timer");
-  return (
-    <div>
-      <div style={{ marginBottom: "20px" }}><h2 style={{ fontFamily: F.p, fontSize: "24px", fontWeight: "600", color: C.txt, margin: 0 }}>Digiuno Intermittente</h2><p style={{ fontFamily: F.s, fontSize: "12px", color: C.txtL, marginTop: "5px" }}>IF 14:10 | Finestra 10:00-20:00</p></div>
-      <SubT tabs={[{k:"timer",l:"Timer",i:"\u23F1\uFE0F"},{k:"info",l:"Info",i:"\u{1F52C}"},{k:"rules",l:"Regole",i:"\u{1F4CF}"}]} active={sub} onSel={setSub} />
-      {sub === "timer" && (<div style={{ display: "grid", gap: "14px" }}><FastingTimer /><Info bg={C.plumP} bdr={C.plumL} color={C.plum}>Protocollo <strong>14:10</strong>: colazione abbondante alle 10, pranzo alle 14, cena leggera alle 19:30. Digiuno dalle 20 alle 10.</Info></div>)}
-      {sub === "info" && (<div style={{ display: "grid", gap: "12px" }}><Cd accent={C.sage}><h3 style={{ fontFamily: F.p, fontSize: "15px", margin: "0 0 8px", color: C.sage }}>Benefici</h3>{["Migliora sensibilita insulinica","Riduce infiammazione cronica","Favorisce autofagia cellulare","Con deficit ~500 kcal: ~0.5 kg/settimana"].map(function(b,i){return <div key={i} style={{ display: "flex", gap: "6px", alignItems: "center", marginBottom: "5px" }}><span style={{ width: "4px", height: "4px", borderRadius: "50%", background: C.sage, flexShrink: 0 }} /><span style={{ fontSize: "12px", fontFamily: F.s, color: C.txt }}>{b}</span></div>;})}</Cd><Cd accent={C.rose}><h3 style={{ fontFamily: F.p, fontSize: "15px", margin: "0 0 8px", color: C.rose }}>Attenzione nella PCOS</h3>{["NON saltare la colazione: riduce insulina del 53%","Puo innescare cicli restrizione/abbuffata","Colazione proteica piu importante del digiuno lungo"].map(function(w,i){return <div key={i} style={{ display: "flex", gap: "6px", alignItems: "flex-start", marginBottom: "6px" }}><span style={{ fontSize: "12px", flexShrink: 0 }}>!</span><span style={{ fontSize: "11px", fontFamily: F.s, color: C.txt, lineHeight: 1.5 }}>{w}</span></div>;})}</Cd></div>)}
-      {sub === "rules" && (<div style={{ display: "grid", gap: "10px" }}>{[{t:"Colazione abbondante ore 10:00 (~520 kcal)",d:"Pasto principale con proteine."},{t:"Pranzo ore 14:00 (~550 kcal)",d:"Equilibrato. Ordine: verdura, proteine, carbo."},{t:"Cena leggera ore 19:30 (~350 kcal)",d:"Proteine + verdure, pochissimi carboidrati."},{t:"Digiuno 20:00 \u2192 10:00 (14h)",d:"Te verde, camomilla, acqua. Zero calorie."},{t:"Se hai fame a digiuno",d:"Un te caldo senza zucchero sazia. Il te verde riduce insulina a digiuno."}].map(function(r,i){return <Cd key={i}><h4 style={{ margin: "0 0 2px", fontFamily: F.s, fontSize: "13px", fontWeight: "600", color: C.txt }}>{r.t}</h4><p style={{ margin: 0, fontSize: "11px", fontFamily: F.s, color: C.txtM, lineHeight: 1.5 }}>{r.d}</p></Cd>;})}<Cd style={{ background: C.plumP, border: "1px solid "+C.plumL }}><h4 style={{ margin: "0 0 6px", fontFamily: F.s, fontSize: "12px", fontWeight: "600", color: C.plum }}>La tua giornata tipo</h4>{[{t:"10:00",e:"Colazione abbondante (~520 kcal)",c:C.amber},{t:"14:00",e:"Pranzo equilibrato (~550 kcal)",c:C.sage},{t:"16:30",e:"Snack opzionale (~80 kcal)",c:C.txtM},{t:"19:30",e:"Cena leggera (~350 kcal)",c:C.rose},{t:"20:00\u219210:00",e:"DIGIUNO (te, acqua, camomilla)",c:C.plum}].map(function(x,i){return <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center", padding: "3px 0" }}><span style={{ fontFamily: F.s, fontSize: "10px", fontWeight: "700", color: x.c, minWidth: "85px" }}>{x.t}</span><span style={{ fontSize: "11px", fontFamily: F.s, color: C.txt }}>{x.e}</span></div>;})}</Cd></div>)}
-    </div>
-  );
+
+/* ═══════════ DIGIUNO ═══════════ */
+function Digiuno({profile}){
+  const[sub,setSub]=useState("timer");
+  return(<div>
+    <SecH title="Digiuno Intermittente" sub={"IF "+profile.ifH+":"+(24-profile.ifH)+" | Finestra "+profile.ifOpen+"-"+profile.ifClose}/>
+    <SubT tabs={[{k:"timer",l:"Timer",i:"⏱️"},{k:"info",l:"Info",i:"🔬"},{k:"rules",l:"Regole",i:"📏"}]} active={sub} onSel={setSub}/>
+    {sub==="timer"&&<FastingTimer profile={profile}/>}
+    {sub==="info"&&(<div style={{display:"grid",gap:"12px"}}><Cd accent={C.sage}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 8px",color:C.sage}}>Benefici</h3>{["Migliora sensibilita insulinica","Riduce infiammazione cronica","Favorisce autofagia cellulare","Con deficit ~500 kcal: ~0.5 kg/settimana"].map(function(b,i){return<div key={i} style={{display:"flex",gap:"6px",alignItems:"center",marginBottom:"5px"}}><span style={{width:"4px",height:"4px",borderRadius:"50%",background:C.sage,flexShrink:0}}/><span style={{fontSize:"12px",fontFamily:F.s,color:C.txt}}>{b}</span></div>;})}</Cd><Cd accent={C.rose}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 8px",color:C.rose}}>Attenzione nella PCOS</h3>{["NON saltare la colazione: riduce insulina del 53%","Puo innescare cicli restrizione/abbuffata","Colazione proteica piu importante del digiuno lungo"].map(function(w,i){return<div key={i} style={{display:"flex",gap:"6px",alignItems:"flex-start",marginBottom:"6px"}}><span style={{fontSize:"12px",flexShrink:0}}>⚠️</span><span style={{fontSize:"11px",fontFamily:F.s,color:C.txt,lineHeight:1.5}}>{w}</span></div>;})}</Cd></div>)}
+    {sub==="rules"&&(<div style={{display:"grid",gap:"10px"}}>{[{t:"Colazione abbondante ore "+profile.ifOpen+" (~520 kcal)",d:"Pasto principale con proteine."},{t:"Pranzo ore 14:00 (~550 kcal)",d:"Equilibrato. Ordine: verdura, proteine, carbo."},{t:"Cena leggera entro "+profile.ifClose+" (~350 kcal)",d:"Proteine + verdure, pochissimi carboidrati."},{t:"Digiuno "+profile.ifClose+" → "+profile.ifOpen+" ("+profile.ifH+"h)",d:"Te verde, camomilla, acqua. Zero calorie."},{t:"Se hai fame a digiuno",d:"Un te caldo senza zucchero sazia. Il te verde riduce insulina a digiuno."}].map(function(r,i){return<Cd key={i}><h4 style={{margin:"0 0 2px",fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{r.t}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{r.d}</p></Cd>;})}<Cd style={{background:C.plumP,border:"1px solid "+C.plumL}}><h4 style={{margin:"0 0 6px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum}}>La tua giornata tipo</h4>{[{t:profile.ifOpen,e:"Colazione abbondante (~520 kcal)",c:C.amber},{t:"14:00",e:"Pranzo equilibrato (~550 kcal)",c:C.sage},{t:"16:30",e:"Snack opzionale (~80 kcal)",c:C.txtM},{t:"19:30",e:"Cena leggera (~350 kcal)",c:C.rose},{t:profile.ifClose+"→"+profile.ifOpen,e:"DIGIUNO (te, acqua, camomilla)",c:C.plum}].map(function(x,i){return<div key={i} style={{display:"flex",gap:"8px",alignItems:"center",padding:"3px 0"}}><span style={{fontFamily:F.s,fontSize:"10px",fontWeight:"700",color:x.c,minWidth:"85px"}}>{x.t}</span><span style={{fontSize:"11px",fontFamily:F.s,color:C.txt}}>{x.e}</span></div>;})}</Cd></div>)}
+  </div>);
 }
 
-function GarminSection() {
-  const [sub, setSub] = useState("dash");
-  const [weighins, setWeighins] = useState(function(){ return loadData("pcos_weighins", DEF_W); });
-  const [workouts, setWorkouts] = useState(function(){ return loadData("pcos_workouts", DEF_WO); });
-  const [daily, setDaily] = useState(function(){ return loadData("pcos_daily", DEF_D); });
-  const [showAW, setShowAW] = useState(false);
-  const [showAT, setShowAT] = useState(false);
-  const [wF, setWF] = useState({date:new Date().toISOString().slice(0,10),weight:"",bf:"",mm:"",bm:"",bw:""});
-  const [tF, setTF] = useState({date:new Date().toISOString().slice(0,10),type:"Strength",duration:"",calories:"",hr:""});
-  const [dF, setDF] = useState(Object.assign({},daily));
-  const [em, setEM] = useState(false);
-  var lat = weighins.length>0 ? weighins[weighins.length-1] : null;
-  var bmi = lat ? (lat.weight/(1.68*1.68)).toFixed(1) : "--";
-  var last8 = weighins.slice(-8);
-  function addW(){if(!wF.weight)return;var e={date:wF.date,weight:parseFloat(wF.weight),bf:parseFloat(wF.bf)||0,mm:parseFloat(wF.mm)||0,bm:parseFloat(wF.bm)||0,bw:parseFloat(wF.bw)||0};var u=weighins.concat([e]).sort(function(a,b){return a.date.localeCompare(b.date);});setWeighins(u);saveData("pcos_weighins",u);setWF({date:new Date().toISOString().slice(0,10),weight:"",bf:"",mm:"",bm:"",bw:""});setShowAW(false);}
-  function delW(i){var u=weighins.filter(function(_,j){return j!==i;});setWeighins(u);saveData("pcos_weighins",u);}
-  function addT(){if(!tF.duration)return;var e={date:tF.date,type:tF.type,duration:parseInt(tF.duration)||0,calories:parseInt(tF.calories)||0,hr:parseInt(tF.hr)||0};var u=workouts.concat([e]).sort(function(a,b){return b.date.localeCompare(a.date);});setWorkouts(u);saveData("pcos_workouts",u);setTF({date:new Date().toISOString().slice(0,10),type:"Strength",duration:"",calories:"",hr:""});setShowAT(false);}
-  function delT(i){var u=workouts.filter(function(_,j){return j!==i;});setWorkouts(u);saveData("pcos_workouts",u);}
-  function savD(){var d={steps:parseInt(dF.steps)||0,rhr:parseInt(dF.rhr)||0,stress:parseInt(dF.stress)||0,bb:parseInt(dF.bb)||0,vo2:parseInt(dF.vo2)||0};setDaily(d);saveData("pcos_daily",d);setEM(false);}
-  function fD(ds){if(!ds)return"--";return new Date(ds).toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
-  var iS={width:"100%",padding:"10px",borderRadius:"10px",border:"1px solid "+C.bdr,fontFamily:F.s,fontSize:"13px",boxSizing:"border-box",background:C.white};
-  var lS={fontSize:"10px",fontFamily:F.s,color:C.txtM,display:"block",marginBottom:"3px",fontWeight:"500"};
+/* ═══════════ CICLO MESTRUALE ═══════════ */
+function CicloMestruale(){
+  const[sub,setSub]=useState("tracker");
+  const[lastPeriod,setLastPeriod]=useState(function(){return LD("lastPeriod","");});
+  const[cycleLen,setCycleLen]=useState(function(){return LD("cycleLen",35);});
+  const[showResult,setShowResult]=useState(false);
+  var today=new Date();var lpDate=lastPeriod?new Date(lastPeriod):null;
+  var dayOfCycle=lpDate?Math.floor((today-lpDate)/86400000)+1:null;
+  var nextPeriod=lpDate?new Date(lpDate.getTime()+cycleLen*86400000):null;
+  var daysToNext=nextPeriod?Math.max(0,Math.floor((nextPeriod-today)/86400000)):null;
+  var currentPhase=null;
+  if(dayOfCycle){if(dayOfCycle<=5)currentPhase=0;else if(dayOfCycle<=Math.floor(cycleLen*0.46))currentPhase=1;else if(dayOfCycle<=Math.floor(cycleLen*0.57))currentPhase=2;else currentPhase=3;}
+  function formatDate(d){if(!d)return"--";return d.toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
+  useEffect(function(){if(lastPeriod)SV("lastPeriod",lastPeriod);SV("cycleLen",cycleLen);},[lastPeriod,cycleLen]);
+  return(<div>
+    <SecH title="Ciclo Mestruale" sub="Tracker, fasi e consigli PCOS-specifici"/>
+    <SubT tabs={[{k:"tracker",l:"Tracker",i:"📅"},{k:"fasi",l:"Fasi",i:"🌙"},{k:"pcos",l:"PCOS & Ciclo",i:"🩺"}]} active={sub} onSel={setSub}/>
+    {sub==="tracker"&&(<div style={{display:"grid",gap:"12px"}}>
+      <Cd accent={C.berry}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 12px",color:C.berry}}>Inserisci i tuoi dati</h3><div style={{marginBottom:"10px"}}><label style={lS}>Primo giorno dell'ultimo ciclo</label><input type="date" value={lastPeriod} onChange={function(e){setLastPeriod(e.target.value);setShowResult(false);}} style={iS}/></div><div style={{marginBottom:"12px"}}><label style={lS}>Durata media del ciclo (giorni)</label><div style={{display:"flex",gap:"4px"}}>{[28,30,32,35,40,45].map(function(d){return(<button key={d} onClick={function(){setCycleLen(d);setShowResult(false);}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",border:cycleLen===d?"none":"1px solid "+C.bdr,background:cycleLen===d?C.berry:C.white,color:cycleLen===d?C.white:C.txtM}}>{d}</button>);})}</div><p style={{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"4px 0 0"}}>Nella PCOS i cicli sono spesso 35-45 giorni o irregolari</p></div>{lastPeriod&&(<button onClick={function(){setShowResult(true);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.berry+","+C.rose+")",color:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Calcola</button>)}</Cd>
+      {showResult&&dayOfCycle&&(<><Cd accent={CYCLE_PHASES[currentPhase].color} style={{background:CYCLE_PHASES[currentPhase].color+"08"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"10px"}}><div><span style={{fontSize:"28px"}}>{CYCLE_PHASES[currentPhase].icon}</span><h3 style={{fontFamily:F.p,fontSize:"18px",margin:"4px 0 0",color:C.txt}}>Fase {CYCLE_PHASES[currentPhase].name}</h3></div><div style={{textAlign:"right"}}><div style={{fontFamily:F.s,fontSize:"28px",fontWeight:"700",color:CYCLE_PHASES[currentPhase].color}}>G{dayOfCycle}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>del ciclo</div></div></div><Bar v={dayOfCycle} mx={cycleLen} color={CYCLE_PHASES[currentPhase].color}/><div style={{display:"flex",gap:"8px",marginTop:"10px"}}><div style={{flex:1,padding:"8px",borderRadius:"8px",background:C.white,textAlign:"center"}}><div style={{fontSize:"14px",fontWeight:"700",color:C.berry,fontFamily:F.s}}>{formatDate(nextPeriod)}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>Prossimo ciclo</div></div><div style={{flex:1,padding:"8px",borderRadius:"8px",background:C.white,textAlign:"center"}}><div style={{fontSize:"14px",fontWeight:"700",color:C.plum,fontFamily:F.s}}>{daysToNext}gg</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>Mancano</div></div></div></Cd>
+      <Cd><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",margin:"0 0 8px",color:CYCLE_PHASES[currentPhase].color}}>Consigli per questa fase</h4>{[{l:"Alimentazione",v:CYCLE_PHASES[currentPhase].food,ic:"🥗"},{l:"Allenamento",v:CYCLE_PHASES[currentPhase].gym,ic:"🏋️"},{l:"Note PCOS",v:CYCLE_PHASES[currentPhase].pcos,ic:"🩺"}].map(function(tip,i){return(<div key={i} style={{display:"flex",gap:"8px",marginBottom:"10px",alignItems:"flex-start"}}><span style={{fontSize:"16px",flexShrink:0}}>{tip.ic}</span><div><div style={{fontSize:"10px",fontWeight:"600",fontFamily:F.s,color:C.txt,marginBottom:"2px"}}>{tip.l}</div><div style={{fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{tip.v}</div></div></div>);})}</Cd></>)}
+    </div>)}
+    {sub==="fasi"&&(<div style={{display:"grid",gap:"10px"}}>{CYCLE_PHASES.map(function(ph,i){return(<Cd key={i} accent={ph.color}><div style={{display:"flex",gap:"10px",alignItems:"center",marginBottom:"8px"}}><span style={{fontSize:"24px"}}>{ph.icon}</span><div><h3 style={{fontFamily:F.p,fontSize:"15px",margin:0,color:C.txt}}>Fase {ph.name}</h3><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>{ph.days}</span></div></div><div style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,marginBottom:"4px"}}><strong>Ormoni:</strong> {ph.hormones}</div><div style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,marginBottom:"4px"}}><strong>Alimentazione:</strong> {ph.food}</div><div style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,marginBottom:"4px"}}><strong>Allenamento:</strong> {ph.gym}</div><div style={{padding:"6px 8px",borderRadius:"8px",background:ph.color+"10",marginTop:"6px"}}><div style={{fontSize:"10px",fontFamily:F.s,color:ph.color,fontWeight:"500"}}>{ph.pcos}</div></div></Cd>);})}</div>)}
+    {sub==="pcos"&&(<div style={{display:"grid",gap:"10px"}}><Info bg={C.berryP} bdr={C.berryL} color={C.berry}><strong>Nella PCOS il ciclo e spesso irregolare</strong>: oligomenorrea (cicli lunghi 35-90 giorni) o amenorrea (assenza di ciclo).</Info>{[{t:"Perche il ciclo e irregolare",d:"L'eccesso di androgeni e l'iperinsulinemia interferiscono con la maturazione dei follicoli.",ic:"🔬"},{t:"La fase luteale insufficiente",d:"Nella PCOS il corpo luteo puo produrre poco progesterone, accorciando la fase luteale.",ic:"🌙"},{t:"SPM amplificata nella PCOS",d:"Gonfiore, voglia di dolce, ansia sono piu intense. La fame emotiva colpisce 1 donna PCOS su 3.",ic:"💛"},{t:"Cosa migliora il ciclo",d:"Perdita del 5-10% del peso, esercizio regolare, alimentazione anti-infiammatoria e gestione dello stress.",ic:"🌱"},{t:"Quando preoccuparsi",d:"Assenza di ciclo per oltre 3 mesi, sanguinamento abbondante, dolore pelvico forte. Consulta il ginecologo.",ic:"🩺"}].map(function(item,i){return(<Cd key={i}><div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><span style={{fontSize:"20px",flexShrink:0}}>{item.ic}</span><div><h4 style={{margin:"0 0 3px",fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{item.t}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{item.d}</p></div></div></Cd>);})}</div>)}
+  </div>);
+}
+
+
+/* ═══════════ GARMIN TRACKER ═══════════ */
+function GarminSection({profile}){
+  const[sub,setSub]=useState("dash");
+  const[weighins,setWeighins]=useState(function(){return LD("weighins",DEF_W);});
+  const[workouts,setWorkouts]=useState(function(){return LD("workouts",DEF_WO);});
+  const[daily,setDaily]=useState(function(){return LD("daily",DEF_DD);});
+  const[showAW,setShowAW]=useState(false);
+  const[showAT,setShowAT]=useState(false);
+  const[wF,setWF]=useState({date:todayK(),weight:"",bf:"",mm:"",bm:"",bw:""});
+  const[tF,setTF]=useState({date:todayK(),type:"Strength",duration:"",calories:"",hr:""});
+  const[dF,setDF]=useState(Object.assign({},daily));
+  const[em,setEM]=useState(false);
+  const[chartMode,setChartMode]=useState("weight");
+  var lat=weighins.length>0?weighins[weighins.length-1]:null;
+  var bmi=lat?(lat.weight/(profile.height/100*profile.height/100)).toFixed(1):"--";
+  var last8=weighins.slice(-8);
+  function addW(){if(!wF.weight)return;var e={date:wF.date,weight:parseFloat(wF.weight),bf:parseFloat(wF.bf)||0,mm:parseFloat(wF.mm)||0,bm:parseFloat(wF.bm)||0,bw:parseFloat(wF.bw)||0};var u=weighins.concat([e]).sort(function(a,b){return a.date.localeCompare(b.date);});setWeighins(u);SV("weighins",u);setWF({date:todayK(),weight:"",bf:"",mm:"",bm:"",bw:""});setShowAW(false);}
+  function delW(i){var u=weighins.filter(function(_,j){return j!==i;});setWeighins(u);SV("weighins",u);}
+  function addT(){if(!tF.duration)return;var e={date:tF.date,type:tF.type,duration:parseInt(tF.duration)||0,calories:parseInt(tF.calories)||0,hr:parseInt(tF.hr)||0};var u=workouts.concat([e]).sort(function(a,b){return b.date.localeCompare(a.date);});setWorkouts(u);SV("workouts",u);setTF({date:todayK(),type:"Strength",duration:"",calories:"",hr:""});setShowAT(false);}
+  function delT(i){var u=workouts.filter(function(_,j){return j!==i;});setWorkouts(u);SV("workouts",u);}
+  function savD(){var d={steps:parseInt(dF.steps)||0,rhr:parseInt(dF.rhr)||0,stress:parseInt(dF.stress)||0,bb:parseInt(dF.bb)||0,vo2:parseInt(dF.vo2)||0};setDaily(d);SV("daily",d);setEM(false);}
   var tcMap={Strength:C.sage,Camminata:C.amber,Yoga:C.plum,Cardio:C.rose,HIIT:C.berry,Riposo:C.txtL};
-  return (
-    <div>
-      <div style={{marginBottom:"20px"}}><h2 style={{fontFamily:F.p,fontSize:"24px",fontWeight:"600",color:C.txt,margin:0}}>Garmin Tracker</h2><p style={{fontFamily:F.s,fontSize:"12px",color:C.txtL,marginTop:"5px"}}>Forerunner 570 + Index S2 | Inserisci i dati manualmente</p></div>
-      <SubT tabs={[{k:"dash",l:"Dashboard",i:"\u{1F4CA}"},{k:"peso",l:"Pesate",i:"\u2696\uFE0F"},{k:"workout",l:"Allenamenti",i:"\u231A"},{k:"daily",l:"Oggi",i:"\u2764\uFE0F"}]} active={sub} onSel={setSub} />
-      {sub==="dash" && (<div style={{display:"grid",gap:"10px"}}>
-        <Cd accent={C.sage} style={{background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 10px",color:C.sageD}}>Stato Attuale</h3>
-          <div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr"}}>{[{l:"Peso",v:lat?lat.weight+" kg":"--",c:C.sage},{l:"BMI",v:bmi,c:C.amber},{l:"Body Fat",v:lat?lat.bf+"%":"--",c:C.rose}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div>
-          <div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr",marginTop:"8px"}}>{[{l:"Muscolo",v:lat?lat.mm+"%":"--",c:C.sage},{l:"Ossa",v:lat?lat.bm+" kg":"--",c:C.amber},{l:"Acqua",v:lat?lat.bw+"%":"--",c:"#5B9BD5"}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"16px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div>
-        </Cd>
-        <div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"\u2014",s:"/10.000",c:C.sage,b:true,bv:daily.steps||0,bm:10000},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"\u2014",c:C.rose},{l:"Body Battery",v:daily.bb?daily.bb+"%":"\u2014",c:C.sage,b:true,bv:daily.bb||0,bm:100},{l:"Stress",v:daily.stress?String(daily.stress):"\u2014",s:daily.stress<30?"Basso":daily.stress<60?"Medio":"Alto",c:C.amber}].map(function(m,i){return(<Cd key={i} style={{padding:"12px"}}><span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL,textTransform:"uppercase"}}>{m.l}</span><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c||C.txt}}>{m.v}</div>{m.s&&<div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{m.s}</div>}{m.b&&<div style={{marginTop:"5px"}}><Bar v={m.bv} mx={m.bm} color={m.c||C.sage}/></div>}</Cd>);})}</div>
-        <Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Andamento Peso (Obiettivo: ~68 kg)</h4><div style={{display:"flex",alignItems:"flex-end",gap:"3px",height:"100px"}}>{last8.map(function(w,i){var mn=Math.min.apply(null,last8.map(function(x){return x.weight;}))-1;var mx=Math.max.apply(null,last8.map(function(x){return x.weight;}))+1;var h=((w.weight-mn)/(mx-mn))*100;var il=i===last8.length-1;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}><span style={{fontSize:"8px",fontFamily:F.s,color:il?C.sage:C.txtL,fontWeight:il?"700":"400"}}>{w.weight}</span><div style={{width:"100%",maxWidth:"26px",height:h+"%",borderRadius:"5px 5px 2px 2px",background:il?C.sage:C.sageL}}/><span style={{fontSize:"7px",fontFamily:F.s,color:C.txtL}}>{fD(w.date)}</span></div>);})}</div></Cd>
-        <Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>Obiettivo: <strong>~68 kg</strong> (BF ~23-24%) in <strong>4-5 mesi</strong>. Apri Garmin Connect e inserisci qui i dati.</Info>
-      </div>)}
-      {sub==="peso" && (<div style={{display:"grid",gap:"10px"}}>
-        <button onClick={function(){setShowAW(!showAW);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:showAW?C.roseP:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:showAW?C.roseD:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{showAW?"\u2715 Chiudi":"\u2795 Nuova Pesata"}</button>
-        {showAW&&(<Cd accent={C.sage}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",margin:"0 0 10px",color:C.sageD}}>Registra pesata dalla bilancia Garmin</h4><div style={{display:"grid",gap:"8px"}}>
-          <div><label style={lS}>Data</label><input type="date" value={wF.date} onChange={function(e){setWF(Object.assign({},wF,{date:e.target.value}));}} style={iS}/></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Peso (kg) *</label><input type="number" step="0.1" placeholder="77.0" value={wF.weight} onChange={function(e){setWF(Object.assign({},wF,{weight:e.target.value}));}} style={iS}/></div><div><label style={lS}>Body Fat %</label><input type="number" step="0.1" placeholder="29.0" value={wF.bf} onChange={function(e){setWF(Object.assign({},wF,{bf:e.target.value}));}} style={iS}/></div></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Muscolo %</label><input type="number" step="0.1" placeholder="26.5" value={wF.mm} onChange={function(e){setWF(Object.assign({},wF,{mm:e.target.value}));}} style={iS}/></div><div><label style={lS}>Ossa kg</label><input type="number" step="0.1" placeholder="2.6" value={wF.bm} onChange={function(e){setWF(Object.assign({},wF,{bm:e.target.value}));}} style={iS}/></div><div><label style={lS}>Acqua %</label><input type="number" step="0.1" placeholder="48.2" value={wF.bw} onChange={function(e){setWF(Object.assign({},wF,{bw:e.target.value}));}} style={iS}/></div></div>
-          <button onClick={addW} style={{width:"100%",padding:"11px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva Pesata</button>
-        </div><p style={{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"8px 0 0",fontStyle:"italic"}}>Apri Garmin Connect {"\u2192"} Statistiche salute {"\u2192"} Peso</p></Cd>)}
-        <Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Storico Pesate ({weighins.length})</h4>
-        {weighins.length===0&&<p style={{fontSize:"12px",fontFamily:F.s,color:C.txtL}}>Nessuna pesata registrata</p>}
-        <div style={{display:"grid",gap:"6px"}}>{weighins.slice().reverse().map(function(w,i){var ri=weighins.length-1-i;return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:"10px",background:i===0?C.sageP:C.bg}}><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fD(w.date)}</span><span style={{fontFamily:F.s,fontSize:"12px",color:C.txtM,marginLeft:"8px"}}>{w.weight} kg</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}>{w.bf>0&&<Pill color={C.rose}>BF {w.bf}%</Pill>}{w.mm>0&&<Pill color={C.sage}>MM {w.mm}%</Pill>}<button onClick={function(){delW(ri);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px",padding:"2px 4px"}}>{"\u2715"}</button></div></div>);})}</div></Cd>
-      </div>)}
-      {sub==="workout" && (<div style={{display:"grid",gap:"10px"}}>
-        <button onClick={function(){setShowAT(!showAT);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:showAT?C.roseP:"linear-gradient(135deg,"+C.rose+","+C.roseD+")",color:showAT?C.roseD:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{showAT?"\u2715 Chiudi":"\u2795 Registra Allenamento"}</button>
-        {showAT&&(<Cd accent={C.rose}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",margin:"0 0 10px",color:C.roseD}}>Dati dal Garmin Forerunner</h4><div style={{display:"grid",gap:"8px"}}>
-          <div><label style={lS}>Data</label><input type="date" value={tF.date} onChange={function(e){setTF(Object.assign({},tF,{date:e.target.value}));}} style={iS}/></div>
-          <div><label style={lS}>Tipo</label><div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>{["Strength","Camminata","Yoga","Cardio","HIIT","Riposo"].map(function(t){return <button key={t} onClick={function(){setTF(Object.assign({},tF,{type:t}));}} style={{padding:"7px 12px",borderRadius:"10px",border:tF.type===t?"none":"1px solid "+C.bdr,background:tF.type===t?C.rose:C.white,color:tF.type===t?C.white:C.txtM,fontSize:"11px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>{t}</button>;})}</div></div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Durata (min) *</label><input type="number" placeholder="55" value={tF.duration} onChange={function(e){setTF(Object.assign({},tF,{duration:e.target.value}));}} style={iS}/></div><div><label style={lS}>Calorie</label><input type="number" placeholder="380" value={tF.calories} onChange={function(e){setTF(Object.assign({},tF,{calories:e.target.value}));}} style={iS}/></div><div><label style={lS}>FC media</label><input type="number" placeholder="128" value={tF.hr} onChange={function(e){setTF(Object.assign({},tF,{hr:e.target.value}));}} style={iS}/></div></div>
-          <button onClick={addT} style={{width:"100%",padding:"11px",borderRadius:"12px",border:"none",background:C.rose,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva Allenamento</button>
-        </div></Cd>)}
-        {workouts.length===0&&<Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>Nessun allenamento. Dopo ogni sessione, inserisci qui i dati dal Garmin.</Info>}
-        <div style={{display:"grid",gap:"6px"}}>{workouts.slice(0,14).map(function(w,i){return(<Cd key={i} style={{padding:"13px",opacity:w.type==="Riposo"?0.5:1}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",gap:"6px",alignItems:"center",marginBottom:"2px"}}><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fD(w.date)}</span><Pill color={tcMap[w.type]||C.sage}>{w.type}</Pill></div><div style={{display:"flex",gap:"10px"}}>{w.duration>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{w.duration} min</span>}{w.calories>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{w.calories} kcal</span>}{w.hr>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>FC {w.hr}</span>}</div></div><button onClick={function(){delT(i);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px",padding:"2px 6px"}}>{"\u2715"}</button></div></Cd>);})}</div>
-      </div>)}
-      {sub==="daily" && (<div style={{display:"grid",gap:"10px"}}>
-        <Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Inserisci i dati di <strong>oggi</strong> dal tuo Garmin Connect.</Info>
-        <Cd accent={C.sage}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",margin:0,color:C.txt}}>Dati Giornalieri</h4>{!em&&<button onClick={function(){setDF(Object.assign({},daily));setEM(true);}} style={{padding:"6px 14px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Modifica</button>}</div>
-          {!em?(<div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"\u2014",ic:"\u{1F6B6}",c:C.sage},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"\u2014",ic:"\u2764\uFE0F",c:C.rose},{l:"Stress",v:daily.stress?String(daily.stress):"\u2014",ic:"\u{1F9E0}",c:C.amber},{l:"Body Battery",v:daily.bb?daily.bb+"%":"\u2014",ic:"\u{1F50B}",c:C.sage},{l:"VO2 Max",v:daily.vo2?String(daily.vo2):"\u2014",ic:"\u{1FAC1}",c:C.plum}].map(function(m,i){return(<div key={i} style={{display:"flex",gap:"8px",alignItems:"center",padding:"10px",borderRadius:"10px",background:C.bg}}><span style={{fontSize:"18px"}}>{m.ic}</span><div><div style={{fontSize:"15px",fontWeight:"700",color:m.c,fontFamily:F.s}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div></div>);})}</div>):(<div style={{display:"grid",gap:"8px"}}>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Passi</label><input type="number" placeholder="8420" value={dF.steps} onChange={function(e){setDF(Object.assign({},dF,{steps:e.target.value}));}} style={iS}/></div><div><label style={lS}>FC Riposo (bpm)</label><input type="number" placeholder="68" value={dF.rhr} onChange={function(e){setDF(Object.assign({},dF,{rhr:e.target.value}));}} style={iS}/></div></div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Stress</label><input type="number" placeholder="38" value={dF.stress} onChange={function(e){setDF(Object.assign({},dF,{stress:e.target.value}));}} style={iS}/></div><div><label style={lS}>Body Battery %</label><input type="number" placeholder="72" value={dF.bb} onChange={function(e){setDF(Object.assign({},dF,{bb:e.target.value}));}} style={iS}/></div><div><label style={lS}>VO2 Max</label><input type="number" placeholder="34" value={dF.vo2} onChange={function(e){setDF(Object.assign({},dF,{vo2:e.target.value}));}} style={iS}/></div></div>
-            <div style={{display:"flex",gap:"8px"}}><button onClick={savD} style={{flex:1,padding:"11px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva</button><button onClick={function(){setEM(false);}} style={{padding:"11px 16px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"13px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>Annulla</button></div>
-          </div>)}
-        </Cd>
-        <Cd style={{background:C.plumP,border:"1px solid "+C.plumL}}><h4 style={{margin:"0 0 4px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum}}>Dove trovo i dati?</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.plum,lineHeight:1.6}}>Apri l'app <strong>Garmin Connect</strong> sul telefono:<br/>{"\u2022"} <strong>Passi</strong>: schermata "La mia giornata"<br/>{"\u2022"} <strong>FC/Stress/BB</strong>: "Statistiche salute"<br/>{"\u2022"} <strong>Peso/BF</strong>: "Statistiche salute" {"\u2192"} "Peso"<br/>{"\u2022"} <strong>Allenamenti</strong>: cronologia attivita</p></Cd>
-      </div>)}
+  function chartData(mode){var d=weighins.slice(-12);return d.map(function(w){if(mode==="weight")return{v:w.weight,label:fmtD(w.date)};if(mode==="bf")return{v:w.bf,label:fmtD(w.date)};if(mode==="mm")return{v:w.mm,label:fmtD(w.date)};if(mode==="bw")return{v:w.bw,label:fmtD(w.date)};return{v:0,label:""};});}
+  var cd=chartData(chartMode);
+  var chartColors={weight:C.sage,bf:C.rose,mm:C.amber,bw:C.blue};
+  return(<div>
+    <SecH title="Garmin Tracker" sub="Forerunner 570 + Index S2 | Inserimento manuale"/>
+    <SubT tabs={[{k:"dash",l:"Dashboard",i:"📊"},{k:"charts",l:"Grafici",i:"📈"},{k:"peso",l:"Pesate",i:"⚖️"},{k:"workout",l:"Allenamenti",i:"⌚"},{k:"daily",l:"Oggi",i:"❤️"}]} active={sub} onSel={setSub}/>
+    {sub==="dash"&&(<div style={{display:"grid",gap:"10px"}}>
+      <Cd accent={C.sage} style={{background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 10px",color:C.sageD}}>Stato Attuale</h3><div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr"}}>{[{l:"Peso",v:lat?lat.weight+" kg":"--",c:C.sage},{l:"BMI",v:bmi,c:C.amber},{l:"Body Fat",v:lat?lat.bf+"%":"--",c:C.rose}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div><div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr",marginTop:"8px"}}>{[{l:"Muscolo",v:lat?lat.mm+"%":"--",c:C.sage},{l:"Ossa",v:lat?lat.bm+" kg":"--",c:C.amber},{l:"Acqua",v:lat?lat.bw+"%":"--",c:C.blue}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"16px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div></Cd>
+      <div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"—",s:"/"+profile.stepsG.toLocaleString(),c:C.sage,b:true,bv:daily.steps||0,bm:profile.stepsG},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"—",c:C.rose},{l:"Body Battery",v:daily.bb?daily.bb+"%":"—",c:C.sage,b:true,bv:daily.bb||0,bm:100},{l:"Stress",v:daily.stress?String(daily.stress):"—",s:daily.stress<30?"Basso":daily.stress<60?"Medio":"Alto",c:C.amber}].map(function(m,i){return(<Cd key={i} style={{padding:"12px"}}><span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL,textTransform:"uppercase"}}>{m.l}</span><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c||C.txt}}>{m.v}</div>{m.s&&<div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{m.s}</div>}{m.b&&<div style={{marginTop:"5px"}}><Bar v={m.bv} mx={m.bm} color={m.c||C.sage}/></div>}</Cd>);})}</div>
+      <Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Andamento Peso (Ob: ~{profile.goalW} kg)</h4><div style={{display:"flex",alignItems:"flex-end",gap:"3px",height:"100px"}}>{last8.map(function(w,i){var mn=Math.min.apply(null,last8.map(function(x){return x.weight;}))-1;var mx=Math.max.apply(null,last8.map(function(x){return x.weight;}))+1;var h=((w.weight-mn)/(mx-mn))*100;var il=i===last8.length-1;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}><span style={{fontSize:"8px",fontFamily:F.s,color:il?C.sage:C.txtL,fontWeight:il?"700":"400"}}>{w.weight}</span><div style={{width:"100%",maxWidth:"26px",height:h+"%",borderRadius:"5px 5px 2px 2px",background:il?C.sage:C.sageL}}/><span style={{fontSize:"7px",fontFamily:F.s,color:C.txtL}}>{fmtD(w.date)}</span></div>);})}</div></Cd>
+    </div>)}
+    {sub==="charts"&&(<div style={{display:"grid",gap:"10px"}}>
+      <div style={{display:"flex",gap:"4px"}}>{[{k:"weight",l:"Peso"},{k:"bf",l:"Body Fat %"},{k:"mm",l:"Muscolo %"},{k:"bw",l:"Acqua %"}].map(function(m){return(<button key={m.k} onClick={function(){setChartMode(m.k);}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",border:chartMode===m.k?"none":"1px solid "+C.bdr,background:chartMode===m.k?chartColors[m.k]:C.white,color:chartMode===m.k?C.white:C.txtM,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{m.l}</button>);})}</div>
+      <Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 12px",color:C.txt}}>📈 {chartMode==="weight"?"Peso":chartMode==="bf"?"Body Fat %":chartMode==="mm"?"Massa Muscolare %":"Acqua %"}</h4>{cd.length>1?(<div style={{position:"relative",height:"140px",display:"flex",alignItems:"flex-end",gap:"4px"}}>{cd.map(function(pt,i){var vals=cd.map(function(x){return x.v;});var mn=Math.min.apply(null,vals)-1;var mx=Math.max.apply(null,vals)+1;var h=((pt.v-mn)/(mx-mn))*100;var il=i===cd.length-1;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px",height:"100%",justifyContent:"flex-end"}}><span style={{fontSize:"8px",fontFamily:F.s,color:il?chartColors[chartMode]:C.txtL,fontWeight:il?"700":"400"}}>{pt.v}</span><div style={{width:"100%",maxWidth:"30px",height:h+"%",borderRadius:"5px 5px 2px 2px",background:il?chartColors[chartMode]:chartColors[chartMode]+"60",transition:"height .5s"}}/><span style={{fontSize:"7px",fontFamily:F.s,color:C.txtL}}>{pt.label}</span></div>);})}</div>):(<p style={{fontSize:"12px",fontFamily:F.s,color:C.txtL,textAlign:"center",padding:"20px"}}>Inserisci almeno 2 pesate per vedere il grafico</p>)}</Cd>
+      {cd.length>1&&<Cd style={{background:C.sageP,border:"1px solid "+C.sageL}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.sageD}}>Prima: {cd[0].v} | Ora: {cd[cd.length-1].v}</span><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"700",color:cd[cd.length-1].v<cd[0].v?C.sage:C.rose}}>{chartMode==="weight"||chartMode==="bf"?(cd[cd.length-1].v<cd[0].v?"↓":"↑"):(cd[cd.length-1].v>cd[0].v?"↑":"↓")} {Math.abs(cd[cd.length-1].v-cd[0].v).toFixed(1)}</span></div></Cd>}
+    </div>)}
+    {sub==="peso"&&(<div style={{display:"grid",gap:"10px"}}>
+      <button onClick={function(){setShowAW(!showAW);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:showAW?C.roseP:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:showAW?C.roseD:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{showAW?"✕ Chiudi":"➕ Nuova Pesata"}</button>
+      {showAW&&(<Cd accent={C.sage}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",margin:"0 0 10px",color:C.sageD}}>Registra pesata dalla bilancia Garmin</h4><div style={{display:"grid",gap:"8px"}}><div><label style={lS}>Data</label><input type="date" value={wF.date} onChange={function(e){setWF(Object.assign({},wF,{date:e.target.value}));}} style={iS}/></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Peso (kg) *</label><input type="number" step="0.1" placeholder="77.0" value={wF.weight} onChange={function(e){setWF(Object.assign({},wF,{weight:e.target.value}));}} style={iS}/></div><div><label style={lS}>Body Fat %</label><input type="number" step="0.1" placeholder="29.0" value={wF.bf} onChange={function(e){setWF(Object.assign({},wF,{bf:e.target.value}));}} style={iS}/></div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Muscolo %</label><input type="number" step="0.1" value={wF.mm} onChange={function(e){setWF(Object.assign({},wF,{mm:e.target.value}));}} style={iS}/></div><div><label style={lS}>Ossa kg</label><input type="number" step="0.1" value={wF.bm} onChange={function(e){setWF(Object.assign({},wF,{bm:e.target.value}));}} style={iS}/></div><div><label style={lS}>Acqua %</label><input type="number" step="0.1" value={wF.bw} onChange={function(e){setWF(Object.assign({},wF,{bw:e.target.value}));}} style={iS}/></div></div><button onClick={addW} style={{width:"100%",padding:"11px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva Pesata</button></div></Cd>)}
+      <Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Storico Pesate ({weighins.length})</h4>{weighins.length===0&&<p style={{fontSize:"12px",fontFamily:F.s,color:C.txtL}}>Nessuna pesata</p>}<div style={{display:"grid",gap:"6px"}}>{weighins.slice().reverse().map(function(w,i){var ri=weighins.length-1-i;return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 12px",borderRadius:"10px",background:i===0?C.sageP:C.bg}}><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fmtD(w.date)}</span><span style={{fontFamily:F.s,fontSize:"12px",color:C.txtM,marginLeft:"8px"}}>{w.weight} kg</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}>{w.bf>0&&<Pill color={C.rose}>BF {w.bf}%</Pill>}{w.mm>0&&<Pill color={C.sage}>MM {w.mm}%</Pill>}<button onClick={function(){delW(ri);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px",padding:"2px 4px"}}>✕</button></div></div>);})}</div></Cd>
+    </div>)}
+    {sub==="workout"&&(<div style={{display:"grid",gap:"10px"}}>
+      <button onClick={function(){setShowAT(!showAT);}} style={{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:showAT?C.roseP:"linear-gradient(135deg,"+C.rose+","+C.roseD+")",color:showAT?C.roseD:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{showAT?"✕ Chiudi":"➕ Registra Allenamento"}</button>
+      {showAT&&(<Cd accent={C.rose}><div style={{display:"grid",gap:"8px"}}><div><label style={lS}>Data</label><input type="date" value={tF.date} onChange={function(e){setTF(Object.assign({},tF,{date:e.target.value}));}} style={iS}/></div><div><label style={lS}>Tipo</label><div style={{display:"flex",gap:"4px",flexWrap:"wrap"}}>{["Strength","Camminata","Yoga","Cardio","HIIT","Riposo"].map(function(t){return<button key={t} onClick={function(){setTF(Object.assign({},tF,{type:t}));}} style={{padding:"7px 12px",borderRadius:"10px",border:tF.type===t?"none":"1px solid "+C.bdr,background:tF.type===t?C.rose:C.white,color:tF.type===t?C.white:C.txtM,fontSize:"11px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>{t}</button>;})}</div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Durata (min) *</label><input type="number" placeholder="55" value={tF.duration} onChange={function(e){setTF(Object.assign({},tF,{duration:e.target.value}));}} style={iS}/></div><div><label style={lS}>Calorie</label><input type="number" placeholder="380" value={tF.calories} onChange={function(e){setTF(Object.assign({},tF,{calories:e.target.value}));}} style={iS}/></div><div><label style={lS}>FC media</label><input type="number" placeholder="128" value={tF.hr} onChange={function(e){setTF(Object.assign({},tF,{hr:e.target.value}));}} style={iS}/></div></div><button onClick={addT} style={{width:"100%",padding:"11px",borderRadius:"12px",border:"none",background:C.rose,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva</button></div></Cd>)}
+      {workouts.length===0&&<Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>Nessun allenamento registrato.</Info>}
+      <div style={{display:"grid",gap:"6px"}}>{workouts.slice(0,14).map(function(w,i){return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{display:"flex",gap:"6px",alignItems:"center",marginBottom:"2px"}}><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fmtD(w.date)}</span><Pill color={tcMap[w.type]||C.sage}>{w.type}</Pill></div><div style={{display:"flex",gap:"10px"}}>{w.duration>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{w.duration} min</span>}{w.calories>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{w.calories} kcal</span>}{w.hr>0&&<span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>FC {w.hr}</span>}</div></div><button onClick={function(){delT(i);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px"}}> ✕</button></div></Cd>);})}</div>
+    </div>)}
+    {sub==="daily"&&(<div style={{display:"grid",gap:"10px"}}>
+      <Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Inserisci i dati di <strong>oggi</strong> dal tuo Garmin Connect.</Info>
+      <Cd accent={C.sage}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",margin:0,color:C.txt}}>Dati Giornalieri</h4>{!em&&<button onClick={function(){setDF(Object.assign({},daily));setEM(true);}} style={{padding:"6px 14px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Modifica</button>}</div>
+      {!em?(<div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"—",ic:"🚶",c:C.sage},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"—",ic:"❤️",c:C.rose},{l:"Stress",v:daily.stress?String(daily.stress):"—",ic:"🧠",c:C.amber},{l:"Body Battery",v:daily.bb?daily.bb+"%":"—",ic:"🔋",c:C.sage},{l:"VO2 Max",v:daily.vo2?String(daily.vo2):"—",ic:"🫁",c:C.plum}].map(function(m,i){return(<div key={i} style={{display:"flex",gap:"8px",alignItems:"center",padding:"10px",borderRadius:"10px",background:C.bg}}><span style={{fontSize:"18px"}}>{m.ic}</span><div><div style={{fontSize:"15px",fontWeight:"700",color:m.c,fontFamily:F.s}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div></div>);})}</div>):(<div style={{display:"grid",gap:"8px"}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Passi</label><input type="number" value={dF.steps} onChange={function(e){setDF(Object.assign({},dF,{steps:e.target.value}));}} style={iS}/></div><div><label style={lS}>FC Riposo</label><input type="number" value={dF.rhr} onChange={function(e){setDF(Object.assign({},dF,{rhr:e.target.value}));}} style={iS}/></div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Stress</label><input type="number" value={dF.stress} onChange={function(e){setDF(Object.assign({},dF,{stress:e.target.value}));}} style={iS}/></div><div><label style={lS}>Body Battery %</label><input type="number" value={dF.bb} onChange={function(e){setDF(Object.assign({},dF,{bb:e.target.value}));}} style={iS}/></div><div><label style={lS}>VO2 Max</label><input type="number" value={dF.vo2} onChange={function(e){setDF(Object.assign({},dF,{vo2:e.target.value}));}} style={iS}/></div></div><div style={{display:"flex",gap:"8px"}}><button onClick={savD} style={{flex:1,padding:"11px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva</button><button onClick={function(){setEM(false);}} style={{padding:"11px 16px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"13px",fontFamily:F.s,cursor:"pointer"}}>Annulla</button></div></div>)}</Cd>
+    </div>)}
+  </div>);
+}
+
+
+
+
+/* ═══════════ BENESSERE (Integratori + Sonno) ═══════════ */
+function Benessere(){
+  const[sub,setSub]=useState("supps");
+  return(<div>
+    <SecH title="Benessere PCOS" sub="Integratori, sonno e gestione dello stress"/>
+    <SubT tabs={[{k:"supps",l:"Integratori",i:"💊"},{k:"sleep",l:"Sonno",i:"😴"},{k:"tips",l:"Tips PCOS",i:"💡"}]} active={sub} onSel={setSub}/>
+    {sub==="supps"&&<SuppTracker/>}
+    {sub==="sleep"&&(<div style={{display:"grid",gap:"12px"}}><SleepTracker/><Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>Perche il sonno conta nella PCOS:</strong> Dormire meno di 7 ore aumenta il cortisolo del 37%, peggiora l'insulino-resistenza e aumenta la fame il giorno dopo. Punta a 7-9 ore per notte.</Info></div>)}
+    {sub==="tips"&&(<div style={{display:"grid",gap:"10px"}}>
+      {[{t:"Cortisolo e grasso addominale",d:"Lo stress cronico alza il cortisolo, che nella PCOS e gia elevato. Il cortisolo promuove l'accumulo di grasso viscerale. Meditazione, camminate e sonno di qualita lo riducono.",ic:"🧠",c:C.plum},
+      {t:"Infiammazione cronica silente",d:"La PCOS e associata a infiammazione cronica di basso grado. Gli omega-3, la curcuma, le verdure crucifere e il te verde la combattono.",ic:"🔥",c:C.rose},
+      {t:"Insulino-resistenza: il cuore della PCOS",d:"Il 70% delle donne PCOS ha insulino-resistenza. L'inositolo, l'esercizio fisico e mangiare le verdure PRIMA dei carboidrati migliorano la sensibilita insulinica.",ic:"📊",c:C.amber},
+      {t:"Il circolo vizioso dello stress",d:"Stress → cortisolo alto → fame emotiva → zuccheri → picco insulinico → piu grasso → piu stress. Rompi il ciclo con attivita fisica e routine regolari.",ic:"🔄",c:C.berry},
+      {t:"Vitamina D e PCOS",d:"L'80% delle donne PCOS e carente di vitamina D. Supplementare migliora ciclo mestruale, umore e sensibilita insulinica. Target: 40-60 ng/mL.",ic:"☀️",c:C.amber},
+      {t:"Il potere dell'inositolo",d:"Il myo-inositolo (4g/giorno) + D-chiro-inositolo (rapporto 40:1) migliorano ovulazione, insulina, androgeni e qualita ovocitaria. E l'integratore #1 per la PCOS.",ic:"💊",c:C.sage}
+      ].map(function(item,i){return(<Cd key={i} accent={item.c}><div style={{display:"flex",gap:"10px",alignItems:"flex-start"}}><span style={{fontSize:"20px",flexShrink:0}}>{item.ic}</span><div><h4 style={{margin:"0 0 3px",fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}}>{item.t}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.5}}>{item.d}</p></div></div></Cd>);})}
+    </div>)}
+  </div>);
+}
+
+
+/* ═══════════ APP PRINCIPALE ═══════════ */
+function App(){
+  const[tab,setTab]=useState("alimentazione");
+  const[profile,setProfile]=useState(function(){return LD("profile",DEF_PROF);});
+  var scrollRef=useRef(null);
+  useEffect(function(){if(scrollRef.current)scrollRef.current.scrollTop=0;},[tab]);
+  useEffect(function(){SV("profile",profile);},[profile]);
+  var mc=calcMacros(profile);
+  return(
+    <div style={{fontFamily:F.s,background:"linear-gradient(180deg,"+C.bg+","+C.bgW+")",minHeight:"100vh",display:"flex",flexDirection:"column"}}>
+      <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"12px 16px 8px",position:"sticky",top:0,zIndex:100}}>
+        <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
+          <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,"+C.sage+","+C.rose+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>🌸</div>
+          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v2.0 | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
+          <div style={{textAlign:"right"}}><div style={{fontSize:"12px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"8px",color:C.txtL,fontFamily:F.s}}>goal {profile.goalW} kg</div></div>
+        </div>
+        <div style={{display:"flex",gap:"2px",overflowX:"auto"}}>
+          <NavTab label="Cibo" icon="🥗" active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}}/>
+          <NavTab label="Gym" icon="🏋️‍♀️" active={tab==="allenamento"} onClick={function(){setTab("allenamento");}}/>
+          <NavTab label="Digiuno" icon="⏳" active={tab==="digiuno"} onClick={function(){setTab("digiuno");}}/>
+          <NavTab label="Ciclo" icon="🩸" active={tab==="ciclo"} onClick={function(){setTab("ciclo");}}/>
+          <NavTab label="Garmin" icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
+          <NavTab label="Salute" icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
+        </div>
+      </div>
+      <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+        <DailyQuote/>
+        {tab==="alimentazione"&&<Alimentazione profile={profile} setProfile={setProfile}/>}
+        {tab==="allenamento"&&<Allenamento/>}
+        {tab==="digiuno"&&<Digiuno profile={profile}/>}
+        {tab==="ciclo"&&<CicloMestruale/>}
+        {tab==="garmin"&&<GarminSection profile={profile}/>}
+        {tab==="benessere"&&<Benessere/>}
+      </div>
+      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v2.0 | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
     </div>
   );
 }
 
-function App() {
-  const [tab, setTab] = useState("alimentazione");
-  var scrollRef = useRef(null);
-  useEffect(function () { if (scrollRef.current) scrollRef.current.scrollTop = 0; }, [tab]);
-  return (
-    <div style={{ fontFamily: F.s, background: "linear-gradient(180deg,"+C.bg+","+C.bgW+")", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-      <div style={{ background: C.white, borderBottom: "1px solid "+C.bdr, padding: "12px 16px 8px", position: "sticky", top: 0, zIndex: 100 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-          <div style={{ width: "34px", height: "34px", borderRadius: "10px", background: "linear-gradient(135deg,"+C.sage+","+C.rose+")", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>{"\u{1F338}"}</div>
-          <div style={{ flex: 1 }}><h1 style={{ fontFamily: F.p, fontSize: "17px", fontWeight: "600", color: C.txt, margin: 0 }}>PCOS Daily</h1><p style={{ fontSize: "9px", color: C.txtL, margin: "1px 0 0" }}>~1500 kcal | IF 14:10 (10-20) | Personalizzato</p></div>
-          <div style={{ textAlign: "right" }}><div style={{ fontSize: "12px", fontWeight: "700", color: C.sage, fontFamily: F.s }}>77 kg</div><div style={{ fontSize: "8px", color: C.txtL, fontFamily: F.s }}>goal 68 kg</div></div>
-        </div>
-        <div style={{ display: "flex", gap: "2px", overflowX: "auto" }}>
-          <NavTab label="Cibo" icon={"\u{1F957}"} active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}} />
-          <NavTab label="Gym" icon={"\u{1F3CB}\uFE0F\u200D\u2640\uFE0F"} active={tab==="allenamento"} onClick={function(){setTab("allenamento");}} />
-          <NavTab label="Digiuno" icon={"\u231B"} active={tab==="digiuno"} onClick={function(){setTab("digiuno");}} />
-          <NavTab label="Ciclo" icon={"\u{1FA78}"} active={tab==="ciclo"} onClick={function(){setTab("ciclo");}} />
-          <NavTab label="Garmin" icon={"\u231A"} active={tab==="garmin"} onClick={function(){setTab("garmin");}} />
-        </div>
-      </div>
-      <div ref={scrollRef} style={{ flex: 1, padding: "18px 12px 32px", maxWidth: "640px", width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
-        <DailyQuote />
-        {tab === "alimentazione" && <Alimentazione />}
-        {tab === "allenamento" && <Allenamento />}
-        {tab === "digiuno" && <Digiuno />}
-        {tab === "ciclo" && <CicloMestruale />}
-        {tab === "garmin" && <GarminSection />}
-      </div>
-      <div style={{ textAlign: "center", padding: "12px", borderTop: "1px solid "+C.bdr, background: C.white }}><p style={{ fontSize: "9px", color: C.txtL, margin: 0 }}>PCOS Daily | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
-    </div>
-  );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root=ReactDOM.createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
 </script>
 </body>
