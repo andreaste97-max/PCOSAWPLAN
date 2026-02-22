@@ -605,6 +605,138 @@ function CicloMestruale(){
 }
 
 
+/* ═══════════ GARMIN CSV IMPORT ═══════════ */
+function parseCSV(text){var lines=text.split(/\r?\n/).filter(function(l){return l.trim();});if(lines.length<2)return[];var headers=[];var inQuote=false;var current="";for(var c=0;c<lines[0].length;c++){var ch=lines[0][c];if(ch==='"')inQuote=!inQuote;else if((ch===","||ch===";")&&!inQuote){headers.push(current.trim().toLowerCase());current="";}else current+=ch;}headers.push(current.trim().toLowerCase());var rows=[];for(var r=1;r<lines.length;r++){var vals=[];inQuote=false;current="";for(var c2=0;c2<lines[r].length;c2++){var ch2=lines[r][c2];if(ch2==='"')inQuote=!inQuote;else if((ch2===","||ch2===";")&&!inQuote){vals.push(current.trim());current="";}else current+=ch2;}vals.push(current.trim());if(vals.length>=headers.length){var obj={};headers.forEach(function(h,i){obj[h]=vals[i]||"";});rows.push(obj);}}return rows;}
+function detectGarminType(rows){if(!rows||rows.length===0)return"unknown";var keys=Object.keys(rows[0]).join(" ").toLowerCase();if(keys.includes("weight")&&(keys.includes("bmi")||keys.includes("fat")||keys.includes("body")))return"weight";if(keys.includes("activity")&&(keys.includes("calories")||keys.includes("distance")||keys.includes("time")))return"activities";if(keys.includes("peso")&&(keys.includes("imc")||keys.includes("grasso")))return"weight_it";if(keys.includes("attivit")&&(keys.includes("calorie")||keys.includes("distanza")))return"activities_it";return"unknown";}
+function parseGarminWeight(rows,type){var isIT=type==="weight_it";return rows.map(function(r){var dateRaw=r.date||r.data||r.day||r.giorno||Object.values(r)[0]||"";var d=dateRaw.replace(/\//g,"-");if(d.match(/^\d{2}-\d{2}-\d{4}$/))d=d.split("-").reverse().join("-");var wRaw=r.weight||r.peso||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("weight")||k.toLowerCase().includes("peso");})]||"0";var w=parseFloat(String(wRaw).replace(",","."));if(isNaN(w)||w<30||w>300)return null;var bfRaw=r["fat %"]||r["body fat"]||r["% grasso"]||r["fat"]||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("fat")||k.toLowerCase().includes("grasso");})]||"0";var bf=parseFloat(String(bfRaw).replace(",",".").replace("%",""));if(isNaN(bf))bf=0;var mmRaw=r["muscle mass"]||r["massa muscolare"]||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("muscle")||k.toLowerCase().includes("muscol");})]||"0";var mm=parseFloat(String(mmRaw).replace(",",".").replace("%",""));if(isNaN(mm))mm=0;var bmRaw=r["bone mass"]||r["massa ossea"]||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("bone")||k.toLowerCase().includes("oss");})]||"0";var bm=parseFloat(String(bmRaw).replace(",","."));if(isNaN(bm))bm=0;var bwRaw=r["body water"]||r["acqua corporea"]||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("water")||k.toLowerCase().includes("acqua");})]||"0";var bw=parseFloat(String(bwRaw).replace(",",".").replace("%",""));if(isNaN(bw))bw=0;if(!d||d.length<8)return null;return{date:d.slice(0,10),weight:w,bf:bf,mm:mm,bm:bm,bw:bw};}).filter(Boolean);}
+function parseGarminActivities(rows,type){var typeMap={"running":"Cardio","cycling":"Cardio","swimming":"Cardio","walking":"Camminata","hiking":"Camminata","strength":"Strength","yoga":"Yoga","hiit":"HIIT","corsa":"Cardio","ciclismo":"Cardio","nuoto":"Cardio","camminata":"Camminata","escursionismo":"Camminata","forza":"Strength"};return rows.map(function(r){var dateRaw=r.date||r.data||Object.values(r)[0]||"";var d=dateRaw.replace(/\//g,"-");if(d.match(/^\d{2}-\d{2}-\d{4}$/))d=d.split("-").reverse().join("-");var actType=r["activity type"]||r["tipo attività"]||r["tipo di attività"]||r.type||r.tipo||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("type")||k.toLowerCase().includes("tipo");})]||"";var mapped=typeMap[actType.toLowerCase()]||"Strength";var durRaw=r.time||r.duration||r.durata||r.tempo||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("time")||k.toLowerCase().includes("durat")||k.toLowerCase().includes("tempo");})]||"0";var dur=0;if(String(durRaw).includes(":")){var parts=String(durRaw).split(":");dur=parseInt(parts[0])*60+(parseInt(parts[1])||0);}else{dur=parseInt(durRaw)||0;}if(dur>600)dur=Math.round(dur/60);var calRaw=r.calories||r.calorie||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("calor");})]||"0";var cal=parseInt(String(calRaw).replace(",","").replace(".",""))||0;var hrRaw=r["avg hr"]||r["avg heart rate"]||r["fc media"]||r[Object.keys(r).find(function(k){return k.toLowerCase().includes("heart")||k.toLowerCase().includes("hr")||k.toLowerCase().includes("fc");})]||"0";var hr=parseInt(hrRaw)||0;if(!d||d.length<8||dur<=0)return null;return{date:d.slice(0,10),type:mapped,duration:dur,calories:cal,hr:hr};}).filter(Boolean);}
+function GarminImport(props){
+  var weighins=props.weighins,setWeighins=props.setWeighins,workouts=props.workouts,setWorkouts=props.setWorkouts;
+  var _s1=useState(null),result=_s1[0],setResult=_s1[1];
+  var _s2=useState(""),status=_s2[0],setStatus=_s2[1];
+  var _s3=useState(null),preview=_s3[0],setPreview=_s3[1];
+  function handleFile(e){
+    var file=e.target.files[0];if(!file)return;
+    setStatus(LANG_STORE==="en"?"Reading file...":"Lettura file...");setResult(null);setPreview(null);
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      var text=ev.target.result;var rows=parseCSV(text);
+      if(rows.length===0){setStatus(LANG_STORE==="en"?"Error: empty or invalid CSV":"Errore: CSV vuoto o non valido");return;}
+      var type=detectGarminType(rows);
+      if(type==="weight"||type==="weight_it"){
+        var parsed=parseGarminWeight(rows,type);
+        if(parsed.length===0){setStatus(LANG_STORE==="en"?"No valid weight data found":"Nessun dato peso valido trovato");return;}
+        setPreview({type:"weight",data:parsed,total:rows.length});
+        setStatus(LANG_STORE==="en"?parsed.length+" weight entries ready to import":parsed.length+" pesate pronte per l'importazione");
+      }else if(type==="activities"||type==="activities_it"){
+        var parsed2=parseGarminActivities(rows,type);
+        if(parsed2.length===0){setStatus(LANG_STORE==="en"?"No valid activity data found":"Nessun dato attivita valido trovato");return;}
+        setPreview({type:"activities",data:parsed2,total:rows.length});
+        setStatus(LANG_STORE==="en"?parsed2.length+" activities ready to import":parsed2.length+" attivita pronte per l'importazione");
+      }else{
+        var parsed3=parseGarminWeight(rows,"weight");
+        if(parsed3.length>0){setPreview({type:"weight",data:parsed3,total:rows.length});setStatus(LANG_STORE==="en"?parsed3.length+" weight entries detected":parsed3.length+" pesate rilevate");return;}
+        var parsed4=parseGarminActivities(rows,"activities");
+        if(parsed4.length>0){setPreview({type:"activities",data:parsed4,total:rows.length});setStatus(LANG_STORE==="en"?parsed4.length+" activities detected":parsed4.length+" attivita rilevate");return;}
+        setStatus(LANG_STORE==="en"?"Could not recognize Garmin CSV format. Try exporting from Garmin Connect > Reports.":"Formato CSV non riconosciuto. Prova a esportare da Garmin Connect > Report.");
+      }
+    };reader.readAsText(file);
+  }
+  function doImport(){
+    if(!preview)return;
+    if(preview.type==="weight"){
+      var existDates={};weighins.forEach(function(w){existDates[w.date]=true;});
+      var newOnes=preview.data.filter(function(w){return!existDates[w.date];});
+      var merged=weighins.concat(newOnes).sort(function(a,b){return a.date.localeCompare(b.date);});
+      setWeighins(merged);SV("weighins",merged);
+      setResult({added:newOnes.length,skipped:preview.data.length-newOnes.length,type:"weight"});
+    }else{
+      var existKeys={};workouts.forEach(function(w){existKeys[w.date+"_"+w.type+"_"+w.duration]=true;});
+      var newW=preview.data.filter(function(w){return!existKeys[w.date+"_"+w.type+"_"+w.duration];});
+      var merged2=workouts.concat(newW).sort(function(a,b){return b.date.localeCompare(a.date);});
+      setWorkouts(merged2);SV("workouts",merged2);
+      setResult({added:newW.length,skipped:preview.data.length-newW.length,type:"activities"});
+    }
+    setPreview(null);setStatus("");
+  }
+  var guideSteps=LANG_STORE==="en"?[
+    {i:"1️⃣",t:"Open Garmin Connect",d:"Go to connect.garmin.com or open the Garmin Connect app"},
+    {i:"2️⃣",t:"Navigate to Reports",d:"For weight: Health Stats → Weight. For activities: Activities → All Activities"},
+    {i:"3️⃣",t:"Export CSV",d:"Click the export/download icon (⬇️) and select CSV format"},
+    {i:"4️⃣",t:"Upload here",d:"Upload the CSV file below and confirm the import"}
+  ]:[
+    {i:"1️⃣",t:"Apri Garmin Connect",d:"Vai su connect.garmin.com o apri l'app Garmin Connect"},
+    {i:"2️⃣",t:"Vai ai Report",d:"Per il peso: Statistiche Salute → Peso. Per le attivita: Attivita → Tutte le Attivita"},
+    {i:"3️⃣",t:"Esporta CSV",d:"Clicca l'icona esporta/scarica (⬇️) e seleziona formato CSV"},
+    {i:"4️⃣",t:"Carica qui",d:"Carica il file CSV qui sotto e conferma l'importazione"}
+  ];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}},
+      React.createElement("h4",{style:{fontFamily:F.p,fontSize:"15px",color:C.sageD,margin:"0 0 6px"}},LANG_STORE==="en"?"📥 Import from Garmin Connect":"📥 Importa da Garmin Connect"),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 12px",lineHeight:1.6}},LANG_STORE==="en"?"Export your data from Garmin Connect as CSV, then upload it here. Weight, body composition and activities will be imported automatically.":"Esporta i tuoi dati da Garmin Connect come CSV, poi caricali qui. Peso, composizione corporea e attivita verranno importati automaticamente."),
+      React.createElement("div",{style:{display:"grid",gap:"8px"}},guideSteps.map(function(s,i){return React.createElement("div",{key:i,style:{display:"flex",gap:"10px",alignItems:"flex-start",padding:"8px 10px",borderRadius:"10px",background:C.white}},
+        React.createElement("span",{style:{fontSize:"16px",flexShrink:0}},s.i),
+        React.createElement("div",null,React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.txt,margin:0}},s.t),React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},s.d))
+      );}))
+    ),
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 10px"}},LANG_STORE==="en"?"📂 Upload CSV File":"📂 Carica File CSV"),
+      React.createElement("label",{style:{display:"block",padding:"20px",borderRadius:"12px",border:"2px dashed "+C.sageL,background:C.sageP,textAlign:"center",cursor:"pointer",transition:"all .2s"}},
+        React.createElement("input",{type:"file",accept:".csv,.txt",onChange:handleFile,style:{display:"none"}}),
+        React.createElement("span",{style:{fontSize:"28px",display:"block",marginBottom:"6px"}},"📄"),
+        React.createElement("p",{style:{fontSize:"12px",fontFamily:F.s,fontWeight:"600",color:C.sageD,margin:0}},LANG_STORE==="en"?"Tap to select CSV file":"Tocca per selezionare il file CSV"),
+        React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"4px 0 0"}},LANG_STORE==="en"?"Supports: Weight, Body Composition, Activities":"Supporta: Peso, Composizione Corporea, Attivita")
+      ),
+      status&&React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.sageD,margin:"10px 0 0",textAlign:"center",fontWeight:"600"}},status)
+    ),
+    preview&&React.createElement(Cd,{accent:C.sage},
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.sageD,margin:"0 0 8px"}},LANG_STORE==="en"?"📋 Preview":"📋 Anteprima"),
+      React.createElement("div",{style:{maxHeight:"200px",overflow:"auto",marginBottom:"10px"}},
+        preview.type==="weight"?React.createElement("table",{style:{width:"100%",fontSize:"10px",fontFamily:F.s,borderCollapse:"collapse"}},
+          React.createElement("thead",null,React.createElement("tr",null,
+            [LANG_STORE==="en"?"Date":"Data","Peso","BF%","MM%","Ossa","Acqua%"].map(function(h,i){return React.createElement("th",{key:i,style:{padding:"4px 6px",textAlign:"left",borderBottom:"1px solid "+C.bdr,color:C.txtL,fontWeight:"600"}},h);})
+          )),
+          React.createElement("tbody",null,preview.data.slice(0,10).map(function(r,i){return React.createElement("tr",{key:i},
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.date),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg,fontWeight:"600",color:C.sage}},r.weight+"kg"),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.bf||"-"),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.mm||"-"),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.bm||"-"),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.bw||"-")
+          );}))
+        ):React.createElement("table",{style:{width:"100%",fontSize:"10px",fontFamily:F.s,borderCollapse:"collapse"}},
+          React.createElement("thead",null,React.createElement("tr",null,
+            [LANG_STORE==="en"?"Date":"Data",LANG_STORE==="en"?"Type":"Tipo","Min","Kcal","FC"].map(function(h,i){return React.createElement("th",{key:i,style:{padding:"4px 6px",textAlign:"left",borderBottom:"1px solid "+C.bdr,color:C.txtL,fontWeight:"600"}},h);})
+          )),
+          React.createElement("tbody",null,preview.data.slice(0,10).map(function(r,i){return React.createElement("tr",{key:i},
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.date),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},React.createElement(Pill,{color:C.sage},r.type)),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.duration),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.calories||"-"),
+            React.createElement("td",{style:{padding:"3px 6px",borderBottom:"1px solid "+C.bg}},r.hr||"-")
+          );}))
+        )
+      ),
+      preview.data.length>10&&React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,textAlign:"center"}},"+"+(preview.data.length-10)+(LANG_STORE==="en"?" more entries...":" altre voci...")),
+      React.createElement("button",{onClick:doImport,style:{width:"100%",padding:"12px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},"✅ "+(LANG_STORE==="en"?"Import "+preview.data.length+" entries":"Importa "+preview.data.length+" voci"))
+    ),
+    result&&React.createElement(Cd,{style:{background:C.sageP,border:"1px solid "+C.sageL}},
+      React.createElement("div",{style:{textAlign:"center"}},
+        React.createElement("span",{style:{fontSize:"32px"}},"🎉"),
+        React.createElement("h4",{style:{fontFamily:F.p,fontSize:"15px",color:C.sageD,margin:"6px 0 4px"}},LANG_STORE==="en"?"Import Complete!":"Importazione Completata!"),
+        React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txtM,margin:0}},
+          (LANG_STORE==="en"?"Added: ":"Aggiunti: ")+React.createElement("strong",null,result.added)+(LANG_STORE==="en"?" new | Skipped: ":" nuovi | Saltati: ")+React.createElement("strong",null,result.skipped)+(LANG_STORE==="en"?" duplicates":" duplicati")
+        ),
+        React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.sageD,margin:"6px 0 0"}},result.type==="weight"?(LANG_STORE==="en"?"Check the Weight tab for your updated data":"Controlla il tab Pesate per i dati aggiornati"):(LANG_STORE==="en"?"Check the Workouts tab for your updated data":"Controlla il tab Allenamenti per i dati aggiornati"))
+      )
+    ),
+    React.createElement(Cd,{style:{background:C.amberP,border:"1px solid "+C.amberL}},
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.amber,margin:0,lineHeight:1.6}},
+        LANG_STORE==="en"?"💡 Tip: You can import multiple CSV files. Duplicate entries (same date) are automatically skipped. For best results, export from Garmin Connect web (connect.garmin.com) rather than the mobile app.":"💡 Suggerimento: Puoi importare piu file CSV. Le voci duplicate (stessa data) vengono saltate automaticamente. Per risultati migliori, esporta da Garmin Connect web (connect.garmin.com) piuttosto che dall'app mobile."
+      )
+    )
+  );
+}
 /* ═══════════ GARMIN TRACKER ═══════════ */
 function GarminSection({profile}){
   const[sub,setSub]=useState("dash");
@@ -632,7 +764,7 @@ function GarminSection({profile}){
   var chartColors={weight:C.sage,bf:C.rose,mm:C.amber,bw:C.blue};
   return(<div>
     <SecH title="Garmin Tracker" sub="Forerunner 570 + Index S2 | Inserimento manuale"/>
-    <SubT tabs={[{k:"dash",l:"Dashboard",i:"📊"},{k:"charts",l:"Grafici",i:"📈"},{k:"peso",l:"Pesate",i:"⚖️"},{k:"workout",l:"Allenamenti",i:"⌚"},{k:"daily",l:"Oggi",i:"❤️"}]} active={sub} onSel={setSub}/>
+    <SubT tabs={[{k:"dash",l:"Dashboard",i:"📊"},{k:"charts",l:"Grafici",i:"📈"},{k:"peso",l:"Pesate",i:"⚖️"},{k:"workout",l:"Allenamenti",i:"⌚"},{k:"daily",l:"Oggi",i:"❤️"},{k:"import",l:LANG_STORE==="en"?"Import":"Importa",i:"📥"}]} active={sub} onSel={setSub}/>
     {sub==="dash"&&(<div style={{display:"grid",gap:"10px"}}>
       <Cd accent={C.sage} style={{background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><h3 style={{fontFamily:F.p,fontSize:"15px",margin:"0 0 10px",color:C.sageD}}>Stato Attuale</h3><div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr"}}>{[{l:"Peso",v:lat?lat.weight+" kg":"--",c:C.sage},{l:"BMI",v:bmi,c:C.amber},{l:"Body Fat",v:lat?lat.bf+"%":"--",c:C.rose}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div><div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr 1fr",marginTop:"8px"}}>{[{l:"Muscolo",v:lat?lat.mm+"%":"--",c:C.sage},{l:"Ossa",v:lat?lat.bm+" kg":"--",c:C.amber},{l:"Acqua",v:lat?lat.bw+"%":"--",c:C.blue}].map(function(m,i){return(<div key={i} style={{textAlign:"center",padding:"10px 4px",borderRadius:"10px",background:C.white}}><div style={{fontFamily:F.s,fontSize:"16px",fontWeight:"700",color:m.c}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div>);})}</div></Cd>
       <div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"—",s:"/"+profile.stepsG.toLocaleString(),c:C.sage,b:true,bv:daily.steps||0,bm:profile.stepsG},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"—",c:C.rose},{l:"Body Battery",v:daily.bb?daily.bb+"%":"—",c:C.sage,b:true,bv:daily.bb||0,bm:100},{l:"Stress",v:daily.stress?String(daily.stress):"—",s:daily.stress<30?"Basso":daily.stress<60?"Medio":"Alto",c:C.amber}].map(function(m,i){return(<Cd key={i} style={{padding:"12px"}}><span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL,textTransform:"uppercase"}}>{m.l}</span><div style={{fontFamily:F.s,fontSize:"18px",fontWeight:"700",color:m.c||C.txt}}>{m.v}</div>{m.s&&<div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{m.s}</div>}{m.b&&<div style={{marginTop:"5px"}}><Bar v={m.bv} mx={m.bm} color={m.c||C.sage}/></div>}</Cd>);})}</div>
@@ -659,6 +791,7 @@ function GarminSection({profile}){
       <Cd accent={C.sage}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"12px"}}><h4 style={{fontFamily:F.s,fontSize:"14px",fontWeight:"600",margin:0,color:C.txt}}>Dati Giornalieri</h4>{!em&&<button onClick={function(){setDF(Object.assign({},daily));setEM(true);}} style={{padding:"6px 14px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Modifica</button>}</div>
       {!em?(<div style={{display:"grid",gap:"8px",gridTemplateColumns:"1fr 1fr"}}>{[{l:"Passi",v:daily.steps?daily.steps.toLocaleString():"—",ic:"🚶",c:C.sage},{l:"FC Riposo",v:daily.rhr?daily.rhr+" bpm":"—",ic:"❤️",c:C.rose},{l:"Stress",v:daily.stress?String(daily.stress):"—",ic:"🧠",c:C.amber},{l:"Body Battery",v:daily.bb?daily.bb+"%":"—",ic:"🔋",c:C.sage},{l:"VO2 Max",v:daily.vo2?String(daily.vo2):"—",ic:"🫁",c:C.plum}].map(function(m,i){return(<div key={i} style={{display:"flex",gap:"8px",alignItems:"center",padding:"10px",borderRadius:"10px",background:C.bg}}><span style={{fontSize:"18px"}}>{m.ic}</span><div><div style={{fontSize:"15px",fontWeight:"700",color:m.c,fontFamily:F.s}}>{m.v}</div><div style={{fontSize:"9px",color:C.txtL,fontFamily:F.s}}>{m.l}</div></div></div>);})}</div>):(<div style={{display:"grid",gap:"8px"}}><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}}><div><label style={lS}>Passi</label><input type="number" value={dF.steps} onChange={function(e){setDF(Object.assign({},dF,{steps:e.target.value}));}} style={iS}/></div><div><label style={lS}>FC Riposo</label><input type="number" value={dF.rhr} onChange={function(e){setDF(Object.assign({},dF,{rhr:e.target.value}));}} style={iS}/></div></div><div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><div><label style={lS}>Stress</label><input type="number" value={dF.stress} onChange={function(e){setDF(Object.assign({},dF,{stress:e.target.value}));}} style={iS}/></div><div><label style={lS}>Body Battery %</label><input type="number" value={dF.bb} onChange={function(e){setDF(Object.assign({},dF,{bb:e.target.value}));}} style={iS}/></div><div><label style={lS}>VO2 Max</label><input type="number" value={dF.vo2} onChange={function(e){setDF(Object.assign({},dF,{vo2:e.target.value}));}} style={iS}/></div></div><div style={{display:"flex",gap:"8px"}}><button onClick={savD} style={{flex:1,padding:"11px",borderRadius:"12px",border:"none",background:C.sage,color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Salva</button><button onClick={function(){setEM(false);}} style={{padding:"11px 16px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"13px",fontFamily:F.s,cursor:"pointer"}}>Annulla</button></div></div>)}</Cd>
     </div>)}
+    {sub==="import"&&(<GarminImport weighins={weighins} setWeighins={setWeighins} workouts={workouts} setWorkouts={setWorkouts}/>)}
   </div>);
 }
 
