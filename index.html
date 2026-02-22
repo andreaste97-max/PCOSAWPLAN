@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="it">
 <head>
   <meta charset="UTF-8"/>
@@ -110,7 +110,7 @@ var fbAuth=firebase.auth();
 var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
-var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal"];
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
 function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
@@ -808,6 +808,326 @@ function MedicalDashboard(){
 }
 
 
+/* PHASE 6: SMART TRACKING */
+var SYMPTOMS_DEF=[
+{k:"acne",l:"Acne",i:"\ud83d\udd34",lEN:"Acne"},
+{k:"bloat",l:"Gonfiore",i:"\ud83e\udee7",lEN:"Bloating"},
+{k:"hairloss",l:"Caduta capelli",i:"\ud83d\udc87\u200d\u2640\ufe0f",lEN:"Hair Loss"},
+{k:"energy",l:"Energia",i:"\u26a1",lEN:"Energy"},
+{k:"mood",l:"Umore",i:"\ud83d\ude0a",lEN:"Mood"},
+{k:"cravings",l:"Voglie",i:"\ud83c\udf6b",lEN:"Cravings"},
+{k:"headache",l:"Mal di testa",i:"\ud83e\udd15",lEN:"Headache"},
+{k:"sleep_q",l:"Qualita sonno",i:"\ud83d\ude34",lEN:"Sleep Quality"},
+{k:"anxiety",l:"Ansia",i:"\ud83d\ude30",lEN:"Anxiety"},
+{k:"pain",l:"Dolore pelvico",i:"\ud83e\ude79",lEN:"Pelvic Pain"}
+];var HABIT_DEFS=[
+{k:"water_ok",l:"Acqua 2L+",i:"\ud83d\udca7",lEN:"Water 2L+"},
+{k:"workout_ok",l:"Allenamento",i:"\ud83c\udfcb\ufe0f",lEN:"Workout"},
+{k:"sleep_ok",l:"Sonno 7h+",i:"\ud83c\udf19",lEN:"Sleep 7h+"},
+{k:"if_ok",l:"IF completato",i:"\u23f3",lEN:"IF done"},
+{k:"vegs_ok",l:"Verdure",i:"\ud83e\udd66",lEN:"Veggies"},
+{k:"supps_ok",l:"Integratori",i:"\ud83d\udc8a",lEN:"Supplements"},
+{k:"steps_ok",l:"8000+ passi",i:"\ud83d\udc5f",lEN:"8000+ steps"},
+{k:"nosugar_ok",l:"No zuccheri",i:"\ud83d\udeab",lEN:"No sugar"}
+];
+var DAILY_CHALLENGES=[
+"Cammina 20 min dopo pranzo per abbassare la glicemia","Aggiungi semi di zucca al pranzo (zinco!)","Bevi 3 tazze di te verde oggi","Inizia il pasto con verdure crude abbondanti","Prova 5 min di box breathing prima di dormire","Sostituisci il latte vaccino con latte di mandorla oggi","Fai 10 min di stretching appena sveglia","Prepara snack PCOS-friendly: mandorle + cioccolato fondente","Bevi acqua appena sveglia, prima del caffe","Prova mindful eating senza telefono","Aggiungi cannella allo yogurt (migliora insulino-sensibilita)","Vai a letto 30 min prima stasera","Fai una camminata nella natura di 15 min","Prepara hummus fatto in casa","Prova colazione salata oggi","Scrivi 3 cose per cui sei grata - riduce cortisolo","Sostituisci gallette riso con pane di segale","Aggiungi avocado a un pasto oggi","Prendi le scale tutto il giorno","Prepara un'insalata con 5+ ingredienti"
+];
+function getDailyChallenge(){var day=Math.floor(Date.now()/86400000);return DAILY_CHALLENGES[day%DAILY_CHALLENGES.length];}
+function SymptomTracker(){
+  var _s1=useState(function(){return LD("symptoms",[]);}),log=_s1[0],setLog=_s1[1];
+  var _s2=useState(function(){var ex=log.find(function(e){return e.date===todayK();});return ex?ex.vals:{};}),today=_s2[0],setToday=_s2[1];
+  function rate(k,v){var u=Object.assign({},today);u[k]=v;setToday(u);var entry={date:todayK(),vals:u};var nl=log.filter(function(e){return e.date!==todayK();}).concat([entry]);nl.sort(function(a,b){return b.date.localeCompare(a.date);});setLog(nl);SV("symptoms",nl);}
+  var last7=log.slice(0,7).reverse();
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 10px",color:C.plum}},LANG_STORE==="en"?"Today's Symptoms":"Sintomi di Oggi"," \u2014 ",fmtD(todayK())),
+      SYMPTOMS_DEF.map(function(s){return React.createElement("div",{key:s.k,style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"8px"}},
+        React.createElement("span",{style:{fontSize:"14px",width:"22px"}},s.i),
+        React.createElement("span",{style:{fontSize:"11px",fontFamily:F.s,flex:1,color:C.txt}},LANG_STORE==="en"?s.lEN:s.l),
+        React.createElement("div",{style:{display:"flex",gap:"3px"}},[1,2,3,4,5].map(function(v){return React.createElement("button",{key:v,onClick:function(){rate(s.k,v);},style:{width:"26px",height:"26px",borderRadius:"50%",border:"1.5px solid "+(today[s.k]>=v?C.plum:C.bdr),background:today[s.k]>=v?"linear-gradient(135deg,"+C.plum+","+C.rose+")":C.white,color:today[s.k]>=v?C.white:C.txtL,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},""+v);}))
+      );})
+    ),
+    last7.length>1&&React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"600",margin:"0 0 8px",color:C.sageD}},LANG_STORE==="en"?"7-Day Trend":"Trend 7 Giorni"),
+      SYMPTOMS_DEF.slice(0,5).map(function(s){return React.createElement("div",{key:s.k,style:{display:"flex",alignItems:"center",gap:"6px",marginBottom:"4px"}},
+        React.createElement("span",{style:{fontSize:"11px",width:"20px"}},s.i),
+        React.createElement("div",{style:{flex:1,display:"flex",gap:"2px"}},last7.map(function(d,i){var v=d.vals[s.k]||0;var colors=["#e8e8e8",C.sageP,C.sage,C.plumL,C.plum,C.rose];return React.createElement("div",{key:i,style:{flex:1,height:"14px",borderRadius:"3px",background:colors[v],transition:"all .3s"},title:fmtD(d.date)+": "+v+"/5"});}))
+      );})
+    )
+  );
+}
+function BodyMeasurements(){
+  var _s1=useState(function(){return LD("bodyMeas",[]);}),data=_s1[0],setData=_s1[1];
+  var _s2=useState({waist:"",hips:"",thigh:"",arm:""}),form=_s2[0],setForm=_s2[1];
+  function save(){if(!form.waist)return;var entry=Object.assign({date:todayK()},form);var u=[entry].concat(data.filter(function(e){return e.date!==todayK();})).slice(0,100);setData(u);SV("bodyMeas",u);setForm({waist:"",hips:"",arm:"",thigh:""});}
+  var latest=data[0];var whr=latest&&latest.waist&&latest.hips?(parseFloat(latest.waist)/parseFloat(latest.hips)).toFixed(2):null;
+  var whrRisk=whr?(parseFloat(whr)>0.85?"\u26a0\ufe0f "+(LANG_STORE==="en"?"High risk":"Rischio alto"):"\u2705 "+(LANG_STORE==="en"?"Normal":"Normale")):null;
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 8px",color:C.plum}},LANG_STORE==="en"?"Add Measurements (cm)":"Aggiungi Misure (cm)"),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px"}},
+        React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Waist":"Vita"),React.createElement("input",{type:"number",value:form.waist,onChange:function(e){setForm(Object.assign({},form,{waist:e.target.value}));},placeholder:"cm",style:iS})),
+        React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Hips":"Fianchi"),React.createElement("input",{type:"number",value:form.hips,onChange:function(e){setForm(Object.assign({},form,{hips:e.target.value}));},placeholder:"cm",style:iS})),
+        React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Thigh":"Coscia"),React.createElement("input",{type:"number",value:form.thigh,onChange:function(e){setForm(Object.assign({},form,{thigh:e.target.value}));},placeholder:"cm",style:iS})),
+        React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Arm":"Braccio"),React.createElement("input",{type:"number",value:form.arm,onChange:function(e){setForm(Object.assign({},form,{arm:e.target.value}));},placeholder:"cm",style:iS}))
+      ),
+      React.createElement("button",{onClick:save,disabled:!form.waist,style:{padding:"10px",borderRadius:"10px",border:"none",background:!form.waist?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",marginTop:"4px"}},LANG_STORE==="en"?"Save":"Salva")
+    ),
+    whr&&React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.plumP+","+C.roseP+")"}},
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"600",margin:"0 0 4px",color:C.plum}},LANG_STORE==="en"?"Waist/Hip Ratio":"Rapporto Vita/Fianchi"),
+      React.createElement("div",{style:{display:"flex",alignItems:"baseline",gap:"8px"}},React.createElement("span",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.plum}},whr),React.createElement("span",{style:{fontSize:"11px",fontFamily:F.s,color:C.txtM}},whrRisk)),
+      React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"4px 0 0"}},LANG_STORE==="en"?"WHR > 0.85 = higher insulin resistance risk":"WHR > 0.85 = rischio maggiore insulino-resistenza")
+    ),
+    data.length>0&&React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"600",margin:"0 0 6px",color:C.sageD}},LANG_STORE==="en"?"History":"Storico"),
+      data.slice(0,8).map(function(e,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",padding:"4px 0",borderBottom:"1px solid "+C.bdr,fontSize:"10px",fontFamily:F.s}},React.createElement("span",{style:{color:C.txtM}},fmtD(e.date)),React.createElement("span",null,(LANG_STORE==="en"?"W":"V")+":"+e.waist+" | "+(LANG_STORE==="en"?"H":"F")+":"+(e.hips||"-")+" | "+(LANG_STORE==="en"?"T":"C")+":"+(e.thigh||"-")));})
+    )
+  );
+}
+function HabitStreaks(){
+  var _s1=useState(function(){return LD("habits",{});}),habits=_s1[0],setHabits=_s1[1];
+  var dk=todayK();var todayH=habits[dk]||{};
+  function toggleHabit(k){var u=Object.assign({},habits);var td=Object.assign({},todayH);td[k]=!td[k];u[dk]=td;setHabits(u);SV("habits",u);}
+  function getStreak(k){var streak=0;var d=new Date();for(var i=0;i<365;i++){var key=d.toISOString().slice(0,10);if(habits[key]&&habits[key][k])streak++;else if(i>0)break;d.setDate(d.getDate()-1);}return streak;}
+  function getBestStreak(k){var best=0,cur=0;var d=new Date();for(var i=0;i<365;i++){var key=d.toISOString().slice(0,10);if(habits[key]&&habits[key][k]){cur++;if(cur>best)best=cur;}else cur=0;d.setDate(d.getDate()-1);}return best;}
+  var totalToday=HABIT_DEFS.filter(function(h){return todayH[h.k];}).length;
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.sageP+","+C.plumP+")"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        React.createElement("div",null,React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:0,color:C.sageD}},LANG_STORE==="en"?"Today":"Oggi"),React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"2px 0 0"}},totalToday+"/"+HABIT_DEFS.length+" "+(LANG_STORE==="en"?"completed":"completate"))),
+        React.createElement("div",{style:{width:"50px",height:"50px",borderRadius:"50%",background:"conic-gradient("+C.sage+" "+(totalToday/HABIT_DEFS.length*360)+"deg, "+C.bdr+" 0deg)",display:"flex",alignItems:"center",justifyContent:"center"}},React.createElement("div",{style:{width:"38px",height:"38px",borderRadius:"50%",background:C.white,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"700",fontFamily:F.s,color:C.sageD}},Math.round(totalToday/HABIT_DEFS.length*100)+"%"))
+      )
+    ),
+    HABIT_DEFS.map(function(h){var streak=getStreak(h.k);var best=getBestStreak(h.k);var done=todayH[h.k];
+      return React.createElement(Cd,{key:h.k,onClick:function(){toggleHabit(h.k);},style:{cursor:"pointer",border:"1.5px solid "+(done?C.sage:C.bdr),background:done?C.sageP:C.white,transition:"all .2s"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},
+          React.createElement("span",{style:{fontSize:"20px"}},h.i),
+          React.createElement("div",{style:{flex:1}},
+            React.createElement("span",{style:{fontSize:"12px",fontFamily:F.s,fontWeight:"600",color:done?C.sageD:C.txt}},LANG_STORE==="en"?h.lEN:h.l),
+            React.createElement("div",{style:{display:"flex",gap:"10px",marginTop:"2px"}},
+              React.createElement("span",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL}},"\ud83d\udd25 "+streak+" "+(LANG_STORE==="en"?"days":"gg")),
+              React.createElement("span",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL}},"\ud83c\udfc6 "+(LANG_STORE==="en"?"best":"record")+": "+best)
+            )
+          ),
+          React.createElement("div",{style:{width:"28px",height:"28px",borderRadius:"50%",border:"2px solid "+(done?C.sage:C.bdr),background:done?C.sage:C.white,display:"flex",alignItems:"center",justifyContent:"center"}},done&&React.createElement("span",{style:{color:C.white,fontSize:"14px"}},"\u2713"))
+        )
+      );
+    })
+  );
+}
+function SmartTracking(){
+  var _s=useState("symptoms"),sub=_s[0],setSub=_s[1];
+  return React.createElement("div",null,
+    React.createElement(SecH,{title:LANG_STORE==="en"?"Smart Tracking":"Tracking Avanzato",sub:LANG_STORE==="en"?"Symptoms, body, habits":"Sintomi, corpo, abitudini"}),
+    React.createElement(SubT,{tabs:[{k:"symptoms",l:LANG_STORE==="en"?"Symptoms":"Sintomi",i:"\ud83d\udccb"},{k:"body",l:LANG_STORE==="en"?"Body":"Corpo",i:"\ud83d\udccf"},{k:"habits",l:LANG_STORE==="en"?"Habits":"Abitudini",i:"\ud83d\udd25"}],active:sub,onSel:setSub}),
+    sub==="symptoms"&&React.createElement(SymptomTracker,null),
+    sub==="body"&&React.createElement(BodyMeasurements,null),
+    sub==="habits"&&React.createElement(HabitStreaks,null)
+  );
+}
+/* PHASE 7: MEAL INTELLIGENCE */
+var PCOS_MEALS={follicular:{breakfast:[{n:"Uova strapazzate + avocado + pane di segale",p:28,c:30,f:22,gl:"\ud83d\udfe2"},{n:"Porridge avena + frutti di bosco + mandorle",p:15,c:42,f:18,gl:"\ud83d\udfe2"},{n:"Pancake grano saraceno + burro arachidi",p:18,c:38,f:16,gl:"\ud83d\udfe1"},{n:"Smoothie: spinaci + proteine + avocado",p:25,c:15,f:20,gl:"\ud83d\udfe2"}],lunch:[{n:"Quinoa + ceci + verdure grigliate + feta",p:22,c:40,f:18,gl:"\ud83d\udfe2"},{n:"Salmone al forno + broccoli + riso integrale",p:35,c:38,f:16,gl:"\ud83d\udfe2"},{n:"Lenticchie + spinaci + avocado + uovo",p:28,c:32,f:22,gl:"\ud83d\udfe2"},{n:"Pollo griglia + insalata mista + farro",p:38,c:35,f:12,gl:"\ud83d\udfe2"}],dinner:[{n:"Merluzzo + zucchine grigliate + patata dolce",p:32,c:28,f:10,gl:"\ud83d\udfe2"},{n:"Frittata 3 uova + spinaci + funghi",p:26,c:8,f:20,gl:"\ud83d\udfe2"},{n:"Tacchino + cavolfiore arrosto + hummus",p:34,c:18,f:14,gl:"\ud83d\udfe2"},{n:"Zuppa lenticchie + verdure + crostino integrale",p:20,c:35,f:8,gl:"\ud83d\udfe2"}],snack:[{n:"Mandorle 30g + cioccolato fondente 85%",p:8,c:12,f:18,gl:"\ud83d\udfe2"},{n:"Hummus + bastoncini sedano e carota",p:6,c:12,f:8,gl:"\ud83d\udfe2"},{n:"Yogurt greco intero + noci + cannella",p:12,c:10,f:14,gl:"\ud83d\udfe1"},{n:"Mela + burro di mandorle",p:4,c:18,f:10,gl:"\ud83d\udfe1"}]}};
+PCOS_MEALS.luteal=JSON.parse(JSON.stringify(PCOS_MEALS.follicular));
+PCOS_MEALS.luteal.breakfast.push({n:"Toast integrale + avocado + salmone affumicato",p:22,c:28,f:18,gl:"\ud83d\udfe2"});
+PCOS_MEALS.luteal.dinner.push({n:"Pasta integrale + ragu lenticchie + parmigiano",p:24,c:45,f:12,gl:"\ud83d\udfe1"});
+PCOS_MEALS.ovulatory=PCOS_MEALS.follicular;
+PCOS_MEALS.menstrual=JSON.parse(JSON.stringify(PCOS_MEALS.follicular));
+PCOS_MEALS.menstrual.lunch.push({n:"Stufato di manzo + spinaci + lenticchie (ferro!)",p:35,c:28,f:14,gl:"\ud83d\udfe2"});
+function MealPlanner(props){
+  var profile=props.profile;
+  var _s=useState(function(){return LD("mealPlan",null);}),plan=_s[0],setPlan=_s[1];
+  var cp=getCyclePhaseNow();var phase=cp?cp.phase:"follicular";var meals=PCOS_MEALS[phase]||PCOS_MEALS.follicular;
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+  function generate(){var week=[];for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()+i);week.push({date:d.toISOString().slice(0,10),b:pick(meals.breakfast),l:pick(meals.lunch),d:pick(meals.dinner),s:pick(meals.snack)});}setPlan(week);SV("mealPlan",week);}
+  var DI=["Dom","Lun","Mar","Mer","Gio","Ven","Sab"],DE=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.sageP+","+C.plumP+")",textAlign:"center"}},
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 6px"}},(LANG_STORE==="en"?"Cycle phase":"Fase ciclo")+": ",React.createElement("strong",null,phase)),
+      React.createElement("button",{onClick:generate,style:{padding:"12px 24px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},LANG_STORE==="en"?"\ud83d\udd04 Generate Weekly Plan":"\ud83d\udd04 Genera Piano Settimanale")
+    ),
+    plan&&plan.map(function(day,i){var dd=new Date(day.date);var dn=LANG_STORE==="en"?DE[dd.getDay()]:DI[dd.getDay()];
+      return React.createElement(Cd,{key:i},
+        React.createElement("h5",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"700",color:C.plum,margin:"0 0 6px"}},dn+" "+fmtD(day.date)),
+        [{k:"b",l:LANG_STORE==="en"?"Breakfast":"Colazione",ic:"\ud83c\udf05"},{k:"l",l:LANG_STORE==="en"?"Lunch":"Pranzo",ic:"\u2600\ufe0f"},{k:"d",l:LANG_STORE==="en"?"Dinner":"Cena",ic:"\ud83c\udf19"},{k:"s",l:"Snack",ic:"\ud83c\udf4e"}].map(function(m){var ml=day[m.k];return React.createElement("div",{key:m.k,style:{display:"flex",gap:"6px",marginBottom:"4px",alignItems:"flex-start"}},React.createElement("span",{style:{fontSize:"12px"}},m.ic),React.createElement("div",{style:{flex:1}},React.createElement("span",{style:{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.txt}},ml.n),React.createElement("div",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,marginTop:"1px"}},"P:"+ml.p+"g C:"+ml.c+"g F:"+ml.f+"g | GL:"+ml.gl)));})
+      );
+    })
+  );
+}
+var GL_DB=[{n:"Riso bianco",gi:73,c:28},{n:"Riso integrale",gi:50,c:23},{n:"Pasta bianca",gi:55,c:25},{n:"Pasta integrale",gi:42,c:26},{n:"Pane bianco",gi:75,c:49},{n:"Pane segale integrale",gi:41,c:46},{n:"Quinoa",gi:35,c:21},{n:"Farro",gi:40,c:27},{n:"Avena fiocchi",gi:42,c:12},{n:"Grano saraceno",gi:34,c:20},{n:"Patata",gi:78,c:17},{n:"Patata dolce",gi:44,c:20},{n:"Lenticchie",gi:25,c:20},{n:"Ceci",gi:28,c:27},{n:"Fagioli",gi:24,c:22},{n:"Mela",gi:36,c:14},{n:"Banana",gi:51,c:23},{n:"Frutti di bosco",gi:25,c:12},{n:"Gallette riso",gi:87,c:81},{n:"Cioccolato fond. 85%",gi:23,c:46},{n:"Miele",gi:61,c:82},{n:"Zucchero",gi:65,c:100}];
+function GLCalculator(){
+  var _s1=useState([]),items=_s1[0],setItems=_s1[1];
+  var _s2=useState(""),search=_s2[0],setSearch=_s2[1];
+  var filtered=search.length>=2?GL_DB.filter(function(f){return f.n.toLowerCase().includes(search.toLowerCase());}):[];
+  function addItem(food){setItems(items.concat([{food:food,grams:100}]));setSearch("");}
+  function setGrams(i,g){var u=items.slice();u[i]=Object.assign({},u[i],{grams:parseInt(g)||0});setItems(u);}
+  function removeItem(i){setItems(items.filter(function(_,j){return j!==i;}));}
+  var totalGL=items.reduce(function(sum,it){return sum+(it.food.gi*it.food.c*it.grams/100/100);},0);
+  var glColor=totalGL<10?C.sage:totalGL<20?C.plum:C.rose;
+  var glLabel=totalGL<10?(LANG_STORE==="en"?"Low - Excellent for PCOS":"Basso - Ottimo per PCOS"):totalGL<20?(LANG_STORE==="en"?"Medium - OK with protein":"Medio - OK con proteine"):(LANG_STORE==="en"?"High - Add fiber!":"Alto - Aggiungi fibra!");
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 8px",color:C.plum}},LANG_STORE==="en"?"Glycemic Load Calculator":"Calcolatore Carico Glicemico"),
+      React.createElement("input",{value:search,onChange:function(e){setSearch(e.target.value);},placeholder:LANG_STORE==="en"?"Search food...":"Cerca alimento...",style:Object.assign({},iS,{marginBottom:"6px"})}),
+      filtered.length>0&&React.createElement("div",{style:{maxHeight:"120px",overflowY:"auto",border:"1px solid "+C.bdr,borderRadius:"8px"}},filtered.map(function(f,i){return React.createElement("div",{key:i,onClick:function(){addItem(f);},style:{padding:"6px 10px",cursor:"pointer",fontSize:"11px",fontFamily:F.s,borderBottom:"1px solid "+C.bdr,display:"flex",justifyContent:"space-between"}},React.createElement("span",null,f.n),React.createElement("span",{style:{color:f.gi<40?C.sage:f.gi<60?C.plum:C.rose}},"IG: "+f.gi));})),
+      items.map(function(it,i){return React.createElement("div",{key:i,style:{display:"flex",gap:"6px",alignItems:"center",marginTop:"6px"}},React.createElement("span",{style:{flex:1,fontSize:"11px",fontFamily:F.s}},it.food.n),React.createElement("input",{type:"number",value:it.grams,onChange:function(e){setGrams(i,e.target.value);},style:Object.assign({},iS,{width:"60px",padding:"4px 6px",fontSize:"11px"})}),React.createElement("span",{style:{fontSize:"10px",color:C.txtL}},"g"),React.createElement("button",{onClick:function(){removeItem(i);},style:{border:"none",background:"none",color:C.rose,cursor:"pointer",fontSize:"14px"}},"\u2715"));})
+    ),
+    items.length>0&&React.createElement(Cd,{style:{background:totalGL<10?C.sageP:totalGL<20?C.plumP:C.roseP,textAlign:"center"}},
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:0}},LANG_STORE==="en"?"Total Glycemic Load":"Carico Glicemico Totale"),
+      React.createElement("p",{style:{fontSize:"28px",fontFamily:F.p,fontWeight:"700",color:glColor,margin:"4px 0"}},totalGL.toFixed(1)),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:glColor,margin:0}},glLabel)
+    )
+  );
+}
+function MealIntelligence(props){
+  var _s=useState("planner"),sub=_s[0],setSub=_s[1];
+  return React.createElement("div",null,
+    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Meal Plan":"Piano Pasti",i:"\ud83d\udcc5"},{k:"gl",l:LANG_STORE==="en"?"GL Calc":"Calcola GL",i:"\ud83d\udcca"}],active:sub,onSel:setSub}),
+    sub==="planner"&&React.createElement(MealPlanner,{profile:props.profile}),
+    sub==="gl"&&React.createElement(GLCalculator,null)
+  );
+}
+/* PHASE 8: HEALTH INTELLIGENCE */
+var SUPP_DEFS=[{k:"inositol",n:"Myo-Inositolo",dose:"2-4g",when:LANG_STORE==="en"?"Away from meals":"Lontano dai pasti",i:"\ud83d\udc8a"},{k:"vitd",n:"Vitamina D",dose:"2000-4000 UI",when:LANG_STORE==="en"?"With fat meal":"Con pasto grasso",i:"\u2600\ufe0f"},{k:"omega3",n:"Omega-3",dose:"1-2g EPA+DHA",when:LANG_STORE==="en"?"With meals":"Ai pasti",i:"\ud83d\udc1f"},{k:"magnesium",n:"Magnesio",dose:"300-400mg",when:LANG_STORE==="en"?"Before bed":"Prima di dormire",i:"\ud83c\udf19"},{k:"zinc",n:"Zinco",dose:"15-30mg",when:LANG_STORE==="en"?"With meals":"Ai pasti",i:"\ud83d\udd2c"},{k:"nac",n:"NAC",dose:"600-1800mg",when:LANG_STORE==="en"?"Away from meals":"Lontano dai pasti",i:"\ud83e\uddea"},{k:"folate",n:"Acido Folico",dose:"400-800mcg",when:LANG_STORE==="en"?"Anytime":"Qualsiasi momento",i:"\ud83e\uddec"}];
+function SuppReminders(){
+  var _s=useState(function(){return LD("suppLog",{});}),log=_s[0],setLog=_s[1];
+  var dk=todayK();var todayLog=log[dk]||{};
+  function toggle(k){var u=Object.assign({},log);var td=Object.assign({},todayLog);td[k]=!td[k];u[dk]=td;setLog(u);SV("suppLog",u);}
+  function adherence(k){var taken=0,total=0;for(var i=0;i<30;i++){var d=new Date();d.setDate(d.getDate()-i);var key=d.toISOString().slice(0,10);total++;if(log[key]&&log[key][k])taken++;}return total>0?Math.round(taken/total*100):0;}
+  var totalToday=SUPP_DEFS.filter(function(s){return todayLog[s.k];}).length;
+  return React.createElement("div",{style:{display:"grid",gap:"8px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.plumP+","+C.roseP+")",textAlign:"center"}},
+      React.createElement("p",{style:{fontSize:"20px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},totalToday+"/"+SUPP_DEFS.length),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:0}},LANG_STORE==="en"?"taken today":"presi oggi")
+    ),
+    SUPP_DEFS.map(function(s){var done=todayLog[s.k];var adh=adherence(s.k);
+      return React.createElement(Cd,{key:s.k,onClick:function(){toggle(s.k);},style:{cursor:"pointer",border:"1.5px solid "+(done?C.plum:C.bdr),background:done?C.plumP:C.white}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
+          React.createElement("span",{style:{fontSize:"18px"}},s.i),
+          React.createElement("div",{style:{flex:1}},
+            React.createElement("div",{style:{fontSize:"12px",fontFamily:F.s,fontWeight:"600",color:done?C.plum:C.txt}},s.n),
+            React.createElement("div",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL}},s.dose+" \u2014 "+s.when),
+            React.createElement("div",{style:{marginTop:"3px",height:"4px",borderRadius:"2px",background:C.bdr,overflow:"hidden"}},React.createElement("div",{style:{height:"100%",width:adh+"%",borderRadius:"2px",background:adh>80?C.sage:adh>50?C.plum:C.rose}})),
+            React.createElement("span",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL}},(LANG_STORE==="en"?"30d adherence":"aderenza 30gg")+": "+adh+"%")
+          ),
+          React.createElement("div",{style:{width:"28px",height:"28px",borderRadius:"50%",border:"2px solid "+(done?C.plum:C.bdr),background:done?C.plum:C.white,display:"flex",alignItems:"center",justifyContent:"center"}},done&&React.createElement("span",{style:{color:C.white,fontSize:"14px"}},"\u2713"))
+        )
+      );
+    })
+  );
+}
+function BBTTracker(){
+  var _s1=useState(function(){return LD("bbt",[]);}),data=_s1[0],setData=_s1[1];
+  var _s2=useState(""),temp=_s2[0],setTemp=_s2[1];
+  function save(){if(!temp)return;var entry={date:todayK(),temp:parseFloat(temp)};var u=[entry].concat(data.filter(function(e){return e.date!==todayK();})).slice(0,90);u.sort(function(a,b){return a.date.localeCompare(b.date);});setData(u);SV("bbt",u);setTemp("");}
+  var last30=data.slice(-30);
+  var mn=last30.length>0?Math.min.apply(null,last30.map(function(d){return d.temp;}))-0.1:35.8;
+  var mx=last30.length>0?Math.max.apply(null,last30.map(function(d){return d.temp;}))+0.1:37.2;
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",margin:"0 0 8px",color:C.plum}},LANG_STORE==="en"?"Basal Body Temperature":"Temperatura Basale"),
+      React.createElement("div",{style:{display:"flex",gap:"6px"}},
+        React.createElement("input",{type:"number",step:"0.1",value:temp,onChange:function(e){setTemp(e.target.value);},placeholder:"36.5",style:Object.assign({},iS,{flex:1})}),
+        React.createElement("button",{onClick:save,disabled:!temp,style:{padding:"8px 16px",borderRadius:"8px",border:"none",background:!temp?C.bdr:C.plum,color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},LANG_STORE==="en"?"Save":"Salva")
+      ),
+      React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"4px 0 0"}},LANG_STORE==="en"?"Measure every morning before getting up":"Misura ogni mattina prima di alzarti")
+    ),
+    last30.length>3&&React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"600",margin:"0 0 4px",color:C.sageD}},LANG_STORE==="en"?"30-Day Chart":"Grafico 30 Giorni"),
+      React.createElement("svg",{viewBox:"0 0 "+Math.max(last30.length*12,100)+" 80",style:{width:"100%",height:"80px"}},
+        React.createElement("line",{x1:"0",y1:"40",x2:last30.length*12,y2:"40",stroke:C.roseL,strokeWidth:"0.5",strokeDasharray:"3"}),
+        last30.map(function(d,i){var y=80-((d.temp-mn)/(mx-mn))*70-5;var x=i*12+6;return React.createElement("g",{key:i},React.createElement("circle",{cx:x,cy:y,r:2.5,fill:d.temp>36.7?C.rose:C.sage}),React.createElement("text",{x:x,y:78,fontSize:"5",textAnchor:"middle",fill:C.txtL},d.date.slice(8)));}),
+        React.createElement("polyline",{fill:"none",stroke:C.plum,strokeWidth:"1",points:last30.map(function(d,i){var y=80-((d.temp-mn)/(mx-mn))*70-5;return(i*12+6)+","+y;}).join(" ")})
+      ),
+      React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,textAlign:"center",margin:"2px 0 0"}},LANG_STORE==="en"?"Rise above 36.7C may indicate ovulation":"Rialzo sopra 36.7C puo indicare ovulazione")
+    )
+  );
+}
+function CorrelationEngine(){
+  var symptoms=LD("symptoms",[]),habits=LD("habits",{});
+  var insights=[];
+  if(symptoms.length>=7){
+    var goodSleep=symptoms.filter(function(s){return s.vals.sleep_q>=4;});
+    var badSleep=symptoms.filter(function(s){return s.vals.sleep_q&&s.vals.sleep_q<=2;});
+    if(goodSleep.length>0&&badSleep.length>0){var gb=goodSleep.reduce(function(s,e){return s+(e.vals.bloat||3);},0)/goodSleep.length;var bb=badSleep.reduce(function(s,e){return s+(e.vals.bloat||3);},0)/badSleep.length;if(bb>gb+0.5)insights.push({i:"\ud83d\ude34",t:LANG_STORE==="en"?"When you sleep well, bloating decreases by ~"+Math.round((bb-gb)/bb*100)+"%":"Quando dormi bene, il gonfiore diminuisce del ~"+Math.round((bb-gb)/bb*100)+"%",c:C.sage});}
+    var goodE=symptoms.filter(function(s){return s.vals.energy>=4;});var lowE=symptoms.filter(function(s){return s.vals.energy&&s.vals.energy<=2;});
+    if(goodE.length>=2)insights.push({i:"\u26a1",t:LANG_STORE==="en"?"High energy on "+goodE.length+"/"+symptoms.length+" days - great!":"Energia alta in "+goodE.length+"/"+symptoms.length+" giorni - ottimo!",c:C.sage});
+    if(lowE.length>symptoms.length/2)insights.push({i:"\ud83d\udd0b",t:LANG_STORE==="en"?"Low energy most days. Check sleep, iron, IF timing.":"Energia bassa. Controlla sonno, ferro e timing IF.",c:C.rose});
+  }
+  var hDays=Object.keys(habits);
+  if(hDays.length>=7){var wDays=hDays.filter(function(d){return habits[d].workout_ok;}).length;if(wDays>=4)insights.push({i:"\ud83c\udfcb\ufe0f",t:LANG_STORE==="en"?"Worked out "+wDays+"/"+hDays.length+" days - consistency is key!":"Allenata "+wDays+"/"+hDays.length+" giorni - la costanza e fondamentale!",c:C.sage});var waterD=hDays.filter(function(d){return habits[d].water_ok;}).length;if(waterD<hDays.length/2)insights.push({i:"\ud83d\udca7",t:LANG_STORE==="en"?"Water below target most days. Aim 2L+":"Idratazione sotto target. Punta a 2L+",c:C.plum});}
+  if(insights.length===0)insights.push({i:"\ud83d\udcca",t:LANG_STORE==="en"?"Track for 7+ days to unlock insights!":"Traccia per 7+ giorni per sbloccare insight!",c:C.plum});
+  return React.createElement("div",{style:{display:"grid",gap:"8px"}},
+    React.createElement(SecH,{title:LANG_STORE==="en"?"Smart Correlations":"Correlazioni Intelligenti",sub:LANG_STORE==="en"?"Patterns in YOUR data":"Pattern nei TUOI dati"}),
+    insights.map(function(ins,i){return React.createElement(Cd,{key:i,style:{borderLeft:"3px solid "+ins.c}},React.createElement("div",{style:{display:"flex",gap:"8px",alignItems:"flex-start"}},React.createElement("span",{style:{fontSize:"18px"}},ins.i),React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txt,margin:0,lineHeight:1.5}},ins.t)));})
+  );
+}
+/* PHASE 9: DASHBOARD & UX */
+function HomeDashboard(props){
+  var profile=props.profile,setTab=props.setTab;
+  var cp=getCyclePhaseNow();var weighins=LD("weighins",[]);var habits=LD("habits",{});
+  var todayH=habits[todayK()]||{};var habitsOk=HABIT_DEFS.filter(function(h){return todayH[h.k];}).length;
+  var symptoms=LD("symptoms",[]);var todaySym=symptoms.find(function(s){return s.date===todayK();});
+  var challenge=getDailyChallenge();var latestW=weighins.length>0?weighins[0]:null;
+  var diff=latestW&&profile.goalW?(latestW.kg-profile.goalW).toFixed(1):null;
+  var fastOn=LD("fast_isOn",false);var bodyMeas=LD("bodyMeas",[]);var latestM=bodyMeas.length>0?bodyMeas[0]:null;
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement("div",{style:{textAlign:"center",padding:"4px 0"}},
+      React.createElement("h3",{style:{fontFamily:F.p,fontSize:"18px",color:C.plum,margin:0}},(LANG_STORE==="en"?"Welcome back":"Bentornata")+(profile.name?", "+profile.name:"")+"! \ud83d\udc4b"),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"4px 0 0"}},fmtD(todayK())+(cp?" \u2014 "+CYCLE_PHASES[cp.phase].name+" ("+(LANG_STORE==="en"?"day":"g")+cp.day+")":""))
+    ),
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.plumP+","+C.roseP+")"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},
+        React.createElement("span",{style:{fontSize:"22px"}},"\ud83c\udfaf"),
+        React.createElement("div",null,React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.plum,margin:0}},LANG_STORE==="en"?"Daily Challenge":"Sfida del Giorno"),React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txt,margin:"2px 0 0"}},challenge))
+      )
+    ),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px"}},
+      React.createElement(Cd,{onClick:function(){setTab("garmin");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},latestW?latestW.kg+"kg":"--"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},(LANG_STORE==="en"?"Weight":"Peso")+(diff?" ("+diff+"kg)":""))),
+      React.createElement(Cd,{onClick:function(){setTab("track");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",fontFamily:F.p,fontWeight:"700",color:C.sage,margin:0}},habitsOk+"/"+HABIT_DEFS.length),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},LANG_STORE==="en"?"Habits":"Abitudini")),
+      React.createElement(Cd,{onClick:function(){setTab("digiuno");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",margin:0}},fastOn?"\u23f3":"\u2705"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},"IF "+profile.ifH+":"+(24-profile.ifH))),
+      React.createElement(Cd,{onClick:function(){setTab("ciclo");},style:{cursor:"pointer",textAlign:"center"}},React.createElement("p",{style:{fontSize:"22px",margin:0}},cp?CYCLE_PHASES[cp.phase].icon:"\ud83e\ude78"),React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},cp?CYCLE_PHASES[cp.phase].name:(LANG_STORE==="en"?"Cycle":"Ciclo")))
+    ),
+    latestM&&React.createElement(Cd,null,React.createElement("div",{style:{display:"flex",justifyContent:"space-around",textAlign:"center"}},
+      React.createElement("div",null,React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},latestM.waist),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Waist":"Vita")),
+      React.createElement("div",null,React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},latestM.hips||"-"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Hips":"Fianchi")),
+      latestM.waist&&latestM.hips&&React.createElement("div",null,React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:parseFloat(latestM.waist)/parseFloat(latestM.hips)>0.85?C.rose:C.sage,margin:0}},(parseFloat(latestM.waist)/parseFloat(latestM.hips)).toFixed(2)),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},"WHR"))
+    )),
+    React.createElement(CorrelationEngine,null)
+  );
+}
+/* PHASE 9: DARK MODE */
+var THEME_STORE=localStorage.getItem("pcos_theme")||"light";
+function ThemeToggle(){
+  var _s=useState(THEME_STORE),theme=_s[0],setTheme=_s[1];
+  function toggle(){var n=theme==="light"?"dark":"light";THEME_STORE=n;localStorage.setItem("pcos_theme",n);setTheme(n);document.body.style.background=n==="dark"?"#1a1a2e":"#faf9f7";document.body.style.color=n==="dark"?"#e8e8e8":"#2d2d2d";}
+  return React.createElement("button",{onClick:toggle,style:{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},theme==="light"?"\ud83c\udf19":"\u2600\ufe0f");
+}
+/* PHASE 10: SHARE CARD */
+function ShareCard(props){
+  var profile=props.profile;
+  var _s=useState(false),show=_s[0],setShow=_s[1];
+  var weighins=LD("weighins",[]);var habits=LD("habits",{});
+  var w1=weighins.length>0?weighins[0]:null;var w4=weighins.length>=4?weighins[3]:null;
+  var diff=w1&&w4?(w4.kg-w1.kg).toFixed(1):null;
+  var habitDays=Object.keys(habits).length;var workoutDays=Object.keys(habits).filter(function(d){return habits[d].workout_ok;}).length;
+  return React.createElement("div",{style:{display:"grid",gap:"8px",marginTop:"16px"}},
+    React.createElement("button",{onClick:function(){setShow(!show);},style:{padding:"12px",borderRadius:"12px",border:"none",background:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},LANG_STORE==="en"?"\ud83d\udcf1 Generate Progress Card":"\ud83d\udcf1 Genera Card Progressi"),
+    show&&React.createElement("div",{style:{background:"linear-gradient(135deg,#f8f4f0,#f0e8f4)",borderRadius:"16px",padding:"20px",textAlign:"center",border:"2px solid "+C.plumL}},
+      React.createElement("h3",{style:{fontFamily:F.p,fontSize:"16px",color:C.plum,margin:"0 0 4px"}},"PCOS Daily"),
+      React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"0 0 12px"}},LANG_STORE==="en"?"My progress this month":"I miei progressi questo mese"),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginBottom:"12px"}},
+        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.sageD,margin:0}},w1?w1.kg+"kg":"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Current":"Attuale")),
+        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:diff&&parseFloat(diff)>0?C.rose:C.sage,margin:0}},diff?diff+"kg":"--"),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Change":"Variazione")),
+        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},workoutDays),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Workouts":"Allenamenti")),
+        React.createElement("div",{style:{background:C.white,borderRadius:"10px",padding:"10px"}},React.createElement("p",{style:{fontSize:"18px",fontFamily:F.p,fontWeight:"700",color:C.sage,margin:0}},habitDays),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"Tracked days":"Giorni tracciati"))
+      ),
+      React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},"lotusflowerpcos.com \u00b7 #PCOSDaily #PCOSWarrior")
+    ),
+    show&&React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,textAlign:"center"}},LANG_STORE==="en"?"Screenshot and share on Instagram!":"Fai screenshot e condividi su Instagram!")
+  );
+}
+
 /* ═══════════ PCOS AI ASSISTANT (Rule-Based) ═══════════ */
 var AI_KB=[
 {k:["colazione","mattina","breakfast","prima colazione"],t:"Colazione PCOS-Friendly",r:"La colazione e il pasto piu importante nella PCOS. Dopo il digiuno notturno, il corpo ha bisogno di stabilita glicemica. Le regole d'oro: 1) Proteine al centro — uova (fino a 12/settimana), salmone, affettati magri (tacchino, bresaola), hummus, tofu. Senza proteine avrai montagne russe glicemiche. 2) Grassi buoni — frutta secca (mandorle, noci, pistacchi), burro di arachidi, avocado. 3) Carboidrati complessi e fibrosi — pane integrale di segale, avena, grano saraceno. 4) EVITA: yogurt magro (indice insulinico altissimo, piu del pane bianco!), cornetti, gallette di riso, cereali zuccherati, succhi di frutta. Alternative al latte vaccino: latte di mandorla, cocco, nocciola. Esempio perfetto: 2 uova strapazzate + pane di segale + avocado + mandorle + te verde."},
@@ -941,7 +1261,7 @@ function Benessere(){
 function App(){
   const[user,setUser]=useState(null);
   const[authReady,setAuthReady]=useState(false);
-  const[tab,setTab]=useState("alimentazione");
+  const[tab,setTab]=useState("home");
   const[profile,setProfile]=useState(function(){return LD("profile",DEF_PROF);});
   const[syncing,setSyncing]=useState(false);
   const[lastSync,setLastSync]=useState("");
@@ -974,7 +1294,7 @@ function App(){
       <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"12px 16px 8px",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
           <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,"+C.sage+","+C.rose+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>🌸</div>
-          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v3.2 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
+          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v4.0 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
           <div style={{textAlign:"right"}}><div style={{fontSize:"12px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"8px",color:C.txtL,fontFamily:F.s}}>goal {profile.goalW} kg</div></div>
         </div>
         <div style={{display:"flex",gap:"4px",alignItems:"center",marginBottom:"6px"}}>
@@ -982,16 +1302,19 @@ function App(){
           {lastSync&&<span style={{fontSize:"8px",fontFamily:F.s,color:C.txtL}}>✓ {lastSync}</span>}
           <button onClick={function(){setShowShare(!showShare);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>🔗 {t("medico")}</button>
           <LangToggle/>
+          <ThemeToggle/>
           <div style={{flex:1}}/>
           <span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{user.email?user.email.split("@")[0]:""}</span>
           <button onClick={doLogout} style={{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.rose,fontSize:"9px",fontFamily:F.s,cursor:"pointer"}}>{t("esci")}</button>
         </div>
         {showShare&&(<Cd style={{marginBottom:"8px",padding:"12px",background:C.plumP,border:"1px solid "+C.plumL}}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}}>🔗 {t("condividiMedico")}</h5><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 8px"}}>{LANG_STORE==="en"?"Your doctor will see a read-only dashboard with: profile, weight, blood work, workouts and fasting data.":"Il medico vedra una dashboard di sola lettura con: profilo, peso, analisi del sangue, allenamenti e digiuni."}</p><div style={{display:"flex",gap:"6px"}}><input readOnly value={generateShareLink(user.uid)} style={Object.assign({},iS,{fontSize:"10px",padding:"8px"})}/><button onClick={function(){navigator.clipboard.writeText(generateShareLink(user.uid));}} style={{padding:"8px 14px",borderRadius:"8px",border:"none",background:C.plum,color:C.white,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap"}}>📋 {t("copiaLink")}</button></div></Cd>)}
         <div style={{display:"flex",gap:"2px",overflowX:"auto"}}>
+          <NavTab label="Home" icon="🏠" active={tab==="home"} onClick={function(){setTab("home");}}/>
           <NavTab label={t("cibo")} icon="🥗" active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}}/>
           <NavTab label={t("gym")} icon="🏋️‍♀️" active={tab==="allenamento"} onClick={function(){setTab("allenamento");}}/>
           <NavTab label={t("digiuno")} icon="⏳" active={tab==="digiuno"} onClick={function(){setTab("digiuno");}}/>
           <NavTab label={t("ciclo")} icon="🩸" active={tab==="ciclo"} onClick={function(){setTab("ciclo");}}/>
+          <NavTab label="Track" icon="📋" active={tab==="track"} onClick={function(){setTab("track");}}/>
           <NavTab label={t("garmin")} icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
           <NavTab label={t("salute")} icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
           <NavTab label={t("ai")} icon="🤖" active={tab==="ai"} onClick={function(){setTab("ai");}}/>
@@ -1000,15 +1323,17 @@ function App(){
       <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <DailyQuote/>
         <WeeklyInsight profile={profile}/>
-        {tab==="alimentazione"&&<Alimentazione profile={profile} setProfile={setProfile}/>}
+        {tab==="home"&&<HomeDashboard profile={profile} setTab={setTab}/>}
+        {tab==="alimentazione"&&<><Alimentazione profile={profile} setProfile={setProfile}/><MealIntelligence profile={profile}/></>}
         {tab==="allenamento"&&<Allenamento/>}
         {tab==="digiuno"&&<Digiuno profile={profile}/>}
         {tab==="ciclo"&&<CicloMestruale/>}
+        {tab==="track"&&<SmartTracking/>}
         {tab==="garmin"&&<GarminSection profile={profile}/>}
-        {tab==="benessere"&&<Benessere/>}
-        {tab==="ai"&&<PCOSAssistant profile={profile}/>}
+        {tab==="benessere"&&<><Benessere/><SuppReminders/><BBTTracker/></>}
+        {tab==="ai"&&<><PCOSAssistant profile={profile}/><ShareCard profile={profile}/></>}
       </div>
-      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v3.2 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
+      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v4.0 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
     </div>
   );
 }
