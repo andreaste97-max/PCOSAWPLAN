@@ -111,9 +111,9 @@ var fbAuth=firebase.auth();
 var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
-var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan"];
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
-function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();SYNC_KEYS.forEach(function(k){localStorage.removeItem("pcos_"+k);});["fast_isOn","fast_start","fast_goal"].forEach(function(k){localStorage.removeItem("pcos_"+k);});var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
 function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
 function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
@@ -558,6 +558,7 @@ function FastingTimer({profile}){
   var stopFn=function(){setIsOn(false);clearInterval(timerRef.current);};
   var completeFn=function(){setIsOn(false);clearInterval(timerRef.current);var entry={date:todayK(),goal:goal,actual:Math.round(el/3600000*10)/10,completed:el>=gMs,startTime:new Date(start).toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};var h=[entry].concat(history).slice(0,50);setHistory(h);SV("fasts",h);setStart(null);setEl(0);};
   var resetFn=function(){setIsOn(false);setStart(null);setEl(0);clearInterval(timerRef.current);};
+  var delFast=function(idx){var h=history.slice();h.splice(idx,1);setHistory(h);SV("fasts",h);};
   var streak=0;for(var i=0;i<history.length;i++){if(history[i].completed)streak++;else break;}
   var bestStreak=0;var cur=0;history.forEach(function(h){if(h.completed){cur++;if(cur>bestStreak)bestStreak=cur;}else cur=0;});
   var totalDone=history.filter(function(h){return h.completed;}).length;
@@ -577,7 +578,7 @@ function FastingTimer({profile}){
     {/* STATS */}
     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px"}}><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.sage}}>🔥 {streak}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Streak attuale</div></Cd><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.amber}}>🏆 {bestStreak}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Record streak</div></Cd><Cd style={{textAlign:"center",padding:"12px"}}><div style={{fontFamily:F.s,fontSize:"22px",fontWeight:"700",color:C.plum}}>{totalDone}</div><div style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>Totali completati</div></Cd></div>
     {/* HISTORY */}
-    {history.length>0&&<Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Storico Digiuni</h4><div style={{display:"grid",gap:"6px"}}>{history.slice(0,10).map(function(h,i){return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:"8px",background:h.completed?C.sageP:C.roseP}}><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fmtD(h.date)}</span><span style={{fontFamily:F.s,fontSize:"11px",color:C.txtM,marginLeft:"8px"}}>{h.startTime}</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{h.actual}h / {h.goal}h</span><span style={{fontSize:"14px"}}>{h.completed?"✅":"❌"}</span></div></div>);})}</div></Cd>}
+    {history.length>0&&<Cd><h4 style={{fontFamily:F.p,fontSize:"14px",margin:"0 0 10px",color:C.txt}}>Storico Digiuni</h4><div style={{display:"grid",gap:"6px"}}>{history.map(function(h,i){return(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 10px",borderRadius:"8px",background:h.completed?C.sageP:C.roseP}}><div><span style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{fmtD(h.date)}</span><span style={{fontFamily:F.s,fontSize:"11px",color:C.txtM,marginLeft:"8px"}}>{h.startTime}</span></div><div style={{display:"flex",gap:"6px",alignItems:"center"}}><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{h.actual}h / {h.goal}h</span><span style={{fontSize:"14px"}}>{h.completed?"✅":"❌"}</span><button onClick={function(){delFast(i);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px",padding:"2px 4px",marginLeft:"4px"}}>🗑</button></div></div>);})}</div></Cd>}
   </div>);
 }
 
@@ -2205,8 +2206,8 @@ function App(){
   if(!user)return <AuthScreen onLogin={function(u){setUser(u);}}/>;
 
   /* Onboarding check */
-  var onboarded=LD("pcos_onboarded",false);
-  if(!onboarded&&!profile.name)return <OnboardingWizard setProfile={setProfile}/>;
+  var onboarded=LD("pcos_onboarded",false)||!!profile.name;
+  if(!onboarded)return <OnboardingWizard setProfile={setProfile}/>;
 
   var mc=calcMacros(profile);
   return(
