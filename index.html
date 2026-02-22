@@ -335,25 +335,125 @@ var DEF_W=[{date:"2025-01-06",weight:79.2,bf:30.5,mm:25.8,bm:2.5,bw:47.0},{date:
 var DEF_WO=[];var DEF_DD={steps:0,rhr:0,stress:0,bb:0,vo2:0};
 
 /* ─── SHOPPING LIST GENERATOR ─── */
+/* ─── STAGIONALITA ─── */
+var SEASONAL={
+  frutta:{1:["arance","mandarini","kiwi","mele","pere","pompelmo"],2:["arance","mandarini","kiwi","mele","pere","pompelmo"],3:["arance","kiwi","mele","fragole"],4:["fragole","kiwi","mele","nespole"],5:["fragole","ciliegie","nespole","albicocche"],6:["ciliegie","albicocche","pesche","melone","anguria","fragole"],7:["pesche","albicocche","melone","anguria","fichi","susine"],8:["pesche","fichi","uva","melone","anguria","susine","more"],9:["uva","fichi","pere","mele","more","lamponi"],10:["mele","pere","uva","cachi","melagrana"],11:["mele","pere","cachi","melagrana","kiwi","arance"],12:["arance","mandarini","kiwi","mele","pere","pompelmo"]},
+  verdura:{1:["broccoli","cavolfiore","cavolo","finocchi","carciofi","radicchio","spinaci","zucca","porri","bietole"],2:["broccoli","cavolfiore","cavolo","finocchi","carciofi","radicchio","spinaci","porri","bietole"],3:["carciofi","asparagi","spinaci","broccoli","finocchi","radicchio","porri"],4:["asparagi","carciofi","fave","piselli","spinaci","ravanelli","rucola"],5:["asparagi","fave","piselli","zucchine","pomodori","rucola","lattuga"],6:["zucchine","pomodori","peperoni","melanzane","cetrioli","fagiolini","rucola","lattuga"],7:["zucchine","pomodori","peperoni","melanzane","cetrioli","fagiolini","rucola"],8:["zucchine","pomodori","peperoni","melanzane","cetrioli","fagiolini"],9:["zucchine","peperoni","melanzane","funghi","spinaci","zucca","radicchio"],10:["zucca","funghi","spinaci","radicchio","finocchi","cavolo","broccoli"],11:["zucca","cavolo","broccoli","cavolfiore","finocchi","radicchio","spinaci","carciofi","porri"],12:["broccoli","cavolfiore","cavolo","finocchi","carciofi","radicchio","spinaci","zucca","porri"]}
+};
+function getSeasonal(){var m=new Date().getMonth()+1;return{frutta:SEASONAL.frutta[m]||[],verdura:SEASONAL.verdura[m]||[]};}
+
+/* ─── CONVERSIONE CRUDO/COTTO ─── */
+var COOK_CONV=[
+  {n:"Pasta",crudo:100,cotto:200,note:"Raddoppia"},
+  {n:"Riso bianco",crudo:100,cotto:260,note:"x2.6"},
+  {n:"Riso integrale",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Riso basmati",crudo:100,cotto:270,note:"x2.7"},
+  {n:"Riso venere",crudo:100,cotto:240,note:"x2.4"},
+  {n:"Quinoa",crudo:100,cotto:270,note:"x2.7"},
+  {n:"Farro",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Orzo",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Grano saraceno",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Lenticchie",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Ceci",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Fagioli",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Cannellini",crudo:100,cotto:250,note:"x2.5"},
+  {n:"Avena fiocchi",crudo:100,cotto:250,note:"Porridge x2.5"},
+  {n:"Pollo petto",crudo:100,cotto:75,note:"Perde 25%"},
+  {n:"Tacchino petto",crudo:100,cotto:75,note:"Perde 25%"},
+  {n:"Salmone",crudo:100,cotto:80,note:"Perde 20%"},
+  {n:"Merluzzo",crudo:100,cotto:75,note:"Perde 25%"},
+  {n:"Orata",crudo:100,cotto:80,note:"Perde 20%"},
+  {n:"Tonno fresco",crudo:100,cotto:80,note:"Perde 20%"},
+  {n:"Sgombro",crudo:100,cotto:80,note:"Perde 20%"},
+  {n:"Uovo sodo",crudo:60,cotto:60,note:"Invariato"},
+  {n:"Verdure foglia (spinaci)",crudo:100,cotto:30,note:"Riducono molto"},
+  {n:"Broccoli",crudo:100,cotto:80,note:"Perde 20%"},
+  {n:"Zucchine",crudo:100,cotto:85,note:"Perde 15%"},
+  {n:"Patate",crudo:100,cotto:90,note:"Perde 10%"},
+  {n:"Patate dolci",crudo:100,cotto:90,note:"Perde 10%"},
+  {n:"Funghi",crudo:100,cotto:60,note:"Riducono 40%"},
+  {n:"Cavolfiore",crudo:100,cotto:85,note:"Perde 15%"},
+  {n:"Cavoletti Bruxelles",crudo:100,cotto:85,note:"Perde 15%"},
+];
+
+/* ─── BIBLIOTECA ESERCIZI ─── */
+var EXERCISE_LIB={
+  upper:[
+    {n:"Lat Pulldown",s:"3x12",r:"60s",nt:"Presa larga, squeeze scapole",vid:"lat+pulldown+tutorial",muscle:"Dorsali"},
+    {n:"Chest Press manubri",s:"3x12",r:"60s",nt:"3s eccentrica",vid:"chest+press+manubri",muscle:"Pettorali"},
+    {n:"Shoulder Press",s:"3x10",r:"60s",nt:"Schiena dritta",vid:"shoulder+press+tutorial",muscle:"Deltoidi"},
+    {n:"Cable Row",s:"3x12",r:"60s",nt:"Gomiti al corpo",vid:"cable+row+tutorial",muscle:"Dorsali"},
+    {n:"Curl bicipiti",s:"2x15",r:"45s",nt:"Alternati",vid:"curl+bicipiti",muscle:"Bicipiti"},
+    {n:"Tricep Pushdown",s:"2x15",r:"45s",nt:"Gomiti fermi",vid:"tricep+pushdown",muscle:"Tricipiti"},
+    {n:"Face Pull",s:"3x15",r:"45s",nt:"Per postura",vid:"face+pull+tutorial",muscle:"Deltoidi post."},
+    {n:"Alzate laterali",s:"3x15",r:"45s",nt:"Leggere e controllate",vid:"alzate+laterali+donna",muscle:"Deltoidi"},
+    {n:"Pulley basso",s:"3x12",r:"60s",nt:"Presa stretta",vid:"pulley+basso+tutorial",muscle:"Dorsali"},
+    {n:"Push-up",s:"3x10-15",r:"45s",nt:"Ginocchia se necessario",vid:"push+up+donna",muscle:"Pettorali"},
+    {n:"Pullover manubrio",s:"3x12",r:"60s",nt:"Panca piana, estensione ampia",vid:"pullover+manubrio",muscle:"Dorsali/Pett."},
+    {n:"Rematore manubrio",s:"3x12",r:"60s",nt:"Un braccio alla volta",vid:"rematore+manubrio+donna",muscle:"Dorsali"},
+  ],
+  lower:[
+    {n:"Squat bilanciere/goblet",s:"4x10",r:"90s",nt:"Parallelo, schiena neutra",vid:"squat+donna+tutorial",muscle:"Quadricipiti/Glutei"},
+    {n:"Hip Thrust",s:"3x12",r:"75s",nt:"Pausa in alto, squeeze",vid:"hip+thrust+donna",muscle:"Glutei"},
+    {n:"Leg Press 45",s:"3x12",r:"75s",nt:"Piedi alti per glutei",vid:"leg+press+tutorial",muscle:"Quadricipiti/Glutei"},
+    {n:"Affondi camminati",s:"3x10/g",r:"60s",nt:"Passo lungo",vid:"affondi+camminati",muscle:"Quadricipiti/Glutei"},
+    {n:"Leg Curl",s:"3x12",r:"60s",nt:"Eccentrica lenta",vid:"leg+curl+tutorial",muscle:"Femorali"},
+    {n:"Calf Raise",s:"3x15",r:"45s",nt:"Pausa 2s basso",vid:"calf+raise",muscle:"Polpacci"},
+    {n:"Abductor",s:"3x15",r:"45s",nt:"Contrazione controllata",vid:"abductor+machine",muscle:"Glutei/Abduttori"},
+    {n:"Stacco rumeno",s:"3x10",r:"75s",nt:"Schiena neutra, senti femorali",vid:"stacco+rumeno+donna",muscle:"Femorali/Glutei"},
+    {n:"Bulgarian Split Squat",s:"3x10/g",r:"60s",nt:"Piede su panca",vid:"bulgarian+split+squat",muscle:"Quadricipiti/Glutei"},
+    {n:"Leg Extension",s:"3x15",r:"45s",nt:"Contrazione completa",vid:"leg+extension+tutorial",muscle:"Quadricipiti"},
+    {n:"Sumo Squat",s:"3x12",r:"60s",nt:"Presa larga, punte fuori",vid:"sumo+squat+donna",muscle:"Adduttori/Glutei"},
+    {n:"Step Up manubri",s:"3x10/g",r:"60s",nt:"Rialzo 40cm",vid:"step+up+manubri",muscle:"Glutei/Quad."},
+  ],
+  core:[
+    {n:"Plank",s:"3x30-45s",r:"45s",nt:"Corpo in linea",vid:"plank+corretto",muscle:"Core totale"},
+    {n:"Dead Bug",s:"3x10/lato",r:"45s",nt:"Schiena piatta",vid:"dead+bug+esercizio",muscle:"Trasverso"},
+    {n:"Pallof Press",s:"3x10/lato",r:"45s",nt:"Anti-rotazione",vid:"pallof+press",muscle:"Obliqui"},
+    {n:"Crunch palla svizzera",s:"3x15",r:"45s",nt:"Non tirare collo",vid:"crunch+palla+svizzera",muscle:"Retto addominale"},
+    {n:"Bird Dog",s:"3x10/lato",r:"30s",nt:"Stabilita",vid:"bird+dog+esercizio",muscle:"Core/Lombare"},
+    {n:"Russian Twist",s:"3x12/lato",r:"45s",nt:"Controllare",vid:"russian+twist",muscle:"Obliqui"},
+    {n:"Vacuum addominale",s:"3x10s",r:"30s",nt:"Trasverso",vid:"vacuum+addominale",muscle:"Trasverso"},
+    {n:"Mountain Climber lento",s:"3x15/lato",r:"45s",nt:"Controllato, no rimbalzo",vid:"mountain+climber+lento",muscle:"Core totale"},
+    {n:"Side Plank",s:"3x20-30s/lato",r:"30s",nt:"Anca alta",vid:"side+plank+tutorial",muscle:"Obliqui"},
+    {n:"Ab Wheel/Rollout",s:"3x8-10",r:"60s",nt:"Solo se core forte",vid:"ab+wheel+tutorial",muscle:"Retto/Trasverso"},
+  ],
+  cardio:[
+    {n:"Corsa continua",s:"30-45min",r:"-",nt:"Zona 2 (FC 130-150). Brucia grassi.",vid:"corsa+zona+2+dimagrire",muscle:"Cardio/Gambe"},
+    {n:"Interval Running",s:"20-25min",r:"60s walk",nt:"1min veloce / 1min camminata x 10-12",vid:"interval+running+beginner",muscle:"Cardio HIIT"},
+    {n:"Fartlek",s:"30min",r:"-",nt:"Variazioni ritmo libere in corsa",vid:"fartlek+running",muscle:"Cardio misto"},
+    {n:"Tempo Run",s:"25-30min",r:"-",nt:"Ritmo sostenibile ma sfidante",vid:"tempo+run+training",muscle:"Soglia aerobica"},
+    {n:"Camminata veloce",s:"40-60min",r:"-",nt:"6-7 km/h. Brucia grassi senza cortisolo.",vid:"camminata+veloce+dimagrire",muscle:"Cardio bassa int."},
+    {n:"Camminata in salita",s:"30-40min",r:"-",nt:"Tapis 10-15% inclinazione oppure outdoor",vid:"incline+walking+fat+loss",muscle:"Glutei/Cardio"},
+    {n:"HIIT Bodyweight",s:"20min",r:"30s",nt:"Burpee, squat jump, mountain climber",vid:"hiit+bodyweight+donna",muscle:"Full body HIIT"},
+    {n:"Yoga Flow",s:"30-45min",r:"-",nt:"Riduce cortisolo, migliora flessibilita",vid:"yoga+flow+pcos",muscle:"Flessibilita"},
+    {n:"Pilates",s:"30-40min",r:"-",nt:"Core, postura, bassa intensita",vid:"pilates+per+pcos",muscle:"Core/Postura"},
+  ]
+};
+
+/* ─── OPZIONI SCHEDA SETTIMANALE GYM ─── */
+var GYM_DAY_OPTIONS=["Upper Body","Lower Body","Core + Addome","Upper + Core","Lower + Core","Corsa continua","Interval Running","HIIT Bodyweight","Camminata veloce","Camminata in salita","Yoga / Pilates","Riposo attivo","Riposo"];
+
 function genShoppingList(dayIdxs){
   var cats={frutta:[],verdura:[],proteine:[],carboidrati:[],dispensa:[],latticini:[]};
-  var verdK=["rucola","pomodor","spinac","zucchin","brocco","cavol","insalata","finocch","peperoni","sedano","porri","fungh","valeriana","carot","radicchio"];
-  var protK=["pollo","salmone","merluzzo","tacchino","uov","tonno","orata","seppie","sgombro"];
-  var carbK=["pane","riso","quinoa","farro","orzo","avena","wasa","patate","grano saraceno"];
-  var fruttK=["mirtill","lamponi","fragol","mela","kiwi","pompelmo","frutti di bosco"];
-  var lattK=["yogurt","fiocchi di latte","latte"];
+  var verdMap={"rucola":"Rucola","pomodor":"Pomodori","spinac":"Spinaci","zucchin":"Zucchine","brocco":"Broccoli","cavol":"Cavolo/Cavolfiore","insalata":"Insalata mista","finocch":"Finocchi","peperoni":"Peperoni","sedano":"Sedano","porri":"Porri","fungh":"Funghi","valeriana":"Valeriana","carot":"Carote","radicchio":"Radicchio","cavolett":"Cavoletti di Bruxelles"};
+  var protMap={"pollo":"Petto di pollo","salmone":"Salmone","merluzzo":"Merluzzo","tacchino":"Fesa di tacchino","uov":"Uova","tonno":"Tonno fresco","orata":"Orata","seppie":"Seppie","sgombro":"Sgombro"};
+  var carbMap={"pane":"Pane integrale/segale","riso":"Riso (integrale/venere)","quinoa":"Quinoa","farro":"Farro integrale","orzo":"Orzo","avena":"Fiocchi d'avena","wasa":"Fette Wasa","patate":"Patate","grano saraceno":"Grano saraceno"};
+  var fruttMap={"mirtill":"Mirtilli","lamponi":"Lamponi","fragol":"Fragole","mela":"Mele","kiwi":"Kiwi","pompelmo":"Pompelmo","frutti di bosco":"Frutti di bosco"};
+  var lattMap={"yogurt":"Yogurt greco 0%","fiocchi di latte":"Fiocchi di latte","latte":"Latte (cocco/avena)"};
+  function addCat(map,cat){return function(k){Object.keys(map).forEach(function(stem){if(k.includes(stem)&&cat.indexOf(map[stem])<0)cat.push(map[stem]);});};}
   dayIdxs.forEach(function(di){
     var m=MENU[di];if(!m)return;
     [m.col,m.pra,m.cen].forEach(function(meal){
       var d=(meal.desc||"").toLowerCase();
-      verdK.forEach(function(k){if(d.includes(k)&&cats.verdura.indexOf(k)<0)cats.verdura.push(k);});
-      protK.forEach(function(k){if(d.includes(k)&&cats.proteine.indexOf(k)<0)cats.proteine.push(k);});
-      carbK.forEach(function(k){if(d.includes(k)&&cats.carboidrati.indexOf(k)<0)cats.carboidrati.push(k);});
-      fruttK.forEach(function(k){if(d.includes(k)&&cats.frutta.indexOf(k)<0)cats.frutta.push(k);});
-      lattK.forEach(function(k){if(d.includes(k)&&cats.latticini.indexOf(k)<0)cats.latticini.push(k);});
+      Object.keys(verdMap).forEach(function(k){if(d.includes(k)&&cats.verdura.indexOf(verdMap[k])<0)cats.verdura.push(verdMap[k]);});
+      Object.keys(protMap).forEach(function(k){if(d.includes(k)&&cats.proteine.indexOf(protMap[k])<0)cats.proteine.push(protMap[k]);});
+      Object.keys(carbMap).forEach(function(k){if(d.includes(k)&&cats.carboidrati.indexOf(carbMap[k])<0)cats.carboidrati.push(carbMap[k]);});
+      Object.keys(fruttMap).forEach(function(k){if(d.includes(k)&&cats.frutta.indexOf(fruttMap[k])<0)cats.frutta.push(fruttMap[k]);});
+      Object.keys(lattMap).forEach(function(k){if(d.includes(k)&&cats.latticini.indexOf(lattMap[k])<0)cats.latticini.push(lattMap[k]);});
     });
   });
-  cats.dispensa=["olio EVO","semi di chia","semi canapa","semi sesamo","cannella","curcuma","mandorle","noci","pistacchi","burro di mandorle"];
+  cats.dispensa=["Olio EVO","Semi di chia","Semi di canapa","Semi di sesamo","Cannella","Curcuma","Mandorle","Noci","Pistacchi","Burro di mandorle"];
   return cats;
 }
 
@@ -393,16 +493,25 @@ function MealChecklist(){
 }
 
 /* ═══════════ SUPPLEMENT TRACKER ═══════════ */
+
+function SeasonalBadge(){var s=getSeasonal();var mn=["","Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];return(<Cd accent={C.sage} style={{marginBottom:"10px",padding:"12px",background:"linear-gradient(135deg,"+C.sageP+","+C.white+")"}}><div style={{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px"}}><span style={{fontSize:"16px"}}>🌿</span><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.sageD,margin:0}}>Di stagione a {mn[new Date().getMonth()+1]}</h5></div><div style={{display:"flex",flexWrap:"wrap",gap:"3px"}}>{s.verdura.concat(s.frutta).slice(0,10).map(function(v,i){return(<span key={i} style={{fontSize:"9px",fontFamily:F.s,padding:"2px 6px",borderRadius:"6px",background:C.sage+"15",color:C.sageD}}>{v}</span>);})}</div></Cd>);}
+
 function SuppTracker(){
   var dk=todayK();
-  const[supps,setSupps]=useState(function(){return LD("supps_"+dk,DEF_SUPPS.map(function(s){return{id:s.id,checked:false};}));});
+  const[customSupps,setCustomSupps]=useState(function(){return LD("customSupps",[]);});
+  var allSupps=DEF_SUPPS.concat(customSupps);
+  const[supps,setSupps]=useState(function(){return LD("supps_"+dk,allSupps.map(function(s){return{id:s.id,checked:false};}));});
+  const[showAdd,setShowAdd]=useState(false);
+  const[newSupp,setNewSupp]=useState({name:"",time:"Mattina",note:""});
   useEffect(function(){SV("supps_"+dk,supps);},[supps]);
   function toggle(id){setSupps(supps.map(function(s){return s.id===id?{id:s.id,checked:!s.checked}:s;}));}
+  function addCustom(){if(!newSupp.name.trim())return;var s={id:"custom_"+Date.now(),name:newSupp.name.trim(),time:newSupp.time,note:newSupp.note||"Personalizzato"};var u=customSupps.concat([s]);setCustomSupps(u);SV("customSupps",u);setSupps(supps.concat([{id:s.id,checked:false}]));setNewSupp({name:"",time:"Mattina",note:""});setShowAdd(false);}
+  function removeCustom(id){var u=customSupps.filter(function(s){return s.id!==id;});setCustomSupps(u);SV("customSupps",u);setSupps(supps.filter(function(s){return s.id!==id;}));}
   var done=supps.filter(function(s){return s.checked;}).length;
   var byTime={Mattina:[],Pranzo:[],Sera:[]};
-  DEF_SUPPS.forEach(function(s){if(byTime[s.time])byTime[s.time].push(s);});
-  return(<div style={{display:"grid",gap:"10px"}}><Cd accent={C.plum}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:0}}>💊 Integratori Oggi</h4><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:done===DEF_SUPPS.length?"#4CAF50":C.txtL}}>{done}/{DEF_SUPPS.length}</span></div><Bar v={done} mx={DEF_SUPPS.length} color={C.plum}/></Cd>
-  {Object.keys(byTime).map(function(time){return(<Cd key={time}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.txtM,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:".5px"}}>{time==="Mattina"?"☀️":time==="Pranzo"?"🌤️":"🌙"} {time}</h5><div style={{display:"grid",gap:"6px"}}>{byTime[time].map(function(s){var st=supps.find(function(x){return x.id===s.id;});var ck=st?st.checked:false;return(<button key={s.id} onClick={function(){toggle(s.id);}} style={{display:"flex",gap:"10px",alignItems:"center",padding:"10px",borderRadius:"10px",border:ck?"2px solid "+C.plum:"1px solid "+C.bdr,background:ck?C.plumP:C.white,cursor:"pointer",textAlign:"left",width:"100%"}}><span style={{fontSize:"16px",flexShrink:0}}>{ck?"✅":"⬜"}</span><div style={{flex:1}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:ck?C.plum:C.txt}}>{s.name}</div><div style={{fontFamily:F.s,fontSize:"10px",color:C.txtL}}>{s.note}</div></div></button>);})}</div></Cd>);})}</div>);
+  allSupps.forEach(function(s){if(byTime[s.time])byTime[s.time].push(s);});
+  return(<div style={{display:"grid",gap:"10px"}}><Cd accent={C.plum}><div style={{display:"flex",justifyContent:"space-between",marginBottom:"10px"}}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:0}}>💊 Integratori Oggi</h4><span style={{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:done===allSupps.length?"#4CAF50":C.txtL}}>{done}/{allSupps.length}</span></div><Bar v={done} mx={allSupps.length} color={C.plum}/></Cd>
+  {Object.keys(byTime).map(function(time){return(<Cd key={time}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.txtM,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:".5px"}}>{time==="Mattina"?"☀️":time==="Pranzo"?"🌤️":"🌙"} {time}</h5><div style={{display:"grid",gap:"6px"}}>{byTime[time].map(function(s){var st=supps.find(function(x){return x.id===s.id;});var ck=st?st.checked:false;var isCustom=s.id&&s.id.toString().startsWith("custom_");return(<div key={s.id} style={{display:"flex",gap:"10px",alignItems:"center",padding:"10px",borderRadius:"10px",border:ck?"2px solid "+C.plum:"1px solid "+C.bdr,background:ck?C.plumP:C.white}}><button onClick={function(){toggle(s.id);}} style={{fontSize:"16px",flexShrink:0,background:"none",border:"none",cursor:"pointer",padding:0}}>{ck?"✅":"⬜"}</button><div style={{flex:1,cursor:"pointer"}} onClick={function(){toggle(s.id);}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:ck?C.plum:C.txt}}>{s.name}</div><div style={{fontFamily:F.s,fontSize:"10px",color:C.txtL}}>{s.note}</div></div>{isCustom&&<button onClick={function(){removeCustom(s.id);}} style={{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"14px",padding:"4px"}}>✕</button>}</div>);})}</div></Cd>);})}{/* add custom supplement */}<Cd style={{padding:"12px"}}>{!showAdd?<button onClick={function(){setShowAdd(true);}} style={{width:"100%",padding:"10px",borderRadius:"10px",border:"1px dashed "+C.plum,background:"transparent",color:C.plum,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>+ Aggiungi integratore personalizzato</button>:(<div style={{display:"grid",gap:"6px"}}><input value={newSupp.name} onChange={function(e){setNewSupp(Object.assign({},newSupp,{name:e.target.value}));}} placeholder="Nome (es. Berberina, Acido folico...)" style={iS}/><div style={{display:"flex",gap:"6px"}}><select value={newSupp.time} onChange={function(e){setNewSupp(Object.assign({},newSupp,{time:e.target.value}));}} style={Object.assign({},iS,{flex:1})}><option value="Mattina">Mattina</option><option value="Pranzo">Pranzo</option><option value="Sera">Sera</option></select><input value={newSupp.note} onChange={function(e){setNewSupp(Object.assign({},newSupp,{note:e.target.value}));}} placeholder="Note (opzionale)" style={Object.assign({},iS,{flex:2})}/></div><div style={{display:"flex",gap:"6px"}}><button onClick={addCustom} style={{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:C.plum,color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>Aggiungi</button><button onClick={function(){setShowAdd(false);}} style={{padding:"10px 16px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>Annulla</button></div></div>)}</Cd></div>);
 }
 
 
@@ -510,7 +619,7 @@ function Alimentazione({profile,setProfile}){
     <WaterTracker/>
     <SubT tabs={[{k:"menu",l:"Menu IF",i:"📅"},{k:"idee",l:"Idee Pasti",i:"💡"},{k:"ricette",l:"Ricettario",i:"👩‍🍳"},{k:"guida",l:"Cibi & Dosi",i:"📋"},{k:"spesa",l:"Spesa",i:"🛒"},{k:"regole",l:"Regole"}]} active={sub} onSel={setSub}/>
     {sub==="menu"&&(<div>
-      <Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>IF {profile.ifH}:{24-profile.ifH} | Finestra {profile.ifOpen}-{profile.ifClose}</strong>: colazione ore {profile.ifOpen} | cena entro {profile.ifClose}</Info>
+      <SeasonalBadge/><Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>IF {profile.ifH}:{24-profile.ifH} | Finestra {profile.ifOpen}-{profile.ifClose}</strong>: colazione ore {profile.ifOpen} | cena entro {profile.ifClose}</Info>
       <div style={{display:"flex",gap:"6px",margin:"12px 0"}}><button onClick={shuffleMenu} style={{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.amber+","+C.rose+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>🔄 Genera Menu Casuale</button>{shuffled&&<button onClick={function(){setShuffled(null);setLockedDays({});}} style={{padding:"10px 14px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}}>↩️ Originale</button>}</div>
       <div style={{display:"flex",gap:"4px",margin:"10px 0"}}>{curMenu.map(function(d,i){return(<button key={i} onClick={function(){setSelDay(i);}} style={{flex:1,padding:"7px 2px",borderRadius:"10px",border:selDay===i?"none":"1px solid "+C.bdr,background:selDay===i?C.sage:C.white,color:selDay===i?C.white:C.txtM,fontWeight:"600",fontSize:"11px",fontFamily:F.s,cursor:"pointer",position:"relative"}}>{d.day.slice(0,3)}{shuffled&&lockedDays[i]&&<span style={{position:"absolute",top:"-6px",right:"-2px",fontSize:"10px"}}>🔒</span>}</button>);})}</div>
       {shuffled&&<div style={{display:"flex",justifyContent:"flex-end",marginBottom:"8px"}}><button onClick={function(){var u=Object.assign({},lockedDays);if(u[selDay])delete u[selDay];else u[selDay]=true;setLockedDays(u);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:lockedDays[selDay]?C.sageP:C.white,color:lockedDays[selDay]?C.sageD:C.txtM,fontSize:"10px",fontFamily:F.s,cursor:"pointer"}}>{lockedDays[selDay]?"🔒 Bloccato":"🔓 Blocca questo giorno"}</button></div>}
@@ -535,14 +644,23 @@ function Allenamento(){
   const[logs,setLogs]=useState(function(){return LD("gymLogs",{});});
   const[showLog,setShowLog]=useState(null);
   const[logForm,setLogForm]=useState({weight:"",reps:""});
+  const[customSched,setCustomSched]=useState(function(){return LD("gymSched",["Upper Body","Camminata veloce","Lower Body","Riposo attivo","Core + Addome","Corsa continua","Riposo"]);});
+  const[libCat,setLibCat]=useState("upper");
+  const[libSearch,setLibSearch]=useState("");
   function saveLog(exName){if(!logForm.weight&&!logForm.reps)return;var k=exName.replace(/[^a-zA-Z]/g,"");var entries=logs[k]||[];var entry={date:todayK(),weight:parseFloat(logForm.weight)||0,reps:parseInt(logForm.reps)||0};entries=[entry].concat(entries).slice(0,20);var u=Object.assign({},logs);u[k]=entries;setLogs(u);SV("gymLogs",u);setShowLog(null);setLogForm({weight:"",reps:""});}
   function getLastLog(exName){var k=exName.replace(/[^a-zA-Z]/g,"");var entries=logs[k]||[];return entries.length>0?entries[0]:null;}
+  function updateDay(idx,val){var u=customSched.slice();u[idx]=val;setCustomSched(u);SV("gymSched",u);}
+  var DAYS=["Lunedi","Martedi","Mercoledi","Giovedi","Venerdi","Sabato","Domenica"];
+  var dayColors=function(w){if(w==="Riposo"||w==="Riposo attivo")return C.txtL;if(w.includes("Corsa")||w.includes("HIIT")||w.includes("Interval"))return C.rose;if(w.includes("Camminata")||w.includes("Yoga"))return C.amber;return C.sage;};
+  var allExercises=EXERCISE_LIB[libCat]||[];
+  var filteredEx=libSearch.length>=2?allExercises.filter(function(e){return e.n.toLowerCase().includes(libSearch.toLowerCase())||e.muscle.toLowerCase().includes(libSearch.toLowerCase());}):allExercises;
   return(<div>
-    <SecH title="Allenamento" sub="Sala pesi per perdere grasso e aumentare massa muscolare"/>
+    <SecH title="Allenamento" sub="Personalizza la tua scheda settimanale"/>
     <CycleGymBanner/>
-    <SubT tabs={[{k:"sched",l:"Scheda",i:"📅"},{k:"upper",l:"Upper",i:"💪"},{k:"lower",l:"Lower",i:"🦵"},{k:"core",l:"Core",i:"🎯"},{k:"progress",l:"Progressi",i:"📈"}]} active={sub} onSel={setSub}/>
-    {sub==="sched"&&(<div><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Con deficit calorico, il resistance training preserva massa muscolare e accelera la perdita di grasso addominale.</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM.sched.map(function(d,i){var iColor=d.i==="Bassa"?C.sage:d.i==="Leggera"?C.amber:C.rose;return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><h4 style={{margin:"0 0 2px",fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{d.d}</h4><p style={{margin:0,fontSize:"11px",fontFamily:F.s,color:C.txtM}}>{d.w}</p></div><Pill color={iColor}>{d.i}</Pill></div></Cd>);})}</div></div>)}
+    <SubT tabs={[{k:"sched",l:"Scheda",i:"📅"},{k:"upper",l:"Upper",i:"💪"},{k:"lower",l:"Lower",i:"🦵"},{k:"core",l:"Core",i:"🎯"},{k:"library",l:"Biblioteca",i:"📚"},{k:"progress",l:"Progressi",i:"📈"}]} active={sub} onSel={setSub}/>
+    {sub==="sched"&&(<div><Info bg={C.sageP} bdr={C.sageL} color={C.sageD}>Personalizza la tua settimana: scegli dal menu a tendina l'allenamento per ogni giorno. Inclusa corsa, HIIT, yoga e riposo.</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{DAYS.map(function(day,i){return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:"8px"}}><h4 style={{margin:0,fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt,minWidth:"70px"}}>{day}</h4><select value={customSched[i]||"Riposo"} onChange={function(e){updateDay(i,e.target.value);}} style={Object.assign({},iS,{flex:1,fontSize:"11px",padding:"8px"})}>{GYM_DAY_OPTIONS.map(function(opt){return(<option key={opt} value={opt}>{opt}</option>);})}</select><Pill color={dayColors(customSched[i])}>{customSched[i].includes("Riposo")?"Bassa":customSched[i].includes("Camminata")||customSched[i].includes("Yoga")?"Leggera":"Moderata"}</Pill></div></Cd>);})}</div></div>)}
     {(sub==="upper"||sub==="lower"||sub==="core")&&(<div><Info bg={C.roseP} bdr={C.roseL} color={C.roseD}>{GYM[sub].ico} {GYM[sub].why}</Info><div style={{display:"grid",gap:"7px",marginTop:"10px"}}>{GYM[sub].ex.map(function(e,i){var lastLog=getLastLog(e.n);return(<Cd key={i} style={{padding:"13px"}}><div style={{display:"flex",justifyContent:"space-between",gap:"8px"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}}><span style={{fontFamily:F.s,fontSize:"9px",color:C.white,background:C.sage,borderRadius:"6px",padding:"2px 6px",fontWeight:"600"}}>{i+1}</span><h5 style={{margin:0,fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{e.n}</h5></div><p style={{margin:0,fontSize:"10px",fontFamily:F.s,color:C.txtL,fontStyle:"italic"}}>{e.nt}</p>{lastLog&&<div style={{marginTop:"4px"}}><Pill color={C.amber}>Ultimo: {lastLog.weight}kg x{lastLog.reps} ({fmtD(lastLog.date)})</Pill></div>}</div><div style={{textAlign:"right",flexShrink:0}}><div style={{fontFamily:F.s,fontSize:"12px",fontWeight:"700",color:C.sage}}>{e.s}</div><div style={{fontFamily:F.s,fontSize:"9px",color:C.txtL}}>Rest {e.r}</div><div style={{display:"flex",gap:"4px",marginTop:"6px"}}><a href={"https://www.youtube.com/results?search_query="+e.vid} target="_blank" rel="noopener noreferrer" style={{padding:"3px 7px",borderRadius:"6px",background:C.roseP,fontSize:"9px",fontFamily:F.s,color:C.roseD,textDecoration:"none",fontWeight:"500"}}>🎬 Video</a><button onClick={function(){setShowLog(showLog===e.n?null:e.n);setLogForm({weight:"",reps:""});}} style={{padding:"3px 7px",borderRadius:"6px",border:"none",background:C.sageP,fontSize:"9px",fontFamily:F.s,color:C.sageD,cursor:"pointer",fontWeight:"500"}}>📊 Log</button></div></div></div>{showLog===e.n&&(<div style={{marginTop:"10px",padding:"10px",borderRadius:"10px",background:C.bg,display:"flex",gap:"6px",alignItems:"flex-end"}}><div style={{flex:1}}><label style={lS}>Peso (kg)</label><input type="number" step="0.5" placeholder="20" value={logForm.weight} onChange={function(ev){setLogForm(Object.assign({},logForm,{weight:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><div style={{flex:1}}><label style={lS}>Reps</label><input type="number" placeholder="12" value={logForm.reps} onChange={function(ev){setLogForm(Object.assign({},logForm,{reps:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><button onClick={function(){saveLog(e.n);}} style={{padding:"8px 12px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✓</button></div>)}</Cd>);})}</div></div>)}
+    {sub==="library"&&(<div><div style={{display:"flex",gap:"4px",marginBottom:"10px"}}>{[{k:"upper",l:"💪 Upper"},{k:"lower",l:"🦵 Lower"},{k:"core",l:"🎯 Core"},{k:"cardio",l:"🏃‍♀️ Cardio/Corsa"}].map(function(c){return(<button key={c.k} onClick={function(){setLibCat(c.k);}} style={{flex:1,padding:"8px 4px",borderRadius:"10px",fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",border:libCat===c.k?"none":"1px solid "+C.bdr,background:libCat===c.k?C.sage:C.white,color:libCat===c.k?C.white:C.txtM}}>{c.l}</button>);})}</div><input value={libSearch} onChange={function(e){setLibSearch(e.target.value);}} placeholder="Cerca esercizio o muscolo..." style={Object.assign({},iS,{marginBottom:"10px"})}/><div style={{display:"grid",gap:"6px"}}>{filteredEx.map(function(e,i){var lastLog=getLastLog(e.n);return(<Cd key={i} style={{padding:"12px"}}><div style={{display:"flex",justifyContent:"space-between",gap:"8px"}}><div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:"5px",marginBottom:"2px"}}><Pill color={C.plum}>{e.muscle}</Pill><h5 style={{margin:0,fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt}}>{e.n}</h5></div><p style={{margin:0,fontSize:"10px",fontFamily:F.s,color:C.txtL,fontStyle:"italic"}}>{e.nt}</p>{lastLog&&<Pill color={C.amber}>Ultimo: {lastLog.weight}kg x{lastLog.reps}</Pill>}</div><div style={{textAlign:"right",flexShrink:0}}><div style={{fontFamily:F.s,fontSize:"11px",fontWeight:"700",color:C.sage}}>{e.s}</div><div style={{fontFamily:F.s,fontSize:"9px",color:C.txtL}}>Rest {e.r}</div><div style={{display:"flex",gap:"4px",marginTop:"5px"}}><a href={"https://www.youtube.com/results?search_query="+e.vid} target="_blank" rel="noopener noreferrer" style={{padding:"3px 7px",borderRadius:"6px",background:C.roseP,fontSize:"9px",fontFamily:F.s,color:C.roseD,textDecoration:"none",fontWeight:"500"}}>🎬 Video</a><button onClick={function(){setShowLog(showLog===e.n?null:e.n);setLogForm({weight:"",reps:""});}} style={{padding:"3px 7px",borderRadius:"6px",border:"none",background:C.sageP,fontSize:"9px",fontFamily:F.s,color:C.sageD,cursor:"pointer",fontWeight:"500"}}>📊 Log</button></div></div></div>{showLog===e.n&&(<div style={{marginTop:"10px",padding:"10px",borderRadius:"10px",background:C.bg,display:"flex",gap:"6px",alignItems:"flex-end"}}><div style={{flex:1}}><label style={lS}>Peso (kg)</label><input type="number" step="0.5" placeholder="20" value={logForm.weight} onChange={function(ev){setLogForm(Object.assign({},logForm,{weight:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><div style={{flex:1}}><label style={lS}>Reps</label><input type="number" placeholder="12" value={logForm.reps} onChange={function(ev){setLogForm(Object.assign({},logForm,{reps:ev.target.value}));}} style={Object.assign({},iS,{padding:"8px"})}/></div><button onClick={function(){saveLog(e.n);}} style={{padding:"8px 12px",borderRadius:"8px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>✓</button></div>)}</Cd>);})}</div></div>)}
     {sub==="progress"&&(<div style={{display:"grid",gap:"10px"}}><Info bg={C.amberP} bdr={C.amberL} color={C.amber}>📈 Progressive overload: quando riesci a fare tutte le reps con buona forma, aumenta il peso del 5-10%.</Info>{Object.keys(logs).filter(function(k){return logs[k].length>1;}).map(function(k){var entries=logs[k].slice().reverse();var exName=entries[0]?k:"";var first=entries[0];var last=entries[entries.length-1];var diff=last.weight-first.weight;return(<Cd key={k}><h4 style={{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt,margin:"0 0 8px",textTransform:"capitalize"}}>{k}</h4><div style={{display:"flex",gap:"3px",alignItems:"flex-end",height:"60px",marginBottom:"6px"}}>{entries.slice(-8).map(function(e,i){var mx=Math.max.apply(null,entries.map(function(x){return x.weight||1;}));var h=((e.weight||1)/mx)*100;return(<div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"2px"}}><span style={{fontSize:"7px",fontFamily:F.s,color:C.txtL}}>{e.weight}</span><div style={{width:"100%",maxWidth:"20px",height:h+"%",borderRadius:"3px",background:i===entries.length-1?C.sage:C.sageL}}/></div>);})}</div><div style={{display:"flex",gap:"10px"}}><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>Prima: {first.weight}kg x{first.reps}</span><span style={{fontSize:"10px",fontFamily:F.s,color:C.txtL}}>→</span><span style={{fontSize:"10px",fontFamily:F.s,color:diff>0?C.sage:C.txt,fontWeight:"600"}}>Ora: {last.weight}kg x{last.reps} {diff>0?"(+"+diff+"kg) 💪":""}</span></div></Cd>);})}{Object.keys(logs).filter(function(k){return logs[k].length>1;}).length===0&&<Cd style={{textAlign:"center",padding:"30px"}}><p style={{fontSize:"13px",fontFamily:F.s,color:C.txtL}}>Registra i carichi negli esercizi per vedere i tuoi progressi qui!</p></Cd>}</div>)}
   </div>);
 }
@@ -1328,14 +1446,76 @@ function CosaCucino(){
     );})
   );
 }
+
+
+/* ═══════════ SEASONAL GUIDE ═══════════ */
+function SeasonalGuide(){
+  var s=getSeasonal();
+  var monthNames=["","Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
+  var curMonth=monthNames[new Date().getMonth()+1];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Info,{bg:C.sageP,bdr:C.sageL,color:C.sageD},React.createElement("strong",null,"🌿 Frutta e verdura di stagione — "+curMonth)," Scegli prodotti di stagione per massimo contenuto di nutrienti e minor impatto ambientale."),
+    React.createElement(Cd,{accent:C.sage},
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.sage,margin:"0 0 8px"}},"🥬 Verdura di stagione"),
+      React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px"}},s.verdura.map(function(v,i){return React.createElement(Pill,{key:i,color:C.sage},v);}))
+    ),
+    React.createElement(Cd,{accent:C.amber},
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.amber,margin:"0 0 8px"}},"🍎 Frutta di stagione"),
+      React.createElement("div",{style:{display:"flex",flexWrap:"wrap",gap:"4px"}},s.frutta.map(function(v,i){return React.createElement(Pill,{key:i,color:C.amber},v);}))
+    ),
+    React.createElement(Cd,null,
+      React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txtM,lineHeight:1.6,margin:0}},"💡 ",React.createElement("strong",null,"Nella PCOS")," preferisci frutta a basso indice glicemico: frutti di bosco, mele, kiwi, pere, pompelmo. Limita banane mature, uva, fichi e datteri.")
+    )
+  );
+}
+
+/* ═══════════ COOK CONVERTER ═══════════ */
+function CookConverter(){
+  var _s=useState(""),search=_s[0],setSearch=_s[1];
+  var _s2=useState(100),grams=_s2[0],setGrams=_s2[1];
+  var _s3=useState("crudo"),mode=_s3[0],setMode=_s3[1];
+  var filtered=search.length>=2?COOK_CONV.filter(function(f){return f.n.toLowerCase().includes(search.toLowerCase());}):COOK_CONV;
+  function convert(item,g){if(mode==="crudo"){return Math.round(g*(item.cotto/item.crudo));}else{return Math.round(g*(item.crudo/item.cotto));}}
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Info,{bg:C.amberP,bdr:C.amberL,color:C.amber},React.createElement("strong",null,"Convertitore Crudo ⇄ Cotto")," — Inserisci i grammi e scopri l'equivalente. Le dosi nel menu sono sempre a CRUDO."),
+    React.createElement(Cd,null,
+      React.createElement("div",{style:{display:"flex",gap:"6px",marginBottom:"8px"}},
+        React.createElement("button",{onClick:function(){setMode("crudo");},style:{flex:1,padding:"8px",borderRadius:"10px",border:mode==="crudo"?"none":"1px solid "+C.bdr,background:mode==="crudo"?C.sage:C.white,color:mode==="crudo"?C.white:C.txtM,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},"Crudo → Cotto"),
+        React.createElement("button",{onClick:function(){setMode("cotto");},style:{flex:1,padding:"8px",borderRadius:"10px",border:mode==="cotto"?"none":"1px solid "+C.bdr,background:mode==="cotto"?C.amber:C.white,color:mode==="cotto"?C.white:C.txtM,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},"Cotto → Crudo")
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"6px",marginBottom:"8px"}},
+        React.createElement("input",{value:search,onChange:function(e){setSearch(e.target.value);},placeholder:"Cerca alimento (es. riso, pasta, pollo...)",style:Object.assign({},iS,{flex:2})}),
+        React.createElement("input",{type:"number",value:grams,onChange:function(e){setGrams(parseInt(e.target.value)||0);},style:Object.assign({},iS,{flex:1,textAlign:"center"})}),
+        React.createElement("span",{style:{fontSize:"11px",fontFamily:F.s,color:C.txtL,alignSelf:"center"}},"g")
+      )
+    ),
+    React.createElement("div",{style:{display:"grid",gap:"5px"}},filtered.slice(0,15).map(function(item,i){
+      var result=convert(item,grams);
+      return React.createElement(Cd,{key:i,style:{padding:"12px"}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("div",null,
+            React.createElement("span",{style:{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt}},item.n),
+            React.createElement("span",{style:{fontFamily:F.s,fontSize:"9px",color:C.txtL,marginLeft:"6px"}},item.note)
+          ),
+          React.createElement("div",{style:{textAlign:"right"}},
+            React.createElement("div",{style:{fontFamily:F.s,fontSize:"14px",fontWeight:"700",color:mode==="crudo"?C.sage:C.amber}},grams+"g "+mode+" = "+result+"g "+(mode==="crudo"?"cotto":"crudo"))
+          )
+        )
+      );
+    }))
+  );
+}
+
 function MealIntelligence(props){
   var _s=useState("planner"),sub=_s[0],setSub=_s[1];
   return React.createElement("div",null,
-    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Plan":"Piano",i:"\ud83d\udcc5"},{k:"gl",l:"GL",i:"\ud83d\udcca"},{k:"scanner",l:"Scan",i:"\ud83d\udcf7"},{k:"cucino",l:LANG_STORE==="en"?"Cook":"Cucino",i:"\ud83e\uddd1\u200d\ud83c\udf73"},{k:"gi",l:"IG DB",i:"\ud83d\udcda"},{k:"spesa",l:LANG_STORE==="en"?"Shop":"Spesa",i:"\ud83d\uded2"},{k:"risto",l:LANG_STORE==="en"?"Eat Out":"Fuori",i:"\ud83c\udf7d"},{k:"diario",l:LANG_STORE==="en"?"Diary":"Diario",i:"\ud83d\udcf8"}],active:sub,onSel:setSub}),
+    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Plan":"Piano",i:"\ud83d\udcc5"},{k:"gl",l:"GL",i:"\ud83d\udcca"},{k:"scanner",l:"Scan",i:"\ud83d\udcf7"},{k:"cucino",l:LANG_STORE==="en"?"Cook":"Cucino",i:"\ud83e\uddd1\u200d\ud83c\udf73"},{k:"convert",l:"⚖️",i:"⚖️"},{k:"season",l:LANG_STORE==="en"?"Season":"Stagione",i:"🌿"},{k:"gi",l:"IG DB",i:"\ud83d\udcda"},{k:"spesa",l:LANG_STORE==="en"?"Shop":"Spesa",i:"\ud83d\uded2"},{k:"risto",l:LANG_STORE==="en"?"Eat Out":"Fuori",i:"\ud83c\udf7d"},{k:"diario",l:LANG_STORE==="en"?"Diary":"Diario",i:"\ud83d\udcf8"}],active:sub,onSel:setSub}),
     sub==="planner"&&React.createElement(MealPlanner,{profile:props.profile}),
     sub==="gl"&&React.createElement(GLCalculator,null),
     sub==="scanner"&&React.createElement(FoodScanner,null),
     sub==="cucino"&&React.createElement(CosaCucino,null),
+    sub==="convert"&&React.createElement(CookConverter,null),
+    sub==="season"&&React.createElement(SeasonalGuide,null),
     sub==="gi"&&React.createElement(GIDatabase,null),
     sub==="spesa"&&React.createElement(ShoppingList,null),
     sub==="risto"&&React.createElement(RestaurantGuide,null),
