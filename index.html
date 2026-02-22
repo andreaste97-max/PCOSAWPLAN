@@ -43,7 +43,8 @@ if('serviceWorker' in navigator){
 const{useState,useEffect,useRef,useCallback}=React;
 
 /* ═══════════ PCOS DAILY v2.0 — FULL ROADMAP ═══════════ */
-const C={bg:"#FBF8F4",bgW:"#F5EDE4",white:"#FFFFFF",sage:"#8B9E7E",sageD:"#6B7F5E",sageL:"#C5D4BC",sageP:"#E8F0E4",rose:"#C4918A",roseD:"#A67069",roseL:"#E8C5C0",roseP:"#FFF0ED",amber:"#D4A574",amberL:"#F0DCC8",amberP:"#FFF8F0",plum:"#7B6B8D",plumL:"#D8D0F0",plumP:"#F3F0FF",txt:"#3A3228",txtM:"#6B5E52",txtL:"#9B8E82",bdr:"#E8DFD6",berry:"#B5547A",berryL:"#F5D6E3",berryP:"#FFF0F6",blue:"#5B9BD5"};
+var PCOS_THEME=localStorage.getItem("pcos_theme")||"light";
+const C=PCOS_THEME==="dark"?{bg:"#1a1a2e",bgW:"#16213e",white:"#1e1e30",sage:"#8B9E7E",sageD:"#A0B893",sageL:"#4a5a40",sageP:"#2a332a",rose:"#C4918A",roseD:"#d4a19a",roseL:"#5a3a35",roseP:"#2e1f1d",amber:"#D4A574",amberL:"#4a3828",amberP:"#2e2418",plum:"#9B8BAD",plumL:"#3a3050",plumP:"#2a2238",txt:"#e8e0d8",txtM:"#b0a89e",txtL:"#7a726a",bdr:"#3a3248",berry:"#B5547A",berryL:"#3a1a28",berryP:"#2e1420",blue:"#5B9BD5"}:{bg:"#FBF8F4",bgW:"#F5EDE4",white:"#FFFFFF",sage:"#8B9E7E",sageD:"#6B7F5E",sageL:"#C5D4BC",sageP:"#E8F0E4",rose:"#C4918A",roseD:"#A67069",roseL:"#E8C5C0",roseP:"#FFF0ED",amber:"#D4A574",amberL:"#F0DCC8",amberP:"#FFF8F0",plum:"#7B6B8D",plumL:"#D8D0F0",plumP:"#F3F0FF",txt:"#3A3228",txtM:"#6B5E52",txtL:"#9B8E82",bdr:"#E8DFD6",berry:"#B5547A",berryL:"#F5D6E3",berryP:"#FFF0F6",blue:"#5B9BD5"};
 const F={p:"'Playfair Display',serif",s:"'DM Sans',sans-serif"};
 
 /* ─── i18n ─── */
@@ -366,7 +367,7 @@ function genShoppingList(dayIdxs){
 /* ═══════════ UI COMPONENTS ═══════════ */
 function fmt(ms){if(ms<=0)return{h:"00",m:"00",s:"00"};var ts=Math.floor(ms/1000);return{h:String(Math.floor(ts/3600)).padStart(2,"0"),m:String(Math.floor((ts%3600)/60)).padStart(2,"0"),s:String(ts%60).padStart(2,"0")};}
 
-function Cd({children,style,accent}){return(<div style={{background:C.white,borderRadius:"14px",padding:"18px",border:"1px solid "+C.bdr,borderTop:accent?"3px solid "+accent:undefined,...style}}>{children}</div>);}
+function Cd({children,style,accent,onClick}){return(<div onClick={onClick} style={{background:C.white,borderRadius:"14px",padding:"18px",border:"1px solid "+C.bdr,borderTop:accent?"3px solid "+accent:undefined,...style}}>{children}</div>);}
 function Pill({children,color}){var c=color||C.sage;return(<span style={{display:"inline-block",padding:"3px 9px",borderRadius:"20px",fontSize:"10px",fontWeight:"500",fontFamily:F.s,background:c+"18",color:c}}>{children}</span>);}
 function Bar({v,mx,color}){var c=color||C.sage;return(<div style={{height:"5px",borderRadius:"3px",background:C.bdr,width:"100%",overflow:"hidden"}}><div style={{height:"100%",borderRadius:"3px",background:c,width:Math.min((v/mx)*100,100)+"%",transition:"width .8s"}}/></div>);}
 function Info({bg,bdr,color,children}){return(<Cd style={{background:bg,border:"1px solid "+bdr}}><div style={{fontSize:"12px",fontFamily:F.s,color:color,margin:0,lineHeight:1.6}}>{children}</div></Cd>);}
@@ -1100,7 +1101,7 @@ function HomeDashboard(props){
 var THEME_STORE=localStorage.getItem("pcos_theme")||"light";
 function ThemeToggle(){
   var _s=useState(THEME_STORE),theme=_s[0],setTheme=_s[1];
-  function toggle(){var n=theme==="light"?"dark":"light";THEME_STORE=n;localStorage.setItem("pcos_theme",n);setTheme(n);document.body.style.background=n==="dark"?"#1a1a2e":"#faf9f7";document.body.style.color=n==="dark"?"#e8e8e8":"#2d2d2d";}
+  function toggle(){var n=theme==="light"?"dark":"light";localStorage.setItem("pcos_theme",n);window.location.reload();}
   return React.createElement("button",{onClick:toggle,style:{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},theme==="light"?"\ud83c\udf19":"\u2600\ufe0f");
 }
 /* PHASE 10: SHARE CARD */
