@@ -113,7 +113,7 @@ var googleProvider=new firebase.auth.GoogleAuthProvider();
 
 var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
-function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();var cloudProf=null;try{cloudProf=data.profile?JSON.parse(data.profile):null;}catch(e){}var localProf=null;try{var lp=localStorage.getItem("pcos_profile");localProf=lp?JSON.parse(lp):null;}catch(e){}var cloudHasProfile=cloudProf&&cloudProf.name;var localHasProfile=localProf&&localProf.name;Object.keys(data).forEach(function(k){if(k==="lastSync")return;if(k==="profile"&&localHasProfile&&!cloudHasProfile)return;if(k==="pcos_onboarded"&&localHasProfile&&!cloudHasProfile)return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
 function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
 function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
@@ -1812,7 +1812,7 @@ function OnboardingWizard(props){
   var _s1=useState(0),step=_s1[0],setStep=_s1[1];
   var _s2=useState({name:"",age:27,height:168,weight:77,goalW:68,bf:29,goalBf:23,ifH:14,ifOpen:"10:00",ifClose:"20:00",stepsG:10000,waterG:8,workoutsG:4,allergies:[],pcosType:"classic",fitnessLevel:"beginner"}),form=_s2[0],setForm=_s2[1];
   function upd(k,v){var u=Object.assign({},form);u[k]=v;setForm(u);}
-  function finish(){var prof=Object.assign({},form);SV("profile",prof);SV("pcos_onboarded",true);props.setProfile(prof);if(_syncUid){syncToCloud(_syncUid).then(function(){window.location.reload();}).catch(function(){window.location.reload();});}else{window.location.reload();}}
+  function finish(){var prof=Object.assign({},form);localStorage.setItem("pcos_profile",JSON.stringify(prof));localStorage.setItem("pcos_pcos_onboarded",JSON.stringify(true));props.setProfile(prof);if(_syncUid){clearTimeout(_syncTimer);syncToCloud(_syncUid).then(function(){window.location.reload();}).catch(function(){window.location.reload();});}else{window.location.reload();}}
   var ALLERGY_OPTS=["Lattosio","Glutine","Frutta secca","Uova","Soia","Pesce"];
   function toggleAllergy(a){var u=form.allergies.slice();var i=u.indexOf(a);if(i===-1)u.push(a);else u.splice(i,1);upd("allergies",u);}
   var steps=[
@@ -2186,7 +2186,7 @@ function App(){
   var scrollRef=useRef(null);
 
   /* Auth listener + redirect result */
-  useEffect(function(){fbAuth.getRedirectResult().catch(function(){});var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);_syncUid=u.uid;syncFromCloud(u.uid).then(function(){setProfile(LD("profile",DEF_PROF));setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);_syncUid=null;setAuthReady(true);}});return unsub;},[]);
+  useEffect(function(){fbAuth.getRedirectResult().catch(function(){});var unsub=fbAuth.onAuthStateChanged(function(u){if(u){setUser(u);_syncUid=u.uid;syncFromCloud(u.uid).then(function(){var p=LD("profile",DEF_PROF);setProfile(p);if(p&&p.name){syncToCloud(u.uid).catch(function(){});}setAuthReady(true);}).catch(function(){setAuthReady(true);});}else{setUser(null);_syncUid=null;setAuthReady(true);}});return unsub;},[]);
 
   /* Auto-sync every 2 min */
   useEffect(function(){if(!user)return;var iv=setInterval(function(){syncToCloud(user.uid).catch(function(){});},120000);return function(){clearInterval(iv);};},[user]);
