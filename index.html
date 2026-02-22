@@ -831,6 +831,7 @@ function ProgressPhotos(){
 }
 
 /* ═══════════ CYCLE CORRELATION ═══════════ */
+var CYCLE_PHASES=[{name:LANG_STORE==="en"?"Menstrual":"Mestruale",icon:"\ud83c\udf39",color:"#e57373"},{name:LANG_STORE==="en"?"Follicular":"Follicolare",icon:"\ud83c\udf31",color:"#81c784"},{name:LANG_STORE==="en"?"Ovulatory":"Ovulatoria",icon:"\u2728",color:"#ffb74d"},{name:LANG_STORE==="en"?"Luteal":"Luteale",icon:"\ud83c\udf19",color:"#9575cd"}];
 function getCyclePhaseNow(){
   var lp=LD("lastPeriod","");var cl=LD("cycleLen",35);
   if(!lp)return null;
@@ -1113,6 +1114,145 @@ function GLCalculator(){
     )
   );
 }
+/* ═══════ PHASE 12: ADVANCED NUTRITION ═══════ */
+/* GI DATABASE - 200+ foods */
+var GI_DB=[
+{n:"Avena integrale",gi:55,gl:13,cat:"cereali",pcos:true},{n:"Quinoa",gi:53,gl:13,cat:"cereali",pcos:true},{n:"Farro",gi:45,gl:15,cat:"cereali",pcos:true},{n:"Riso basmati",gi:58,gl:22,cat:"cereali",pcos:true},{n:"Riso integrale",gi:50,gl:16,cat:"cereali",pcos:true},{n:"Riso bianco",gi:73,gl:30,cat:"cereali",pcos:false},{n:"Pasta integrale",gi:42,gl:17,cat:"cereali",pcos:true},{n:"Pasta bianca",gi:49,gl:24,cat:"cereali",pcos:false},{n:"Pane integrale",gi:51,gl:15,cat:"cereali",pcos:true},{n:"Pane bianco",gi:75,gl:35,cat:"cereali",pcos:false},{n:"Orzo",gi:28,gl:10,cat:"cereali",pcos:true},{n:"Bulgur",gi:48,gl:12,cat:"cereali",pcos:true},{n:"Cous cous integrale",gi:45,gl:14,cat:"cereali",pcos:true},{n:"Segale (pane)",gi:50,gl:14,cat:"cereali",pcos:true},{n:"Amaranto",gi:35,gl:10,cat:"cereali",pcos:true},{n:"Grano saraceno",gi:54,gl:16,cat:"cereali",pcos:true},{n:"Miglio",gi:71,gl:25,cat:"cereali",pcos:false},
+{n:"Lenticchie",gi:29,gl:5,cat:"legumi",pcos:true},{n:"Ceci",gi:28,gl:8,cat:"legumi",pcos:true},{n:"Fagioli neri",gi:30,gl:7,cat:"legumi",pcos:true},{n:"Fagioli borlotti",gi:35,gl:9,cat:"legumi",pcos:true},{n:"Piselli",gi:48,gl:3,cat:"legumi",pcos:true},{n:"Edamame",gi:18,gl:1,cat:"legumi",pcos:true},{n:"Fave",gi:40,gl:6,cat:"legumi",pcos:true},{n:"Lupini",gi:15,gl:1,cat:"legumi",pcos:true},{n:"Soia",gi:16,gl:1,cat:"legumi",pcos:true},{n:"Fagioli cannellini",gi:31,gl:7,cat:"legumi",pcos:true},
+{n:"Mela",gi:36,gl:5,cat:"frutta",pcos:true},{n:"Pera",gi:38,gl:4,cat:"frutta",pcos:true},{n:"Arancia",gi:43,gl:5,cat:"frutta",pcos:true},{n:"Fragole",gi:25,gl:1,cat:"frutta",pcos:true},{n:"Mirtilli",gi:25,gl:4,cat:"frutta",pcos:true},{n:"Lamponi",gi:25,gl:1,cat:"frutta",pcos:true},{n:"Pompelmo",gi:25,gl:3,cat:"frutta",pcos:true},{n:"Ciliegie",gi:22,gl:3,cat:"frutta",pcos:true},{n:"Kiwi",gi:50,gl:5,cat:"frutta",pcos:true},{n:"Prugne",gi:39,gl:5,cat:"frutta",pcos:true},{n:"Pesche",gi:42,gl:5,cat:"frutta",pcos:true},{n:"Albicocche",gi:34,gl:3,cat:"frutta",pcos:true},{n:"Avocado",gi:15,gl:1,cat:"frutta",pcos:true},{n:"Banana matura",gi:62,gl:14,cat:"frutta",pcos:false},{n:"Anguria",gi:76,gl:4,cat:"frutta",pcos:false},{n:"Melone",gi:65,gl:4,cat:"frutta",pcos:false},{n:"Uva",gi:59,gl:11,cat:"frutta",pcos:false},{n:"Ananas",gi:59,gl:7,cat:"frutta",pcos:false},{n:"Mango",gi:56,gl:8,cat:"frutta",pcos:false},{n:"Datteri",gi:42,gl:18,cat:"frutta",pcos:false},{n:"Fichi freschi",gi:35,gl:4,cat:"frutta",pcos:true},{n:"Melograno",gi:35,gl:5,cat:"frutta",pcos:true},{n:"Cocco",gi:45,gl:4,cat:"frutta",pcos:true},
+{n:"Broccoli",gi:10,gl:1,cat:"verdure",pcos:true},{n:"Spinaci",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Zucchine",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Cavolfiore",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Cavolo",gi:10,gl:1,cat:"verdure",pcos:true},{n:"Asparagi",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Peperoni",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Pomodori",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Cetrioli",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Lattuga",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Sedano",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Finocchio",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Melanzane",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Carciofi",gi:15,gl:2,cat:"verdure",pcos:true},{n:"Funghi",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Cipolla",gi:10,gl:1,cat:"verdure",pcos:true},{n:"Aglio",gi:10,gl:1,cat:"verdure",pcos:true},{n:"Rucola",gi:15,gl:1,cat:"verdure",pcos:true},{n:"Carote",gi:39,gl:2,cat:"verdure",pcos:true},{n:"Barbabietola",gi:64,gl:5,cat:"verdure",pcos:false},{n:"Patate bollite",gi:78,gl:15,cat:"verdure",pcos:false},{n:"Patate dolci",gi:63,gl:11,cat:"verdure",pcos:false},{n:"Zucca",gi:75,gl:3,cat:"verdure",pcos:false},
+{n:"Pollo",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Tacchino",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Salmone",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Sgombro",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Sardine",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Tonno fresco",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Uova",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Merluzzo",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Manzo magro",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Tofu",gi:15,gl:1,cat:"proteine",pcos:true},{n:"Tempeh",gi:15,gl:1,cat:"proteine",pcos:true},{n:"Gamberi",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Yogurt greco",gi:11,gl:3,cat:"proteine",pcos:true},{n:"Ricotta",gi:27,gl:2,cat:"proteine",pcos:true},{n:"Parmigiano",gi:0,gl:0,cat:"proteine",pcos:true},{n:"Feta",gi:0,gl:0,cat:"proteine",pcos:true},
+{n:"Mandorle",gi:15,gl:1,cat:"frutta secca",pcos:true},{n:"Noci",gi:15,gl:1,cat:"frutta secca",pcos:true},{n:"Nocciole",gi:15,gl:1,cat:"frutta secca",pcos:true},{n:"Semi di zucca",gi:10,gl:1,cat:"frutta secca",pcos:true},{n:"Semi di lino",gi:0,gl:0,cat:"frutta secca",pcos:true},{n:"Semi di chia",gi:1,gl:0,cat:"frutta secca",pcos:true},{n:"Pistacchi",gi:15,gl:2,cat:"frutta secca",pcos:true},{n:"Anacardi",gi:22,gl:3,cat:"frutta secca",pcos:true},{n:"Tahina",gi:10,gl:1,cat:"frutta secca",pcos:true},{n:"Burro di arachidi",gi:14,gl:1,cat:"frutta secca",pcos:true},
+{n:"Olio EVO",gi:0,gl:0,cat:"grassi",pcos:true},{n:"Olio di cocco",gi:0,gl:0,cat:"grassi",pcos:true},{n:"Burro",gi:0,gl:0,cat:"grassi",pcos:false},{n:"Cioccolato fondente 85%",gi:23,gl:5,cat:"altro",pcos:true},{n:"Miele",gi:61,gl:12,cat:"altro",pcos:false},{n:"Zucchero bianco",gi:65,gl:65,cat:"altro",pcos:false},{n:"Sciroppo d'acero",gi:54,gl:10,cat:"altro",pcos:false},{n:"Cannella",gi:5,gl:0,cat:"spezie",pcos:true},{n:"Curcuma",gi:5,gl:0,cat:"spezie",pcos:true},{n:"Zenzero",gi:5,gl:0,cat:"spezie",pcos:true},{n:"Latte mandorla",gi:25,gl:1,cat:"bevande",pcos:true},{n:"Latte vaccino intero",gi:27,gl:3,cat:"bevande",pcos:false},{n:"Latte avena",gi:69,gl:8,cat:"bevande",pcos:false},{n:"The verde",gi:0,gl:0,cat:"bevande",pcos:true},{n:"Caffe senza zucchero",gi:0,gl:0,cat:"bevande",pcos:true},{n:"Succo d'arancia",gi:50,gl:12,cat:"bevande",pcos:false},{n:"Crackers integrali",gi:55,gl:12,cat:"altro",pcos:true},{n:"Gallette di riso",gi:82,gl:17,cat:"altro",pcos:false},{n:"Corn flakes",gi:81,gl:21,cat:"altro",pcos:false},{n:"Muesli senza zucchero",gi:49,gl:10,cat:"altro",pcos:true}
+];
+var GI_CATS=[{k:"tutti",l:"Tutti"},{k:"cereali",l:"Cereali"},{k:"legumi",l:"Legumi"},{k:"frutta",l:"Frutta"},{k:"verdure",l:"Verdure"},{k:"proteine",l:"Proteine"},{k:"frutta secca",l:"Frutta Secca"},{k:"grassi",l:"Grassi"},{k:"altro",l:"Altro"}];
+function GIDatabase(){
+  var _s1=useState(""),q=_s1[0],setQ=_s1[1];
+  var _s2=useState("tutti"),cat=_s2[0],setCat=_s2[1];
+  var _s3=useState(false),onlyPcos=_s3[0],setOnlyPcos=_s3[1];
+  var filtered=GI_DB.filter(function(f){return(cat==="tutti"||f.cat===cat)&&(!onlyPcos||f.pcos)&&(!q||f.n.toLowerCase().includes(q.toLowerCase()));}).sort(function(a,b){return a.gi-b.gi;});
+  function giColor(gi){return gi<=55?C.sage:gi<=69?C.amber:C.rose;}
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 8px"}},(LANG_STORE==="en"?"\ud83d\udcda GI Database (":"📚 Database IG (")+GI_DB.length+(LANG_STORE==="en"?" foods)":" alimenti)")),
+      React.createElement("input",{value:q,onChange:function(e){setQ(e.target.value);},placeholder:LANG_STORE==="en"?"Search food...":"Cerca alimento...",style:Object.assign({},iS,{marginBottom:"8px"})}),
+      React.createElement("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"8px"}},GI_CATS.map(function(c){return React.createElement("button",{key:c.k,onClick:function(){setCat(c.k);},style:{padding:"4px 10px",borderRadius:"14px",border:cat===c.k?"none":"1px solid "+C.bdr,background:cat===c.k?C.plum:C.white,color:cat===c.k?C.white:C.txtM,fontSize:"9px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},c.l);})),
+      React.createElement("button",{onClick:function(){setOnlyPcos(!onlyPcos);},style:{padding:"6px 12px",borderRadius:"10px",border:"1.5px solid "+(onlyPcos?C.sage:C.bdr),background:onlyPcos?C.sageP:C.white,color:onlyPcos?C.sageD:C.txtM,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},onlyPcos?"\u2705 Solo PCOS-friendly":"\ud83d\udd18 "+(LANG_STORE==="en"?"Show PCOS only":"Solo PCOS-friendly"))
+    ),
+    React.createElement("div",{style:{display:"grid",gap:"4px"}},filtered.slice(0,50).map(function(f,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderRadius:"10px",background:C.white,border:"1px solid "+C.bg}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
+        React.createElement("span",{style:{width:"8px",height:"8px",borderRadius:"50%",background:f.pcos?C.sage:C.rose,flexShrink:0}},null),
+        React.createElement("div",null,React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.txt,margin:0}},f.n),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},f.cat))
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
+        React.createElement("div",{style:{textAlign:"center"}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:giColor(f.gi),margin:0}},f.gi),React.createElement("p",{style:{fontSize:"7px",color:C.txtL,margin:0}},"IG")),
+        React.createElement("div",{style:{textAlign:"center"}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:C.txtM,margin:0}},f.gl),React.createElement("p",{style:{fontSize:"7px",color:C.txtL,margin:0}},"GL"))
+      )
+    );})),
+    filtered.length>50&&React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,textAlign:"center"}},"+"+(filtered.length-50)+(LANG_STORE==="en"?" more...results. Refine your search.":" altri risultati. Affina la ricerca."))
+  );
+}
+/* SHOPPING LIST */
+function ShoppingList(props){
+  var _s1=useState(function(){return LD("shoppingList",[]);}),list=_s1[0],setList=_s1[1];
+  var _s2=useState(""),input=_s2[0],setInput=_s2[1];
+  var _s3=useState("altro"),selCat=_s3[0],setSelCat=_s3[1];
+  var SHOP_CATS=[{k:"frutta",l:"\ud83c\udf4e Frutta",c:C.sage},{k:"verdura",l:"\ud83e\udd66 Verdura",c:C.sage},{k:"proteine",l:"\ud83e\udd69 Proteine",c:C.rose},{k:"cereali",l:"\ud83c\udf3e Cereali",c:C.amber},{k:"latticini",l:"\ud83e\uddc0 Latticini",c:C.plum},{k:"spezie",l:"\ud83e\uddc2 Spezie",c:C.amber},{k:"altro",l:"\ud83d\uded2 Altro",c:C.txtM}];
+  function addItem(){if(!input.trim())return;var item={name:input.trim(),cat:selCat,done:false,id:Date.now()};var u=list.concat([item]);setList(u);SV("shoppingList",u);setInput("");}
+  function toggleItem(id){var u=list.map(function(i){return i.id===id?Object.assign({},i,{done:!i.done}):i;});setList(u);SV("shoppingList",u);}
+  function removeItem(id){var u=list.filter(function(i){return i.id!==id;});setList(u);SV("shoppingList",u);}
+  function clearDone(){var u=list.filter(function(i){return!i.done;});setList(u);SV("shoppingList",u);}
+  function genFromPlan(){var plan=LD("weekMealPlan",null);if(!plan){alert(LANG_STORE==="en"?"Generate a meal plan first!":"Genera prima un piano pasti!");return;}var items=[];var exists={};Object.values(plan).forEach(function(day){["colazione","pranzo","cena","spuntino"].forEach(function(meal){if(day[meal]&&day[meal].ing){day[meal].ing.forEach(function(ig){if(!exists[ig]){exists[ig]=true;items.push({name:ig,cat:"altro",done:false,id:Date.now()+Math.random()*1000});}});}});});if(items.length>0){var u=list.concat(items);setList(u);SV("shoppingList",u);}else{alert(LANG_STORE==="en"?"No ingredients found in meal plan":"Nessun ingrediente trovato nel piano pasti");}}
+  var grouped={};SHOP_CATS.forEach(function(c){grouped[c.k]=list.filter(function(i){return i.cat===c.k;});});
+  var doneCount=list.filter(function(i){return i.done;}).length;
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+        React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:0}},LANG_STORE==="en"?"\ud83d\uded2 Shopping List":"\ud83d\uded2 Lista Spesa"),
+        list.length>0&&React.createElement("span",{style:{fontSize:"10px",fontFamily:F.s,color:C.sageD,fontWeight:"600"}},doneCount+"/"+list.length)
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"4px",marginBottom:"8px",flexWrap:"wrap"}},
+        React.createElement("button",{onClick:genFromPlan,style:{padding:"6px 12px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},LANG_STORE==="en"?"\ud83d\udcc5 From Meal Plan":"\ud83d\udcc5 Da Piano Pasti"),
+        doneCount>0&&React.createElement("button",{onClick:clearDone,style:{padding:"6px 12px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"10px",fontFamily:F.s,cursor:"pointer"}},"\ud83d\uddd1 "+(LANG_STORE==="en"?"Clear done":"Rimuovi fatti"))
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"4px",marginBottom:"6px"}},
+        React.createElement("input",{value:input,onChange:function(e){setInput(e.target.value);},placeholder:LANG_STORE==="en"?"Add item...":"Aggiungi...",style:Object.assign({},iS,{flex:1}),onKeyDown:function(e){if(e.key==="Enter")addItem();}}),
+        React.createElement("select",{value:selCat,onChange:function(e){setSelCat(e.target.value);},style:Object.assign({},iS,{width:"auto",fontSize:"10px"})},SHOP_CATS.map(function(c){return React.createElement("option",{key:c.k,value:c.k},c.l);})),
+        React.createElement("button",{onClick:addItem,style:{padding:"8px 14px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"12px",cursor:"pointer"}},"+")
+      )
+    ),
+    SHOP_CATS.map(function(cat){var items=grouped[cat.k];if(!items||items.length===0)return null;return React.createElement(Cd,{key:cat.k,style:{padding:"10px 12px"}},
+      React.createElement("h6",{style:{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:cat.c,margin:"0 0 6px"}},cat.l),
+      React.createElement("div",{style:{display:"grid",gap:"3px"}},items.map(function(item){return React.createElement("div",{key:item.id,style:{display:"flex",alignItems:"center",gap:"8px",padding:"6px 0"}},
+        React.createElement("button",{onClick:function(){toggleItem(item.id);},style:{width:"20px",height:"20px",borderRadius:"6px",border:"2px solid "+(item.done?C.sage:C.bdr),background:item.done?C.sage:"transparent",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"10px",color:C.white,flexShrink:0}},item.done?"\u2713":""),
+        React.createElement("span",{style:{fontSize:"11px",fontFamily:F.s,color:item.done?C.txtL:C.txt,textDecoration:item.done?"line-through":"none",flex:1}},item.name),
+        React.createElement("button",{onClick:function(){removeItem(item.id);},style:{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"12px",padding:"2px"}},"\u2715")
+      );}))
+    );})
+  );
+}
+/* RESTAURANT GUIDE */
+var REST_GUIDE=[
+{cuisine:LANG_STORE==="en"?"Italian":"Italiana",icon:"\ud83c\uddf2\ud83c\uddf9",good:[LANG_STORE==="en"?"Grilled fish/meat with vegetables":"Pesce/carne alla griglia con verdure",LANG_STORE==="en"?"Whole wheat pasta with legume sauce":"Pasta integrale con sugo di legumi",LANG_STORE==="en"?"Caprese salad (without bread)":"Insalata caprese (senza pane)",LANG_STORE==="en"?"Minestrone or lentil soup":"Minestrone o zuppa di lenticchie",LANG_STORE==="en"?"Grilled vegetables":"Verdure grigliate"],bad:[LANG_STORE==="en"?"White bread/focaccia":"Pane bianco/focaccia",LANG_STORE==="en"?"Risotto (high GI)":"Risotto (alto IG)",LANG_STORE==="en"?"Fried foods":"Fritti",LANG_STORE==="en"?"Desserts/tiramisu":"Dolci/tiramisu"]},
+{cuisine:LANG_STORE==="en"?"Japanese":"Giapponese",icon:"\ud83c\uddef\ud83c\uddf5",good:[LANG_STORE==="en"?"Sashimi (raw fish)":"Sashimi (pesce crudo)",LANG_STORE==="en"?"Edamame":"Edamame",LANG_STORE==="en"?"Grilled yakitori":"Yakitori alla griglia",LANG_STORE==="en"?"Miso soup":"Zuppa di miso",LANG_STORE==="en"?"Seaweed salad":"Insalata di alghe"],bad:[LANG_STORE==="en"?"White rice (large portions)":"Riso bianco (grandi porzioni)",LANG_STORE==="en"?"Tempura (fried)":"Tempura (fritto)",LANG_STORE==="en"?"Sweet sauces/teriyaki":"Salse dolci/teriyaki"]},
+{cuisine:LANG_STORE==="en"?"Mexican":"Messicana",icon:"\ud83c\uddf2\ud83c\uddfd",good:[LANG_STORE==="en"?"Fajitas (no tortilla, extra veggies)":"Fajitas (senza tortilla, extra verdure)",LANG_STORE==="en"?"Guacamole with veggies":"Guacamole con verdure",LANG_STORE==="en"?"Black bean bowl":"Bowl di fagioli neri",LANG_STORE==="en"?"Grilled chicken/fish tacos (1-2)":"Tacos pollo/pesce alla griglia (1-2)"],bad:[LANG_STORE==="en"?"Nachos with cheese":"Nachos con formaggio",LANG_STORE==="en"?"Burritos (large tortilla)":"Burritos (tortilla grande)",LANG_STORE==="en"?"Sour cream/heavy cheese":"Panna acida/formaggio abbondante"]},
+{cuisine:LANG_STORE==="en"?"Fast Food":"Fast Food",icon:"\ud83c\udf54",good:[LANG_STORE==="en"?"Grilled chicken salad":"Insalata con pollo grigliato",LANG_STORE==="en"?"Burger without bun + salad":"Hamburger senza pane + insalata",LANG_STORE==="en"?"Grilled chicken wrap":"Wrap con pollo grigliato"],bad:[LANG_STORE==="en"?"Fries":"Patatine fritte",LANG_STORE==="en"?"Sugary drinks/milkshakes":"Bibite zuccherate/frappè",LANG_STORE==="en"?"Fried chicken/nuggets":"Pollo fritto/nuggets",LANG_STORE==="en"?"Large portions of white bread":"Grandi porzioni di pane bianco"]},
+{cuisine:LANG_STORE==="en"?"Pizza":"Pizza",icon:"\ud83c\udf55",good:[LANG_STORE==="en"?"Whole wheat or cauliflower crust":"Base integrale o di cavolfiore",LANG_STORE==="en"?"Veggie toppings (no extra cheese)":"Condimenti verdure (no formaggio extra)",LANG_STORE==="en"?"Pair with a side salad":"Accompagna con insalata"],bad:[LANG_STORE==="en"?"Stuffed crust":"Bordo ripieno",LANG_STORE==="en"?"Extra mozzarella/4 formaggi":"Extra mozzarella/4 formaggi",LANG_STORE==="en"?"Garlic bread":"Pane all'aglio"]},
+{cuisine:LANG_STORE==="en"?"Chinese":"Cinese",icon:"\ud83c\udde8\ud83c\uddf3",good:[LANG_STORE==="en"?"Steamed fish/shrimp":"Pesce/gamberi al vapore",LANG_STORE==="en"?"Stir-fried vegetables":"Verdure saltate",LANG_STORE==="en"?"Wonton or hot and sour soup":"Zuppa wonton o agrodolce",LANG_STORE==="en"?"Tofu dishes":"Piatti con tofu"],bad:[LANG_STORE==="en"?"Fried rice/noodles":"Riso/noodle fritti",LANG_STORE==="en"?"Sweet and sour dishes":"Piatti agrodolci zuccherati",LANG_STORE==="en"?"Spring rolls (fried)":"Involtini primavera (fritti)"]}
+];
+function RestaurantGuide(){
+  var _s=useState(null),open=_s[0],setOpen=_s[1];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 4px"}},LANG_STORE==="en"?"\ud83c\udf7d\ufe0f Restaurant PCOS Guide":"\ud83c\udf7d\ufe0f Guida Ristorante PCOS"),React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:0}},LANG_STORE==="en"?"What to order and avoid by cuisine":"Cosa ordinare e cosa evitare per tipo di cucina")),
+    REST_GUIDE.map(function(r,i){return React.createElement(Cd,{key:i,onClick:function(){setOpen(open===i?null:i);},style:{cursor:"pointer"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},React.createElement("span",{style:{fontSize:"24px"}},r.icon),React.createElement("h5",{style:{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.txt,margin:0}},r.cuisine)),
+        React.createElement("span",{style:{fontSize:"12px",color:C.txtL}},open===i?"\u25b2":"\u25bc")
+      ),
+      open===i&&React.createElement("div",{style:{marginTop:"10px",display:"grid",gap:"8px"}},
+        React.createElement("div",null,React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,fontWeight:"700",color:C.sage,margin:"0 0 4px"}},"\u2705 "+(LANG_STORE==="en"?"Order":"Ordina")),r.good.map(function(g,j){return React.createElement("p",{key:j,style:{fontSize:"10px",fontFamily:F.s,color:C.txt,margin:"2px 0",paddingLeft:"12px"}},"• "+g);})),
+        React.createElement("div",null,React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,fontWeight:"700",color:C.rose,margin:"0 0 4px"}},"\u274c "+(LANG_STORE==="en"?"Avoid":"Evita")),r.bad.map(function(b,j){return React.createElement("p",{key:j,style:{fontSize:"10px",fontFamily:F.s,color:C.txt,margin:"2px 0",paddingLeft:"12px"}},"• "+b);}))
+      )
+    );})
+  );
+}
+/* MEAL DIARY */
+function MealDiary(){
+  var _s1=useState(function(){return LD("mealDiary",[]);}),entries=_s1[0],setEntries=_s1[1];
+  var _s2=useState({date:todayK(),meal:"pranzo",note:"",rating:3}),form=_s2[0],setForm=_s2[1];
+  function addEntry(){if(!form.note.trim())return;var e=Object.assign({},form,{id:Date.now()});var u=[e].concat(entries);setEntries(u);SV("mealDiary",u);setForm({date:todayK(),meal:"pranzo",note:"",rating:3});}
+  function delEntry(id){var u=entries.filter(function(e){return e.id!==id;});setEntries(u);SV("mealDiary",u);}
+  var mealIcons={colazione:"\ud83c\udf73",pranzo:"\ud83c\udf5d",cena:"\ud83e\udd57",spuntino:"\ud83c\udf4e"};
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(Cd,null,
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 8px"}},LANG_STORE==="en"?"\ud83d\udcf8 Meal Diary":"\ud83d\udcf8 Diario Pasti"),
+      React.createElement("div",{style:{display:"grid",gap:"6px"}},
+        React.createElement("div",{style:{display:"flex",gap:"6px"}},
+          React.createElement("input",{type:"date",value:form.date,onChange:function(e){setForm(Object.assign({},form,{date:e.target.value}));},style:Object.assign({},iS,{flex:1})}),
+          React.createElement("div",{style:{display:"flex",gap:"3px"}},["colazione","pranzo","cena","spuntino"].map(function(m){return React.createElement("button",{key:m,onClick:function(){setForm(Object.assign({},form,{meal:m}));},style:{padding:"6px 8px",borderRadius:"8px",border:form.meal===m?"none":"1px solid "+C.bdr,background:form.meal===m?C.plum:C.white,color:form.meal===m?C.white:C.txtM,fontSize:"12px",cursor:"pointer"}},mealIcons[m]);}))
+        ),
+        React.createElement("textarea",{value:form.note,onChange:function(e){setForm(Object.assign({},form,{note:e.target.value}));},placeholder:LANG_STORE==="en"?"What did you eat? Notes...":"Cosa hai mangiato? Note...",style:Object.assign({},iS,{height:"60px",resize:"none"})}),
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("div",{style:{display:"flex",gap:"2px"}},["1","2","3","4","5"].map(function(r){return React.createElement("button",{key:r,onClick:function(){setForm(Object.assign({},form,{rating:parseInt(r)}));},style:{background:"none",border:"none",fontSize:"18px",cursor:"pointer",opacity:parseInt(r)<=form.rating?1:0.3}},"\u2b50");})),
+          React.createElement("button",{onClick:addEntry,style:{padding:"8px 16px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},LANG_STORE==="en"?"+ Add":"+ Aggiungi")
+        )
+      )
+    ),
+    entries.slice(0,20).map(function(e,i){return React.createElement(Cd,{key:e.id,style:{padding:"10px 12px"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+        React.createElement("div",{style:{flex:1}},
+          React.createElement("div",{style:{display:"flex",gap:"6px",alignItems:"center",marginBottom:"4px"}},
+            React.createElement("span",{style:{fontSize:"14px"}},mealIcons[e.meal]||"\ud83c\udf7d"),
+            React.createElement("span",{style:{fontSize:"10px",fontFamily:F.s,fontWeight:"600",color:C.txt}},fmtD(e.date)),
+            React.createElement("span",{style:{fontSize:"10px",color:C.txtL}},"\u2b50".repeat(e.rating))
+          ),
+          React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:0,lineHeight:1.5}},e.note)
+        ),
+        React.createElement("button",{onClick:function(){delEntry(e.id);},style:{background:"none",border:"none",color:C.txtL,cursor:"pointer",fontSize:"12px"}},"\u2715")
+      )
+    );})
+  );
+}
 /* FOOD SCANNER - Open Food Facts API */
 var PCOS_BAD_INGR=["sugar","glucose","fructose","corn syrup","maltodextrin","dextrose","sucrose","aspartame","palm oil","margarine","hydrogenated","zucchero","glucosio","fruttosio","sciroppo","maltodestrina","destrosio","saccarosio","aspartame","olio di palma","margarina","idrogenato"];
 var PCOS_GOOD_INGR=["oat","quinoa","lentil","chickpea","almond","walnut","flaxseed","chia","turmeric","cinnamon","ginger","avena","quinoa","lenticch","ceci","mandorl","noce","lino","chia","curcuma","cannella","zenzero","omega","inositol","magnesio"];
@@ -1208,11 +1348,15 @@ function CosaCucino(){
 function MealIntelligence(props){
   var _s=useState("planner"),sub=_s[0],setSub=_s[1];
   return React.createElement("div",null,
-    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Meal Plan":"Piano Pasti",i:"\ud83d\udcc5"},{k:"gl",l:LANG_STORE==="en"?"GL Calc":"Calcola GL",i:"\ud83d\udcca"},{k:"scanner",l:"Scanner",i:"\ud83d\udcf7"},{k:"cucino",l:LANG_STORE==="en"?"What to cook?":"Cosa cucino?",i:"\ud83e\uddd1\u200d\ud83c\udf73"}],active:sub,onSel:setSub}),
+    React.createElement(SubT,{tabs:[{k:"planner",l:LANG_STORE==="en"?"Plan":"Piano",i:"\ud83d\udcc5"},{k:"gl",l:"GL",i:"\ud83d\udcca"},{k:"scanner",l:"Scan",i:"\ud83d\udcf7"},{k:"cucino",l:LANG_STORE==="en"?"Cook":"Cucino",i:"\ud83e\uddd1\u200d\ud83c\udf73"},{k:"gi",l:"IG DB",i:"\ud83d\udcda"},{k:"spesa",l:LANG_STORE==="en"?"Shop":"Spesa",i:"\ud83d\uded2"},{k:"risto",l:LANG_STORE==="en"?"Eat Out":"Fuori",i:"\ud83c\udf7d"},{k:"diario",l:LANG_STORE==="en"?"Diary":"Diario",i:"\ud83d\udcf8"}],active:sub,onSel:setSub}),
     sub==="planner"&&React.createElement(MealPlanner,{profile:props.profile}),
     sub==="gl"&&React.createElement(GLCalculator,null),
     sub==="scanner"&&React.createElement(FoodScanner,null),
-    sub==="cucino"&&React.createElement(CosaCucino,null)
+    sub==="cucino"&&React.createElement(CosaCucino,null),
+    sub==="gi"&&React.createElement(GIDatabase,null),
+    sub==="spesa"&&React.createElement(ShoppingList,null),
+    sub==="risto"&&React.createElement(RestaurantGuide,null),
+    sub==="diario"&&React.createElement(MealDiary,null)
   );
 }
 /* PHASE 8: HEALTH INTELLIGENCE */
@@ -1356,6 +1500,97 @@ function ShareCard(props){
   );
 }
 
+/* ═══════ PHASE 11: STRESS & CORTISOL ═══════ */
+function BreathingTimer(){
+  var _s1=useState(false),active=_s1[0],setActive=_s1[1];
+  var _s2=useState("inhale"),phase=_s2[0],setPhase=_s2[1];
+  var _s3=useState(0),secs=_s3[0],setSecs=_s3[1];
+  var _s4=useState(0),rounds=_s4[0],setRounds=_s4[1];
+  var _s5=useState("478"),mode=_s5[0],setMode=_s5[1];
+  var patterns={"478":{inhale:4,hold:7,exhale:8,name:"4-7-8 Relax"},"box":{inhale:4,hold:4,exhale:4,holdOut:4,name:"Box Breathing"},"coherence":{inhale:5,exhale:5,name:LANG_STORE==="en"?"Cardiac Coherence":"Coerenza Cardiaca"}};
+  var pat=patterns[mode];
+  useEffect(function(){if(!active)return;var timer=setInterval(function(){setSecs(function(s){var nextS=s+1;var totalCycle=(pat.inhale||0)+(pat.hold||0)+(pat.exhale||0)+(pat.holdOut||0);if(nextS>=totalCycle){setRounds(function(r){return r+1;});return 0;}if(nextS<pat.inhale)setPhase("inhale");else if(nextS<pat.inhale+(pat.hold||0))setPhase("hold");else if(nextS<pat.inhale+(pat.hold||0)+pat.exhale)setPhase("exhale");else setPhase("holdOut");return nextS;});},1000);return function(){clearInterval(timer);};},[active,mode]);
+  function start(){setActive(true);setSecs(0);setRounds(0);setPhase("inhale");}
+  function stop(){setActive(false);}
+  var phaseLabels={inhale:LANG_STORE==="en"?"Inhale":"Inspira",hold:LANG_STORE==="en"?"Hold":"Trattieni",exhale:LANG_STORE==="en"?"Exhale":"Espira",holdOut:LANG_STORE==="en"?"Hold":"Trattieni"};
+  var phaseColors={inhale:C.sage,hold:C.amber,exhale:C.plum,holdOut:C.amber};
+  var totalCycle=(pat.inhale||0)+(pat.hold||0)+(pat.exhale||0)+(pat.holdOut||0);
+  var progress=active?(secs/totalCycle)*100:0;
+  return React.createElement(Cd,{style:{textAlign:"center"}},
+    React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 8px"}},LANG_STORE==="en"?"\ud83c\udf2c\ufe0f Breathing Exercise":"\ud83c\udf2c\ufe0f Esercizio Respirazione"),
+    React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"0 0 10px"}},LANG_STORE==="en"?"Lower cortisol = lower androgens = better PCOS management":"Meno cortisolo = meno androgeni = migliore gestione PCOS"),
+    React.createElement("div",{style:{display:"flex",gap:"4px",justifyContent:"center",marginBottom:"12px"}},Object.keys(patterns).map(function(k){return React.createElement("button",{key:k,onClick:function(){setMode(k);if(active){stop();start();}},style:{padding:"6px 12px",borderRadius:"10px",border:mode===k?"none":"1px solid "+C.bdr,background:mode===k?C.plum:C.white,color:mode===k?C.white:C.txtM,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},patterns[k].name);})),
+    React.createElement("div",{style:{width:"120px",height:"120px",borderRadius:"50%",margin:"0 auto 12px",background:"conic-gradient("+phaseColors[phase]+" "+progress+"%, "+C.bg+" "+progress+"%)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .3s"}},
+      React.createElement("div",{style:{width:"100px",height:"100px",borderRadius:"50%",background:C.white,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}},
+        active?React.createElement(React.Fragment,null,
+          React.createElement("p",{style:{fontSize:"16px",fontFamily:F.s,fontWeight:"700",color:phaseColors[phase],margin:0}},phaseLabels[phase]),
+          React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:"2px 0 0"}},LANG_STORE==="en"?"Round ":"Ciclo "+rounds)
+        ):React.createElement("p",{style:{fontSize:"12px",fontFamily:F.s,color:C.txtM,margin:0}},pat.name)
+      )
+    ),
+    React.createElement("button",{onClick:active?stop:start,style:{padding:"10px 24px",borderRadius:"12px",border:"none",background:active?C.rose:"linear-gradient(135deg,"+C.plum+","+C.sage+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},active?(LANG_STORE==="en"?"Stop":"Stop"):(LANG_STORE==="en"?"Start Breathing":"Inizia"))
+  );
+}
+function SleepTracker(){
+  var _s1=useState(function(){return LD("sleepLog",[]);}),log=_s1[0],setLog=_s1[1];
+  var _s2=useState({date:todayK(),hours:"",quality:3,bedtime:"23:00",waketime:"07:00"}),form=_s2[0],setForm=_s2[1];
+  function addSleep(){if(!form.hours)return;var e=Object.assign({},form,{hours:parseFloat(form.hours)});var u=[e].concat(log.filter(function(l){return l.date!==form.date;}));setLog(u);SV("sleepLog",u);setForm({date:todayK(),hours:"",quality:3,bedtime:"23:00",waketime:"07:00"});}
+  var avg7=log.length>0?(log.slice(0,7).reduce(function(a,b){return a+b.hours;},0)/Math.min(log.length,7)).toFixed(1):"--";
+  var avgQ=log.length>0?(log.slice(0,7).reduce(function(a,b){return a+b.quality;},0)/Math.min(log.length,7)).toFixed(1):"--";
+  return React.createElement(Cd,null,
+    React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}},LANG_STORE==="en"?"\ud83d\ude34 Sleep Tracker":"😴 Tracker Sonno"),
+    React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"0 0 10px"}},LANG_STORE==="en"?"<7h sleep raises cortisol and insulin resistance":"<7h di sonno alza cortisolo e insulino-resistenza"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px",marginBottom:"8px"}},
+      React.createElement("div",{style:{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.sageP}},React.createElement("p",{style:{fontSize:"16px",fontFamily:F.p,fontWeight:"700",color:parseFloat(avg7)>=7?C.sage:C.rose,margin:0}},avg7+"h"),React.createElement("p",{style:{fontSize:"8px",color:C.txtL,margin:0}},LANG_STORE==="en"?"7d avg":"Media 7gg")),
+      React.createElement("div",{style:{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.plumP}},React.createElement("p",{style:{fontSize:"16px",fontFamily:F.p,fontWeight:"700",color:C.plum,margin:0}},avgQ+"/5"),React.createElement("p",{style:{fontSize:"8px",color:C.txtL,margin:0}},LANG_STORE==="en"?"Quality":"Qualita"))
+    ),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"6px",marginBottom:"6px"}},
+      React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Hours":"Ore"),React.createElement("input",{type:"number",step:"0.5",value:form.hours,onChange:function(e){setForm(Object.assign({},form,{hours:e.target.value}));},placeholder:"7.5",style:iS})),
+      React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Bed":"Letto"),React.createElement("input",{type:"time",value:form.bedtime,onChange:function(e){setForm(Object.assign({},form,{bedtime:e.target.value}));},style:iS})),
+      React.createElement("div",null,React.createElement("label",{style:lS},LANG_STORE==="en"?"Wake":"Sveglia"),React.createElement("input",{type:"time",value:form.waketime,onChange:function(e){setForm(Object.assign({},form,{waketime:e.target.value}));},style:iS}))
+    ),
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+      React.createElement("div",{style:{display:"flex",gap:"2px"}},["1","2","3","4","5"].map(function(r){return React.createElement("button",{key:r,onClick:function(){setForm(Object.assign({},form,{quality:parseInt(r)}));},style:{background:"none",border:"none",fontSize:"16px",cursor:"pointer",opacity:parseInt(r)<=form.quality?1:0.25}},"\ud83c\udf19");})),
+      React.createElement("button",{onClick:addSleep,style:{padding:"8px 16px",borderRadius:"10px",border:"none",background:C.plum,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},LANG_STORE==="en"?"Save":"Salva")
+    )
+  );
+}
+function AntiInflamScore(){
+  var habits=LD("habits",{});var todayH=habits[todayK()]||{};
+  var sleepLog=LD("sleepLog",[]);var todaySleep=sleepLog.find(function(s){return s.date===todayK();});
+  var water=LD("water_"+todayK(),0);var waterG=LD("profile",{waterG:8}).waterG||8;
+  var suppLog=LD("suppLog",{});var todaySupp=suppLog[todayK()]||{};
+  var symptoms=LD("symptoms",[]);var todaySym=symptoms.find(function(s){return s.date===todayK();});
+  var scores=[];
+  scores.push({name:LANG_STORE==="en"?"Water":"Acqua",val:Math.min(water/waterG*100,100),icon:"\ud83d\udca7"});
+  scores.push({name:LANG_STORE==="en"?"Sleep":"Sonno",val:todaySleep?Math.min(todaySleep.hours/7.5*100,100):0,icon:"\ud83d\ude34"});
+  scores.push({name:LANG_STORE==="en"?"Workout":"Allenamento",val:todayH.workout_ok?100:0,icon:"\ud83c\udfcb\ufe0f"});
+  scores.push({name:LANG_STORE==="en"?"Habits":"Abitudini",val:HABIT_DEFS.length>0?(HABIT_DEFS.filter(function(h){return todayH[h.k];}).length/HABIT_DEFS.length*100):0,icon:"\u2705"});
+  var suppCount=SUPP_DEFS.length>0?Object.keys(todaySupp).filter(function(k){return todaySupp[k];}).length:0;
+  scores.push({name:LANG_STORE==="en"?"Supplements":"Integratori",val:SUPP_DEFS.length>0?(suppCount/SUPP_DEFS.length*100):0,icon:"\ud83d\udc8a"});
+  var stressVal=todaySym&&todaySym.vals?todaySym.vals.stress||0:0;
+  scores.push({name:LANG_STORE==="en"?"Low Stress":"Poco Stress",val:stressVal>0?Math.max(0,(5-stressVal)/4*100):50,icon:"\ud83e\udde0"});
+  var total=Math.round(scores.reduce(function(a,b){return a+b.val;},0)/scores.length);
+  var tColor=total>=70?C.sage:total>=40?C.amber:C.rose;
+  var tLabel=total>=70?(LANG_STORE==="en"?"Excellent! Low inflammation":"Eccellente! Bassa infiammazione"):total>=40?(LANG_STORE==="en"?"Good, room to improve":"Buono, margini di miglioramento"):(LANG_STORE==="en"?"Focus on anti-inflammatory habits today":"Concentrati su abitudini anti-infiammatorie oggi");
+  return React.createElement(Cd,{style:{borderLeft:"4px solid "+tColor}},
+    React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+      React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:0}},LANG_STORE==="en"?"\ud83d\udfe2 Anti-Inflammatory Score":"\ud83d\udfe2 Punteggio Anti-Infiammatorio"),
+      React.createElement("div",{style:{width:"44px",height:"44px",borderRadius:"50%",background:"conic-gradient("+tColor+" "+total+"%, "+C.bg+" "+total+"%)",display:"flex",alignItems:"center",justifyContent:"center"}},
+        React.createElement("div",{style:{width:"36px",height:"36px",borderRadius:"50%",background:C.white,display:"flex",alignItems:"center",justifyContent:"center"}},
+          React.createElement("span",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:tColor}},total)
+        )
+      )
+    ),
+    React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:tColor,margin:"0 0 8px",fontWeight:"600"}},tLabel),
+    React.createElement("div",{style:{display:"grid",gap:"4px"}},scores.map(function(s,i){return React.createElement("div",{key:i,style:{display:"flex",alignItems:"center",gap:"8px"}},
+      React.createElement("span",{style:{fontSize:"12px",width:"18px",textAlign:"center"}},s.icon),
+      React.createElement("span",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtM,width:"70px"}},s.name),
+      React.createElement("div",{style:{flex:1,height:"6px",borderRadius:"3px",background:C.bg}},React.createElement("div",{style:{width:s.val+"%",height:"100%",borderRadius:"3px",background:s.val>=70?C.sage:s.val>=40?C.amber:C.rose,transition:"width .5s"}})),
+      React.createElement("span",{style:{fontSize:"9px",fontFamily:F.s,fontWeight:"600",color:s.val>=70?C.sage:s.val>=40?C.amber:C.rose,width:"28px",textAlign:"right"}},Math.round(s.val)+"%")
+    );}))
+  );
+}
 /* MONTHLY PDF REPORT */
 function MonthlyReport(props){
   var profile=props.profile;
@@ -1476,6 +1711,171 @@ function OnboardingWizard(props){
       React.createElement("div",{style:{display:"flex",justifyContent:"space-between",marginTop:"12px"}},
         step>0?React.createElement("button",{onClick:function(){setStep(step-1);},style:{padding:"10px 20px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txtM,fontSize:"12px",fontFamily:F.s,cursor:"pointer"}},"\u2190 "+(LANG_STORE==="en"?"Back":"Indietro")):React.createElement("div",null),
         step<totalSteps-1?React.createElement("button",{onClick:function(){setStep(step+1);},style:{padding:"10px 20px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},(LANG_STORE==="en"?"Next":"Avanti")+" \u2192"):React.createElement("button",{onClick:finish,style:{padding:"10px 24px",borderRadius:"10px",border:"none",background:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:C.white,fontSize:"13px",fontFamily:F.s,fontWeight:"700",cursor:"pointer"}},LANG_STORE==="en"?"\ud83c\udf38 Start!":"\ud83c\udf38 Inizia!")
+      )
+    )
+  );
+}
+
+/* ═══════ PHASE 13: CYCLE ADAPTATION ═══════ */
+var CYCLE_WORKOUTS=[
+{phase:0,name:LANG_STORE==="en"?"Menstrual":"Mestruale",workouts:[
+  {type:LANG_STORE==="en"?"Light Walk":"Camminata Leggera",dur:"20-30 min",desc:LANG_STORE==="en"?"Gentle movement to reduce cramps. Keep heart rate low.":"Movimento dolce per ridurre i crampi. Mantieni FC bassa.",icon:"\ud83d\udeb6\u200d\u2640\ufe0f",intensity:1},
+  {type:"Yoga Restaurativo",dur:"20-30 min",desc:LANG_STORE==="en"?"Child's pose, cat-cow, supine twist. Releases tension in lower back and pelvis.":"Posizione del bambino, gatto-mucca, torsione supina. Rilascia tensione in zona lombare e bacino.",icon:"\ud83e\uddd8\u200d\u2640\ufe0f",intensity:1},
+  {type:LANG_STORE==="en"?"Stretching":"Stretching",dur:"15-20 min",desc:LANG_STORE==="en"?"Full body gentle stretching. Focus on hips and lower back.":"Stretching dolce full body. Focus su anche e zona lombare.",icon:"\ud83e\udd38\u200d\u2640\ufe0f",intensity:1}
+]},
+{phase:1,name:LANG_STORE==="en"?"Follicular":"Follicolare",workouts:[
+  {type:LANG_STORE==="en"?"Strength Training":"Allenamento Forza",dur:"40-50 min",desc:LANG_STORE==="en"?"Estrogen rises → best time for heavy lifts! Compound movements: squat, deadlift, hip thrust, rows.":"L'estrogeno sale → momento migliore per carichi pesanti! Movimenti composti: squat, stacco, hip thrust, rematore.",icon:"\ud83c\udfcb\ufe0f\u200d\u2640\ufe0f",intensity:4},
+  {type:"HIIT",dur:"25-30 min",desc:LANG_STORE==="en"?"High intensity intervals. Your body recovers faster now. Tabata or circuit training.":"Intervalli ad alta intensita. Il corpo recupera piu velocemente. Tabata o circuit training.",icon:"\u26a1",intensity:5},
+  {type:LANG_STORE==="en"?"Power Walk + Incline":"Camminata Potenza + Pendenza",dur:"40 min",desc:LANG_STORE==="en"?"Brisk walk with incline intervals. Great for abdominal fat burning.":"Camminata veloce con intervalli di pendenza. Ottimo per bruciare grasso addominale.",icon:"\u26f0\ufe0f",intensity:3}
+]},
+{phase:2,name:LANG_STORE==="en"?"Ovulatory":"Ovulatoria",workouts:[
+  {type:LANG_STORE==="en"?"Peak Strength":"Forza Massima",dur:"45 min",desc:LANG_STORE==="en"?"Estrogen peaks → maximum strength! PR attempts. Heavy compound lifts with lower reps.":"Picco estrogeni → forza massima! Tentativi di PR. Sollevamenti pesanti composti con basse ripetizioni.",icon:"\ud83d\udcaa",intensity:5},
+  {type:LANG_STORE==="en"?"Cardio Intervals":"Intervalli Cardio",dur:"30 min",desc:LANG_STORE==="en"?"Sprint intervals or cycling HIIT. Energy is at its peak.":"Intervalli di sprint o ciclismo HIIT. L'energia e al massimo.",icon:"\ud83c\udfc3\u200d\u2640\ufe0f",intensity:4},
+  {type:LANG_STORE==="en"?"Group Class":"Classe di Gruppo",dur:"45-60 min",desc:LANG_STORE==="en"?"Social energy is high. Dance, boxing, spinning are great choices.":"Energia sociale alta. Danza, boxe, spinning sono ottime scelte.",icon:"\ud83d\udc83",intensity:4}
+]},
+{phase:3,name:LANG_STORE==="en"?"Luteal":"Luteale",workouts:[
+  {type:LANG_STORE==="en"?"Moderate Strength":"Forza Moderata",dur:"35-40 min",desc:LANG_STORE==="en"?"Lower weights, higher reps. Focus on form. Progesterone rises → body temp higher.":"Pesi piu bassi, piu ripetizioni. Focus sulla forma. Il progesterone sale → temp. corporea piu alta.",icon:"\ud83c\udfcb\ufe0f",intensity:3},
+  {type:"Pilates",dur:"30-40 min",desc:LANG_STORE==="en"?"Core strengthening without high cortisol. Excellent for deep abdominal muscles.":"Rinforzo core senza alzare il cortisolo. Eccellente per muscoli addominali profondi.",icon:"\ud83e\uddd8",intensity:2},
+  {type:LANG_STORE==="en"?"Steady Walk":"Camminata Costante",dur:"40-50 min",desc:LANG_STORE==="en"?"Zone 2 cardio. Burns fat without spiking cortisol. Post-meal walks are ideal.":"Cardio zona 2. Brucia grasso senza alzare il cortisolo. Camminate post-pasto sono ideali.",icon:"\ud83d\udeb6\u200d\u2640\ufe0f",intensity:2},
+  {type:"Yoga Flow",dur:"30 min",desc:LANG_STORE==="en"?"Vinyasa or yin yoga. Helps with PMS symptoms and water retention.":"Vinyasa o yin yoga. Aiuta con sintomi premestruali e ritenzione idrica.",icon:"\ud83e\uddd8\u200d\u2640\ufe0f",intensity:2}
+]}
+];
+function CycleWorkoutSuggestions(){
+  var cp=getCyclePhaseNow();
+  var phaseIdx=cp?cp.phase:1;
+  var phaseData=CYCLE_WORKOUTS[phaseIdx];
+  var intensityBars=function(n){return Array.from({length:5}).map(function(_,i){return React.createElement("div",{key:i,style:{width:"8px",height:10+i*3+"px",borderRadius:"2px",background:i<n?C.sage:C.bg}});});};
+  return React.createElement("div",{style:{display:"grid",gap:"10px",marginTop:"12px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+(cp?CYCLE_PHASES[phaseIdx].color+"20":C.sageP)+","+C.white+")"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"6px"}},
+        React.createElement("span",{style:{fontSize:"24px"}},cp?CYCLE_PHASES[phaseIdx].icon:"\ud83c\udf38"),
+        React.createElement("div",null,
+          React.createElement("h5",{style:{fontFamily:F.s,fontSize:"13px",fontWeight:"600",color:C.plum,margin:0}},LANG_STORE==="en"?"Workout for your cycle phase":"Allenamento per la tua fase del ciclo"),
+          React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"2px 0 0"}},phaseData.name+(cp?" — "+(LANG_STORE==="en"?"Day ":"Giorno ")+cp.day:""))
+        )
+      )
+    ),
+    phaseData.workouts.map(function(w,i){return React.createElement(Cd,{key:i},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}},
+        React.createElement("div",{style:{flex:1}},
+          React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"4px"}},
+            React.createElement("span",{style:{fontSize:"18px"}},w.icon),
+            React.createElement("h6",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt,margin:0}},w.type),
+            React.createElement(Pill,{color:C.sage},w.dur)
+          ),
+          React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"4px 0 0",lineHeight:1.5}},w.desc)
+        ),
+        React.createElement("div",{style:{display:"flex",alignItems:"flex-end",gap:"2px",marginLeft:"8px"}},intensityBars(w.intensity))
+      )
+    );})
+  );
+}
+/* CYCLE PREDICTION */
+function CyclePrediction(){
+  var mc=LD("menstrualCycles",[]);
+  if(mc.length<2)return React.createElement(Cd,{style:{marginTop:"10px"}},
+    React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}},LANG_STORE==="en"?"\ud83d\udd2e Cycle Prediction":"\ud83d\udd2e Predizione Ciclo"),
+    React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL}},LANG_STORE==="en"?"Log at least 2 cycles to enable predictions":"Registra almeno 2 cicli per abilitare le predizioni")
+  );
+  var sorted=mc.slice().sort(function(a,b){return a.start.localeCompare(b.start);});
+  var lengths=[];for(var i=1;i<sorted.length;i++){var d1=new Date(sorted[i-1].start);var d2=new Date(sorted[i].start);var diff=Math.round((d2-d1)/86400000);if(diff>15&&diff<60)lengths.push(diff);}
+  if(lengths.length===0)return null;
+  var avg=Math.round(lengths.reduce(function(a,b){return a+b;},0)/lengths.length);
+  var lastStart=new Date(sorted[sorted.length-1].start);
+  var nextPredicted=new Date(lastStart);nextPredicted.setDate(nextPredicted.getDate()+avg);
+  var ovulDay=new Date(lastStart);ovulDay.setDate(ovulDay.getDate()+avg-14);
+  var daysUntil=Math.round((nextPredicted-new Date())/86400000);
+  var daysUntilOvul=Math.round((ovulDay-new Date())/86400000);
+  var minL=Math.min.apply(null,lengths);var maxL=Math.max.apply(null,lengths);
+  return React.createElement(Cd,{style:{marginTop:"10px",borderLeft:"4px solid "+C.rose}},
+    React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 8px"}},LANG_STORE==="en"?"\ud83d\udd2e Cycle Prediction":"\ud83d\udd2e Predizione Ciclo"),
+    React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"8px",marginBottom:"8px"}},
+      React.createElement("div",{style:{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.roseP}},React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:C.rose,margin:0}},avg+(LANG_STORE==="en"?"d":"gg")),React.createElement("p",{style:{fontSize:"8px",color:C.txtL,margin:0}},LANG_STORE==="en"?"Avg length":"Durata media")),
+      React.createElement("div",{style:{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.roseP}},React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:daysUntil<=3?C.rose:C.txt,margin:0}},daysUntil<=0?(LANG_STORE==="en"?"Today!":"Oggi!"):daysUntil+(LANG_STORE==="en"?"d":"gg")),React.createElement("p",{style:{fontSize:"8px",color:C.txtL,margin:0}},LANG_STORE==="en"?"Next period":"Prossimo ciclo")),
+      React.createElement("div",{style:{textAlign:"center",padding:"8px",borderRadius:"8px",background:C.amberP}},React.createElement("p",{style:{fontSize:"14px",fontFamily:F.p,fontWeight:"700",color:C.amber,margin:0}},daysUntilOvul<=0?(LANG_STORE==="en"?"Passed":"Passata"):daysUntilOvul+(LANG_STORE==="en"?"d":"gg")),React.createElement("p",{style:{fontSize:"8px",color:C.txtL,margin:0}},LANG_STORE==="en"?"Ovulation":"Ovulazione"))
+    ),
+    React.createElement("div",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL}},
+      React.createElement("p",{style:{margin:"2px 0"}},(LANG_STORE==="en"?"Next period: ~":"Prossimo ciclo: ~")+nextPredicted.toLocaleDateString()),
+      React.createElement("p",{style:{margin:"2px 0"}},(LANG_STORE==="en"?"Cycle range: ":"Range ciclo: ")+minL+"-"+maxL+(LANG_STORE==="en"?" days | Based on ":" giorni | Basato su ")+lengths.length+(LANG_STORE==="en"?" cycles":" cicli")),
+      React.createElement("p",{style:{margin:"4px 0 0",fontStyle:"italic",color:C.txtL}},LANG_STORE==="en"?"⚠️ PCOS cycles can be irregular. This is an estimate.":"⚠️ I cicli PCOS possono essere irregolari. Questa e una stima.")
+    )
+  );
+}
+/* SKIN & HAIR DIARY */
+function SkinHairDiary(){
+  var _s1=useState(function(){return LD("skinDiary",[]);}),log=_s1[0],setLog=_s1[1];
+  var AREAS=[{k:"face_acne",l:LANG_STORE==="en"?"Face Acne":"Acne Viso",i:"\ud83d\ude36"},{k:"chin_acne",l:LANG_STORE==="en"?"Chin/Jaw Acne":"Acne Mento/Mandibola",i:"\ud83e\uddd4\u200d\u2640\ufe0f"},{k:"back_acne",l:LANG_STORE==="en"?"Back Acne":"Acne Schiena",i:"\ud83d\uded7"},{k:"hair_fall",l:LANG_STORE==="en"?"Hair Loss":"Caduta Capelli",i:"\ud83d\udc87\u200d\u2640\ufe0f"},{k:"hirsutism",l:LANG_STORE==="en"?"Excess Hair":"Irsutismo",i:"\ud83e\uddf4"},{k:"oily_skin",l:LANG_STORE==="en"?"Oily Skin":"Pelle Grassa",i:"\ud83d\udca7"},{k:"dry_skin",l:LANG_STORE==="en"?"Dry Skin":"Pelle Secca",i:"\ud83c\udf35"}];
+  var _s2=useState({}),vals=_s2[0],setVals=_s2[1];
+  var _s3=useState(""),note=_s3[0],setNote=_s3[1];
+  var today=log.find(function(l){return l.date===todayK();});
+  useEffect(function(){if(today){setVals(today.vals||{});setNote(today.note||"");}},[]);
+  function save(){var entry={date:todayK(),vals:vals,note:note};var u=[entry].concat(log.filter(function(l){return l.date!==todayK();}));setLog(u);SV("skinDiary",u);}
+  function setVal(k,v){var u=Object.assign({},vals);u[k]=v;setVals(u);}
+  var last7=log.slice(0,7);
+  return React.createElement(Cd,{style:{marginTop:"10px"}},
+    React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}},LANG_STORE==="en"?"\ud83e\uddd1 Skin & Hair Diary":"\ud83e\uddd1 Diario Pelle & Capelli"),
+    React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,color:C.txtL,margin:"0 0 10px"}},LANG_STORE==="en"?"Track changes linked to cycle, diet and supplements":"Traccia i cambiamenti legati a ciclo, dieta e integratori"),
+    React.createElement("div",{style:{display:"grid",gap:"6px",marginBottom:"8px"}},AREAS.map(function(a){return React.createElement("div",{key:a.k,style:{display:"flex",alignItems:"center",gap:"8px"}},
+      React.createElement("span",{style:{fontSize:"14px",width:"20px",textAlign:"center"}},a.i),
+      React.createElement("span",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,width:"100px"}},a.l),
+      React.createElement("div",{style:{display:"flex",gap:"3px",flex:1}},["0","1","2","3","4","5"].map(function(v){var n=parseInt(v);var selected=(vals[a.k]||0)===n;return React.createElement("button",{key:v,onClick:function(){setVal(a.k,n);},style:{flex:1,padding:"5px 0",borderRadius:"6px",border:selected?"none":"1px solid "+C.bdr,background:selected?(n===0?C.sage:n<=2?C.amber:C.rose):C.white,color:selected?C.white:C.txtL,fontSize:"10px",fontFamily:F.s,fontWeight:selected?"700":"400",cursor:"pointer"}},v);}))
+    );})),
+    React.createElement("textarea",{value:note,onChange:function(e){setNote(e.target.value);},placeholder:LANG_STORE==="en"?"Notes (new product, diet change...)":"Note (nuovo prodotto, cambio dieta...)",style:Object.assign({},iS,{height:"40px",resize:"none",marginBottom:"6px"})}),
+    React.createElement("button",{onClick:save,style:{width:"100%",padding:"10px",borderRadius:"10px",border:"none",background:C.plum,color:C.white,fontSize:"11px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},LANG_STORE==="en"?"Save Today":"Salva Oggi"),
+    last7.length>1&&React.createElement("div",{style:{marginTop:"10px"}},
+      React.createElement("h6",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtL,margin:"0 0 6px"}},LANG_STORE==="en"?"7-Day Trend":"Trend 7 Giorni"),
+      React.createElement("div",{style:{display:"grid",gap:"3px"}},AREAS.map(function(a){var vals7=last7.map(function(l){return(l.vals&&l.vals[a.k])||0;}).reverse();return React.createElement("div",{key:a.k,style:{display:"flex",alignItems:"center",gap:"6px"}},
+        React.createElement("span",{style:{fontSize:"10px",width:"18px",textAlign:"center"}},a.i),
+        React.createElement("div",{style:{display:"flex",gap:"2px",flex:1}},vals7.map(function(v,i){return React.createElement("div",{key:i,style:{flex:1,height:"12px",borderRadius:"3px",background:v===0?C.sageP:v<=2?C.amberP:C.roseP,position:"relative"}},React.createElement("div",{style:{position:"absolute",bottom:0,width:"100%",height:Math.max(v/5*12,2)+"px",borderRadius:"3px",background:v===0?C.sage:v<=2?C.amber:C.rose}}));}))
+      );}))
+    )
+  );
+}
+/* ═══════ PHASE 14: EDUCATION ═══════ */
+var PCOS_ENCYCLOPEDIA=[
+{title:LANG_STORE==="en"?"What is PCOS?":"Cos'e la PCOS?",icon:"\ud83c\udf38",content:LANG_STORE==="en"?"Polycystic Ovary Syndrome affects 8-13% of women. It's a hormonal disorder involving insulin resistance, excess androgens, and irregular ovulation. It's NOT just about ovarian cysts — it's a metabolic and hormonal condition that affects the whole body.":"La Sindrome dell'Ovaio Policistico colpisce l'8-13% delle donne. E un disordine ormonale che coinvolge insulino-resistenza, eccesso di androgeni e ovulazione irregolare. NON si tratta solo di cisti ovariche — e una condizione metabolica e ormonale che coinvolge tutto il corpo."},
+{title:LANG_STORE==="en"?"Types of PCOS":"Tipi di PCOS",icon:"\ud83d\udd2c",content:LANG_STORE==="en"?"Classic (insulin resistant + hyperandrogenic), Inflammatory (driven by chronic inflammation), Adrenal (excess DHEA-S), Post-pill (temporary after stopping birth control). Each type responds to different treatments.":"Classica (insulino-resistente + iperandrogena), Infiammatoria (guidata da infiammazione cronica), Surrenalica (eccesso DHEA-S), Post-pillola (temporanea dopo sospensione contraccettivo). Ogni tipo risponde a trattamenti diversi."},
+{title:LANG_STORE==="en"?"Nutrition & PCOS":"Alimentazione e PCOS",icon:"\ud83e\udd57",content:LANG_STORE==="en"?"Low glycemic foods reduce insulin spikes. Prioritize: vegetables, legumes, whole grains, lean proteins, healthy fats. A protein-rich breakfast reduces insulin by up to 53%. Avoid: refined sugars, white flour, sugary drinks, trans fats. The Mediterranean diet is the gold standard for PCOS.":"I cibi a basso indice glicemico riducono i picchi insulinici. Privilegia: verdure, legumi, cereali integrali, proteine magre, grassi buoni. Una colazione ricca di proteine riduce l'insulina fino al 53%. Evita: zuccheri raffinati, farine bianche, bibite zuccherate, grassi trans. La dieta mediterranea e il gold standard per la PCOS."},
+{title:LANG_STORE==="en"?"Exercise & PCOS":"Esercizio e PCOS",icon:"\ud83c\udfcb\ufe0f",content:LANG_STORE==="en"?"Strength training 3-4x/week builds muscle that improves insulin sensitivity. Walking 30min daily (especially post-meal) reduces blood sugar. Avoid overtraining — excess cortisol worsens PCOS. Follow your cycle: heavy lifting in follicular phase, gentle movement in luteal phase.":"Allenamento con pesi 3-4x/settimana costruisce muscolo che migliora la sensibilita insulinica. Camminare 30min al giorno (specialmente dopo i pasti) riduce la glicemia. Evita il sovrallenamento — il cortisolo in eccesso peggiora la PCOS. Segui il ciclo: carichi pesanti in fase follicolare, movimento dolce in fase luteale."},
+{title:LANG_STORE==="en"?"Key Supplements":"Integratori Chiave",icon:"\ud83d\udc8a",content:LANG_STORE==="en"?"Inositol (myo + D-chiro 40:1): improves insulin sensitivity and ovulation. Vitamin D: often deficient in PCOS, supports metabolism. Omega-3: reduces inflammation. Magnesium: helps sleep, stress, insulin. Berberine: natural metformin alternative. NAC: antioxidant, helps with excess androgens. Always consult your doctor.":"Inositolo (mio + D-chiro 40:1): migliora sensibilita insulinica e ovulazione. Vitamina D: spesso carente nella PCOS, supporta il metabolismo. Omega-3: riduce l'infiammazione. Magnesio: aiuta sonno, stress, insulina. Berberina: alternativa naturale alla metformina. NAC: antiossidante, aiuta con eccesso di androgeni. Consulta sempre il medico."},
+{title:LANG_STORE==="en"?"Intermittent Fasting":"Digiuno Intermittente",icon:"\u23f3",content:LANG_STORE==="en"?"14:10 or 16:8 protocols can improve insulin sensitivity and reduce inflammation. Start gentle (12:12) and build up. Break fast with protein+fat, not sugar. Don't fast if you have a history of eating disorders. Listen to your body — if stressed, eat.":"I protocolli 14:10 o 16:8 possono migliorare la sensibilita insulinica e ridurre l'infiammazione. Inizia gradualmente (12:12) e aumenta. Rompi il digiuno con proteine+grassi, non zuccheri. Non digiunare se hai una storia di disturbi alimentari. Ascolta il tuo corpo — se sei stressata, mangia."},
+{title:LANG_STORE==="en"?"Stress & Cortisol":"Stress e Cortisolo",icon:"\ud83e\udde0",content:LANG_STORE==="en"?"Chronic stress raises cortisol → raises insulin → worsens PCOS. Prioritize: sleep 7-8h, breathing exercises, walks in nature, limiting caffeine, reducing screen time before bed. Yoga and meditation are clinically proven to lower cortisol in PCOS.":"Lo stress cronico alza il cortisolo → alza l'insulina → peggiora la PCOS. Priorita: dormire 7-8h, esercizi di respirazione, passeggiate nella natura, limitare caffeina, ridurre schermi prima di dormire. Yoga e meditazione sono clinicamente provati nel ridurre il cortisolo nella PCOS."},
+{title:LANG_STORE==="en"?"Fertility & PCOS":"Fertilita e PCOS",icon:"\ud83c\udf1f",content:LANG_STORE==="en"?"PCOS is the #1 cause of anovulatory infertility but most women with PCOS can conceive with proper management. Track BBT and cycle for ovulation signs. Inositol improves ovulation rates. Maintain healthy weight. Work with a reproductive endocrinologist.":"La PCOS e la causa numero 1 di infertilita anovulatoria, ma la maggior parte delle donne con PCOS puo concepire con una gestione adeguata. Traccia la BBT e il ciclo per segni di ovulazione. L'inositolo migliora i tassi di ovulazione. Mantieni un peso sano. Lavora con un endocrinologo riproduttivo."},
+{title:LANG_STORE==="en"?"Abdominal Fat":"Grasso Addominale",icon:"\ud83d\udca5",content:LANG_STORE==="en"?"PCOS makes it harder to lose belly fat due to insulin resistance and high androgens. Key strategies: strength training (builds muscle, boosts metabolism), post-meal walks (reduce glucose spikes), adequate sleep (reduces cortisol), reduce refined carbs, increase protein and fiber. Waist-to-hip ratio >0.85 indicates increased metabolic risk.":"La PCOS rende piu difficile perdere grasso addominale a causa dell'insulino-resistenza e degli androgeni alti. Strategie chiave: allenamento con pesi (costruisce muscolo, aumenta metabolismo), camminate post-pasto (riducono picchi glicemici), sonno adeguato (riduce cortisolo), ridurre carboidrati raffinati, aumentare proteine e fibre. Rapporto vita/fianchi >0.85 indica rischio metabolico aumentato."}
+];
+function PCOSEncyclopedia(){
+  var _s=useState(null),open=_s[0],setOpen=_s[1];
+  return React.createElement("div",{style:{display:"grid",gap:"8px"}},
+    React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+C.plumP+","+C.roseP+")"}},
+      React.createElement("h4",{style:{fontFamily:F.p,fontSize:"16px",color:C.plum,margin:"0 0 4px"}},LANG_STORE==="en"?"\ud83d\udcda PCOS Encyclopedia":"\ud83d\udcda Enciclopedia PCOS"),
+      React.createElement("p",{style:{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:0}},LANG_STORE==="en"?"Everything you need to know, based on clinical evidence":"Tutto quello che devi sapere, basato su evidenze cliniche")
+    ),
+    PCOS_ENCYCLOPEDIA.map(function(e,i){return React.createElement(Cd,{key:i,onClick:function(){setOpen(open===i?null:i);},style:{cursor:"pointer"}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+        React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px"}},React.createElement("span",{style:{fontSize:"20px"}},e.icon),React.createElement("h5",{style:{fontFamily:F.s,fontSize:"12px",fontWeight:"600",color:C.txt,margin:0}},e.title)),
+        React.createElement("span",{style:{fontSize:"12px",color:C.txtL,transition:"transform .2s",transform:open===i?"rotate(180deg)":"none"}},"\u25bc")
+      ),
+      open===i&&React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txtM,margin:"10px 0 0",lineHeight:1.7,borderTop:"1px solid "+C.bdr,paddingTop:"10px"}},e.content)
+    );})
+  );
+}
+/* CYCLE-AWARE DAILY TIP */
+function CycleTip(){
+  var cp=getCyclePhaseNow();if(!cp)return null;
+  var tips={
+    0:[LANG_STORE==="en"?"Your body needs rest. Prioritize sleep and gentle movement. Iron-rich foods (lentils, spinach) help replenish.":"Il tuo corpo ha bisogno di riposo. Priorita al sonno e movimento dolce. Cibi ricchi di ferro (lenticchie, spinaci) aiutano.",LANG_STORE==="en"?"Magnesium can help with cramps. Try a warm turmeric latte before bed.":"Il magnesio puo aiutare con i crampi. Prova un latte alla curcuma caldo prima di dormire.",LANG_STORE==="en"?"Avoid intense workouts — your body is inflamed. Light yoga and stretching are perfect.":"Evita allenamenti intensi — il corpo e infiammato. Yoga leggero e stretching sono perfetti."],
+    1:[LANG_STORE==="en"?"Estrogen is rising — energy is up! Best time for challenging workouts and new projects.":"L'estrogeno sale — energia in aumento! Momento migliore per allenamenti sfidanti e nuovi progetti.",LANG_STORE==="en"?"Your body handles carbs better now. Good time for whole grains and fruit post-workout.":"Il tuo corpo gestisce meglio i carboidrati ora. Buon momento per cereali integrali e frutta post-allenamento.",LANG_STORE==="en"?"Strength training now builds more muscle. Progressive overload is your friend this week!":"L'allenamento con pesi ora costruisce piu muscolo. Il sovraccarico progressivo e il tuo alleato questa settimana!"],
+    2:[LANG_STORE==="en"?"Peak energy and strength! Try for personal records. Social energy is also highest.":"Picco di energia e forza! Prova per record personali. Anche l'energia sociale e al massimo.",LANG_STORE==="en"?"Hydrate extra — body temperature rises slightly around ovulation.":"Idratati di piu — la temperatura corporea sale leggermente intorno all'ovulazione.",LANG_STORE==="en"?"Include anti-inflammatory foods: salmon, turmeric, ginger, berries.":"Includi cibi anti-infiammatori: salmone, curcuma, zenzero, frutti di bosco."],
+    3:[LANG_STORE==="en"?"Progesterone rises — you may feel more tired. Lower workout intensity, increase protein.":"Il progesterone sale — potresti sentirti piu stanca. Riduci l'intensita dell'allenamento, aumenta le proteine.",LANG_STORE==="en"?"Cravings? Add magnesium-rich foods (dark chocolate 85%, nuts, seeds) to curb sugar urges.":"Voglie? Aggiungi cibi ricchi di magnesio (cioccolato fondente 85%, noci, semi) per frenare la voglia di zucchero.",LANG_STORE==="en"?"PMS is common with PCOS. B6, magnesium and evening primrose oil can help.":"La PMS e comune con la PCOS. B6, magnesio e olio di enotera possono aiutare."]
+  };
+  var phaseTips=tips[cp.phase]||tips[1];
+  var dayIdx=(cp.day-1)%phaseTips.length;
+  return React.createElement(Cd,{style:{background:"linear-gradient(135deg,"+(CYCLE_PHASES[cp.phase].color||C.sage)+"15,"+C.white+")",borderLeft:"3px solid "+(CYCLE_PHASES[cp.phase].color||C.sage),marginBottom:"10px"}},
+    React.createElement("div",{style:{display:"flex",alignItems:"flex-start",gap:"10px"}},
+      React.createElement("span",{style:{fontSize:"18px"}},CYCLE_PHASES[cp.phase].icon),
+      React.createElement("div",null,
+        React.createElement("p",{style:{fontSize:"9px",fontFamily:F.s,fontWeight:"600",color:CYCLE_PHASES[cp.phase].color||C.sage,margin:"0 0 3px",textTransform:"uppercase"}},CYCLE_PHASES[cp.phase].name+" — "+(LANG_STORE==="en"?"Day ":"Giorno ")+cp.day),
+        React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,color:C.txt,margin:0,lineHeight:1.5}},phaseTips[dayIdx])
       )
     )
   );
@@ -1675,20 +2075,23 @@ function App(){
           <NavTab label={t("garmin")} icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
           <NavTab label={t("salute")} icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
           <NavTab label={t("ai")} icon="🤖" active={tab==="ai"} onClick={function(){setTab("ai");}}/>
+          <NavTab label={LANG_STORE==="en"?"Wiki":"Wiki"} icon="📚" active={tab==="wiki"} onClick={function(){setTab("wiki");}}/>
         </div>
       </div>
       <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <DailyQuote/>
+        <CycleTip/>
         <WeeklyInsight profile={profile}/>
-        {tab==="home"&&<HomeDashboard profile={profile} setTab={setTab}/>}
+        {tab==="home"&&<><CycleTip/><HomeDashboard profile={profile} setTab={setTab}/></>}
         {tab==="alimentazione"&&<><Alimentazione profile={profile} setProfile={setProfile}/><MealIntelligence profile={profile}/></>}
-        {tab==="allenamento"&&<Allenamento/>}
+        {tab==="allenamento"&&<><Allenamento/><CycleWorkoutSuggestions/></>}
         {tab==="digiuno"&&<Digiuno profile={profile}/>}
-        {tab==="ciclo"&&<CicloMestruale/>}
+        {tab==="ciclo"&&<><CicloMestruale/><CyclePrediction/><SkinHairDiary/></>}
         {tab==="track"&&<SmartTracking/>}
         {tab==="garmin"&&<GarminSection profile={profile}/>}
-        {tab==="benessere"&&<><Benessere/><SuppReminders/><BBTTracker/><MonthlyReport profile={profile}/></>}
+        {tab==="benessere"&&<><Benessere/><SuppReminders/><BBTTracker/><AntiInflamScore/><BreathingTimer/><SleepTracker/><MonthlyReport profile={profile}/></>}
         {tab==="ai"&&<><PCOSAssistant profile={profile}/><ShareCard profile={profile}/></>}
+        {tab==="wiki"&&<PCOSEncyclopedia/>}
       </div>
       <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v4.0 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
     </div>
