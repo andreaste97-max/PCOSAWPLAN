@@ -1,4 +1,4 @@
-var CACHE_NAME='pcos-daily-v3';
+var CACHE_NAME='pcos-daily-v3.2';
 var urlsToCache=['/','./index.html'];
 self.addEventListener('install',function(event){
   self.skipWaiting();

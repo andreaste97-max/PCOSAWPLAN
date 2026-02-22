@@ -46,6 +46,57 @@ const{useState,useEffect,useRef,useCallback}=React;
 const C={bg:"#FBF8F4",bgW:"#F5EDE4",white:"#FFFFFF",sage:"#8B9E7E",sageD:"#6B7F5E",sageL:"#C5D4BC",sageP:"#E8F0E4",rose:"#C4918A",roseD:"#A67069",roseL:"#E8C5C0",roseP:"#FFF0ED",amber:"#D4A574",amberL:"#F0DCC8",amberP:"#FFF8F0",plum:"#7B6B8D",plumL:"#D8D0F0",plumP:"#F3F0FF",txt:"#3A3228",txtM:"#6B5E52",txtL:"#9B8E82",bdr:"#E8DFD6",berry:"#B5547A",berryL:"#F5D6E3",berryP:"#FFF0F6",blue:"#5B9BD5"};
 const F={p:"'Playfair Display',serif",s:"'DM Sans',sans-serif"};
 
+/* ─── i18n ─── */
+var LANG_STORE=localStorage.getItem("pcos_lang")||"it";
+var T={
+it:{cibo:"Cibo",gym:"Gym",digiuno:"Digiuno",ciclo:"Ciclo",garmin:"Garmin",salute:"Salute",ai:"AI",
+alimentazione:"Alimentazione PCOS",allenamento:"Allenamento",digiunoIF:"Digiuno Intermittente",cicloM:"Ciclo Mestruale",garminT:"Garmin Tracker",benessere:"Benessere PCOS",assistente:"Assistente PCOS",
+goal:"obiettivo",peso:"Peso",sync:"Sync",medico:"Medico",esci:"Esci",
+integratori:"Integratori",sonno:"Sonno",analisi:"Analisi",foto:"Foto",exp:"Export",tips:"Tips",
+timer:"Timer",info:"Info",regole:"Regole",storico:"Storico",
+scheda:"Scheda",upper:"Upper",lower:"Lower",core:"Core",progressi:"Progressi",
+menu:"Menu",idee:"Idee",ricette:"Ricette",spesa:"Spesa",cibiDosi:"Cibi & Dosi",regoleOro:"Regole d'Oro",
+dashboard:"Dashboard",pesate:"Pesate",allenamenti:"Allenamenti",giornaliero:"Giornaliero",
+aggiungi:"Aggiungi",salva:"Salva",annulla:"Annulla",elimina:"Elimina",chiudi:"Chiudi",
+accedi:"Accedi",registrati:"Registrati",oppure:"oppure",email:"Email",password:"Password",
+accediGoogle:"Accedi con Google",nonHaiAccount:"Non hai un account? Registrati",haiAccount:"Hai gia un account? Accedi",
+condividiMedico:"Condividi con il tuo medico",copiaLink:"Copia",
+settInsight:"Insight Settimanale",vistaMedico:"Vista Medico",solaLettura:"Dashboard di sola lettura",
+consultaMedico:"Consulta sempre il tuo medico",
+chiedimi:"Chiedimi qualcosa sulla PCOS...",stoPensando:"Sto pensando...",
+aggPhoto:"Aggiungi Progress Photo",confronta:"Confronta Before/After",prima:"PRIMA",dopo:"DOPO",
+inserisciAnalisi:"Inserisci Analisi del Sangue",ultimoPrelievo:"Ultimo Prelievo",storicoAnalisi:"Storico Analisi",trendValori:"Trend Valori",
+scaricaTutto:"Scarica TUTTO (4 file CSV)",storicoPesate:"Storico Pesate",
+caricamento:"Caricamento...",linkNonValido:"Link non valido",
+profiloPaz:"Profilo Paziente",ultimaPesata:"Ultima Pesata",riepilogoAtt:"Riepilogo Attivita",andamentoPeso:"Andamento Peso"},
+en:{cibo:"Food",gym:"Gym",digiuno:"Fasting",ciclo:"Cycle",garmin:"Garmin",salute:"Health",ai:"AI",
+alimentazione:"PCOS Nutrition",allenamento:"Workout",digiunoIF:"Intermittent Fasting",cicloM:"Menstrual Cycle",garminT:"Garmin Tracker",benessere:"PCOS Wellness",assistente:"PCOS Assistant",
+goal:"goal",peso:"Weight",sync:"Sync",medico:"Doctor",esci:"Logout",
+integratori:"Supplements",sonno:"Sleep",analisi:"Blood Work",foto:"Photos",exp:"Export",tips:"Tips",
+timer:"Timer",info:"Info",regole:"Rules",storico:"History",
+scheda:"Plan",upper:"Upper",lower:"Lower",core:"Core",progressi:"Progress",
+menu:"Menu",idee:"Ideas",ricette:"Recipes",spesa:"Shopping",cibiDosi:"Foods & Doses",regoleOro:"Golden Rules",
+dashboard:"Dashboard",pesate:"Weigh-ins",allenamenti:"Workouts",giornaliero:"Daily",
+aggiungi:"Add",salva:"Save",annulla:"Cancel",elimina:"Delete",chiudi:"Close",
+accedi:"Sign In",registrati:"Sign Up",oppure:"or",email:"Email",password:"Password",
+accediGoogle:"Sign in with Google",nonHaiAccount:"Don't have an account? Sign up",haiAccount:"Already have an account? Sign in",
+condividiMedico:"Share with your doctor",copiaLink:"Copy",
+settInsight:"Weekly Insight",vistaMedico:"Doctor View",solaLettura:"Read-only dashboard",
+consultaMedico:"Always consult your doctor",
+chiedimi:"Ask me about PCOS...",stoPensando:"Thinking...",
+aggPhoto:"Add Progress Photo",confronta:"Compare Before/After",prima:"BEFORE",dopo:"AFTER",
+inserisciAnalisi:"Enter Blood Work",ultimoPrelievo:"Latest Blood Work",storicoAnalisi:"Blood Work History",trendValori:"Value Trends",
+scaricaTutto:"Download ALL (4 CSV files)",storicoPesate:"Weight History",
+caricamento:"Loading...",linkNonValido:"Invalid link",
+profiloPaz:"Patient Profile",ultimaPesata:"Latest Weigh-in",riepilogoAtt:"Activity Summary",andamentoPeso:"Weight Trend"}
+};
+function t(key){return T[LANG_STORE]&&T[LANG_STORE][key]?T[LANG_STORE][key]:T.it[key]||key;}
+function LangToggle(){
+  const[lang,setLang]=useState(LANG_STORE);
+  function toggle(){var n=lang==="it"?"en":"it";LANG_STORE=n;localStorage.setItem("pcos_lang",n);setLang(n);window.location.reload();}
+  return(<button onClick={toggle} style={{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{lang==="it"?"🇬🇧 EN":"🇮🇹 IT"}</button>);
+}
+
 /* ─── STORAGE ─── */
 function LD(k,fb){try{var d=localStorage.getItem("pcos_"+k);return d?JSON.parse(d):fb;}catch(e){return fb;}}
 var _syncTimer=null;var _syncUid=null;
@@ -60,8 +111,8 @@ var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
 var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_isOn","fast_start","fast_goal"];
-function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();return fbDb.collection("users").doc(uid).set(data,{merge:true});}
-function syncFromCloud(uid){if(!uid)return Promise.resolve();return fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});}
+function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
+function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();Object.keys(data).forEach(function(k){if(k==="lastSync")return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
 function isViewMode(){return new URLSearchParams(window.location.search).get("view");}
 function getViewUid(){return new URLSearchParams(window.location.search).get("view");}
@@ -79,14 +130,15 @@ function AuthScreen({onLogin}){
     <div style={{maxWidth:"380px",width:"100%"}}>
       <div style={{textAlign:"center",marginBottom:"30px"}}><div style={{fontSize:"48px",marginBottom:"8px"}}>🌸</div><h1 style={{fontFamily:F.p,fontSize:"28px",fontWeight:"600",color:C.txt,margin:"0 0 4px"}}>PCOS Daily</h1><p style={{fontFamily:F.s,fontSize:"13px",color:C.txtL}}>Il tuo strumento quotidiano per gestire la PCOS</p></div>
       <Cd style={{padding:"24px"}}>
-        <button onClick={doGoogle} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txt,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",marginBottom:"16px"}}><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>{loading?"Caricamento...":"Accedi con Google"}</button>
-        <div style={{display:"flex",alignItems:"center",gap:"10px",margin:"12px 0"}}><div style={{flex:1,height:"1px",background:C.bdr}}/><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtL}}>oppure</span><div style={{flex:1,height:"1px",background:C.bdr}}/></div>
-        <div style={{display:"grid",gap:"8px"}}><input type="email" placeholder="Email" value={email} onChange={function(e){setEmail(e.target.value);}} style={Object.assign({},iS,{padding:"12px"})}/><input type="password" placeholder="Password" value={pass} onChange={function(e){setPass(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")doEmail();}} style={Object.assign({},iS,{padding:"12px"})}/></div>
+        <button onClick={doGoogle} disabled={loading} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"1px solid "+C.bdr,background:C.white,color:C.txt,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"10px",marginBottom:"16px"}}><svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>{loading?t("caricamento"):t("accediGoogle")}</button>
+        <div style={{display:"flex",alignItems:"center",gap:"10px",margin:"12px 0"}}><div style={{flex:1,height:"1px",background:C.bdr}}/><span style={{fontSize:"11px",fontFamily:F.s,color:C.txtL}}>{t("oppure")}</span><div style={{flex:1,height:"1px",background:C.bdr}}/></div>
+        <div style={{display:"grid",gap:"8px"}}><input type="email" placeholder={t("email")} value={email} onChange={function(e){setEmail(e.target.value);}} style={Object.assign({},iS,{padding:"12px"})}/><input type="password" placeholder={t("password")} value={pass} onChange={function(e){setPass(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")doEmail();}} style={Object.assign({},iS,{padding:"12px"})}/></div>
         {error&&<p style={{fontSize:"11px",fontFamily:F.s,color:C.rose,margin:"8px 0 0",textAlign:"center"}}>{error}</p>}
-        <button onClick={doEmail} disabled={loading||!email||!pass} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"none",background:!email||!pass?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:!email||!pass?C.txtL:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:!email||!pass?"default":"pointer",marginTop:"12px"}}>{loading?"Caricamento...":mode==="login"?"Accedi":"Registrati"}</button>
-        <p style={{textAlign:"center",margin:"12px 0 0"}}><button onClick={function(){setMode(mode==="login"?"register":"login");setError("");}} style={{background:"none",border:"none",color:C.sage,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",textDecoration:"underline"}}>{mode==="login"?"Non hai un account? Registrati":"Hai gia un account? Accedi"}</button></p>
+        <button onClick={doEmail} disabled={loading||!email||!pass} style={{width:"100%",padding:"13px",borderRadius:"12px",border:"none",background:!email||!pass?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:!email||!pass?C.txtL:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:!email||!pass?"default":"pointer",marginTop:"12px"}}>{loading?t("caricamento"):mode==="login"?t("accedi"):t("registrati")}</button>
+        <p style={{textAlign:"center",margin:"12px 0 0"}}><button onClick={function(){setMode(mode==="login"?"register":"login");setError("");}} style={{background:"none",border:"none",color:C.sage,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",textDecoration:"underline"}}>{mode==="login"?t("nonHaiAccount"):t("haiAccount")}</button></p>
       </Cd>
-      <p style={{textAlign:"center",fontSize:"10px",fontFamily:F.s,color:C.txtL,marginTop:"16px"}}>I tuoi dati saranno sincronizzati in cloud e accessibili da ogni dispositivo.</p>
+      <p style={{textAlign:"center",fontSize:"10px",fontFamily:F.s,color:C.txtL,marginTop:"16px"}}>{LANG_STORE==="en"?"Your data will be synced to the cloud and accessible from any device.":"I tuoi dati saranno sincronizzati in cloud e accessibili da ogni dispositivo."}</p>
+      <div style={{textAlign:"center",marginTop:"10px"}}><LangToggle/></div>
     </div>
   </div>);
 }
@@ -624,20 +676,20 @@ function ProgressPhotos(){
   const[selA,setSelA]=useState(0);
   const[selB,setSelB]=useState(null);
   var fileRef=useRef(null);
-  function addPhoto(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var entry={date:todayK(),data:ev.target.result,note:""};var u=[entry].concat(photos).slice(0,20);setPhotos(u);SV("progressPhotos",u);};reader.readAsDataURL(file);}
+  function addPhoto(e){var file=e.target.files[0];if(!file)return;var reader=new FileReader();reader.onload=function(ev){var img=new Image();img.onload=function(){var MAX=400;var w=img.width;var h=img.height;if(w>h){if(w>MAX){h=h*(MAX/w);w=MAX;}}else{if(h>MAX){w=w*(MAX/h);h=MAX;}}var canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;var ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,w,h);var compressed=canvas.toDataURL("image/jpeg",0.35);var entry={date:todayK(),data:compressed,note:""};var u=[entry].concat(photos).slice(0,20);setPhotos(u);SV("progressPhotos",u);};img.src=ev.target.result;};reader.readAsDataURL(file);}
   function delPhoto(i){var u=photos.filter(function(_,j){return j!==i;});setPhotos(u);SV("progressPhotos",u);}
   useEffect(function(){if(photos.length>=2&&selB===null)setSelB(photos.length-1);},[photos]);
   return(<div style={{display:"grid",gap:"12px"}}>
     <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={addPhoto} style={{display:"none"}}/>
-    <button onClick={function(){fileRef.current.click();}} style={{width:"100%",padding:"14px",borderRadius:"12px",border:"2px dashed "+C.sage,background:C.sageP,color:C.sageD,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>📸 Aggiungi Progress Photo</button>
-    {photos.length>=2&&(<div><button onClick={function(){setCompare(!compare);}} style={{width:"100%",padding:"10px",borderRadius:"10px",border:"none",background:compare?C.roseP:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:compare?C.roseD:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",marginBottom:"10px"}}>{compare?"✕ Chiudi confronto":"🔀 Confronta Before/After"}</button>
+    <button onClick={function(){fileRef.current.click();}} style={{width:"100%",padding:"14px",borderRadius:"12px",border:"2px dashed "+C.sage,background:C.sageP,color:C.sageD,fontSize:"13px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>📸 {t("aggPhoto")}</button>
+    {photos.length>=2&&(<div><button onClick={function(){setCompare(!compare);}} style={{width:"100%",padding:"10px",borderRadius:"10px",border:"none",background:compare?C.roseP:"linear-gradient(135deg,"+C.plum+","+C.rose+")",color:compare?C.roseD:C.white,fontSize:"12px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",marginBottom:"10px"}}>{compare?"✕ "+t("chiudi"):"🔀 "+t("confronta")}</button>
     {compare&&(<Cd accent={C.plum}><div style={{display:"flex",gap:"6px",marginBottom:"10px"}}><div style={{flex:1}}><label style={lS}>Prima</label><select value={selA} onChange={function(e){setSelA(parseInt(e.target.value));}} style={Object.assign({},iS,{fontSize:"11px"})}>{photos.map(function(p,i){return<option key={i} value={i}>{fmtD(p.date)}</option>;})}</select></div><div style={{flex:1}}><label style={lS}>Dopo</label><select value={selB||0} onChange={function(e){setSelB(parseInt(e.target.value));}} style={Object.assign({},iS,{fontSize:"11px"})}>{photos.map(function(p,i){return<option key={i} value={i}>{fmtD(p.date)}</option>;})}</select></div></div>
     <div style={{position:"relative",width:"100%",height:"300px",borderRadius:"12px",overflow:"hidden",touchAction:"none"}} onPointerMove={function(e){var rect=e.currentTarget.getBoundingClientRect();var x=Math.max(0,Math.min(100,((e.clientX-rect.left)/rect.width)*100));setSliderPos(x);}} onTouchMove={function(e){var rect=e.currentTarget.getBoundingClientRect();var t=e.touches[0];var x=Math.max(0,Math.min(100,((t.clientX-rect.left)/rect.width)*100));setSliderPos(x);}}>
       <img src={photos[selB||0].data} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover"}}/>
       <div style={{position:"absolute",top:0,left:0,width:sliderPos+"%",height:"100%",overflow:"hidden"}}><img src={photos[selA].data} style={{position:"absolute",top:0,left:0,width:"100%",height:"100%",objectFit:"cover",minWidth:100/sliderPos*100+"%"}}/></div>
       <div style={{position:"absolute",top:0,left:sliderPos+"%",width:"3px",height:"100%",background:C.white,boxShadow:"0 0 8px rgba(0,0,0,.5)",transform:"translateX(-50%)",zIndex:2}}><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:"30px",height:"30px",borderRadius:"50%",background:C.white,boxShadow:"0 2px 8px rgba(0,0,0,.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"12px"}}>↔</div></div>
-      <div style={{position:"absolute",top:"8px",left:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>PRIMA — {fmtD(photos[selA].date)}</div>
-      <div style={{position:"absolute",top:"8px",right:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>DOPO — {fmtD(photos[selB||0].date)}</div>
+      <div style={{position:"absolute",top:"8px",left:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>{t("prima")} — {fmtD(photos[selA].date)}</div>
+      <div style={{position:"absolute",top:"8px",right:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"9px",fontFamily:F.s,zIndex:3}}>{t("dopo")} — {fmtD(photos[selB||0].date)}</div>
     </div></Cd>)}</div>)}
     {photos.length===0&&<Info bg={C.plumP} bdr={C.plumL} color={C.plum}>Scatta una foto al mese per vedere i tuoi progressi nel tempo! Le foto restano solo sul tuo dispositivo.</Info>}
     <div style={{display:"grid",gap:"8px",gridTemplateColumns:"repeat(3,1fr)"}}>{photos.map(function(p,i){return(<div key={i} style={{position:"relative",borderRadius:"10px",overflow:"hidden",aspectRatio:"3/4"}}><img src={p.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,.7))",padding:"4px 6px"}}><span style={{fontSize:"9px",fontFamily:F.s,color:C.white}}>{fmtD(p.date)}</span></div><button onClick={function(){delPhoto(i);}} style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,.5)",color:C.white,fontSize:"11px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>);})}</div>
@@ -852,10 +904,10 @@ function PCOSAssistant({profile}){
     <SecH title="Assistente PCOS" sub="Basato sulle guide Lotus Flower PCOS 101"/>
     <div ref={chatRef} style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:"10px",padding:"4px 0",marginBottom:"10px"}}>
       {msgs.map(function(m,i){return(<div key={i} style={{display:"flex",justifyContent:m.from==="user"?"flex-end":"flex-start"}}><div style={{maxWidth:"85%",padding:"10px 14px",borderRadius:m.from==="user"?"14px 14px 4px 14px":"14px 14px 14px 4px",background:m.from==="user"?"linear-gradient(135deg,"+C.sage+","+C.sageD+")":C.white,color:m.from==="user"?C.white:C.txt,fontFamily:F.s,boxShadow:"0 1px 3px rgba(0,0,0,.08)",border:m.from==="ai"?"1px solid "+C.bdr:"none"}}>{m.from==="ai"?renderText(m.text):<span style={{fontSize:"12px",lineHeight:1.5}}>{m.text}</span>}<div style={{fontSize:"8px",color:m.from==="user"?"rgba(255,255,255,.6)":C.txtL,textAlign:"right",marginTop:"4px"}}>{m.time}</div></div></div>);})}
-      {typing&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{padding:"10px 18px",borderRadius:"14px 14px 14px 4px",background:C.white,border:"1px solid "+C.bdr}}><span style={{fontFamily:F.s,fontSize:"12px",color:C.txtL,animation:"pulse 1s infinite"}}>Sto pensando...</span></div></div>}
+      {typing&&<div style={{display:"flex",justifyContent:"flex-start"}}><div style={{padding:"10px 18px",borderRadius:"14px 14px 14px 4px",background:C.white,border:"1px solid "+C.bdr}}><span style={{fontFamily:F.s,fontSize:"12px",color:C.txtL,animation:"pulse 1s infinite"}}>{t("stoPensando")}</span></div></div>}
     </div>
     {msgs.length<=2&&(<div style={{display:"flex",gap:"6px",flexWrap:"wrap",marginBottom:"10px"}}>{suggest().map(function(s,i){return(<button key={i} onClick={function(){setInput(s);}} style={{padding:"6px 10px",borderRadius:"20px",border:"1px solid "+C.sageL,background:C.sageP,color:C.sageD,fontSize:"10px",fontFamily:F.s,cursor:"pointer",whiteSpace:"nowrap"}}>{s}</button>);})}</div>)}
-    <div style={{display:"flex",gap:"8px"}}><input value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendMsg();}} placeholder="Chiedimi qualcosa sulla PCOS..." style={Object.assign({},iS,{flex:1,padding:"12px",borderRadius:"20px"})}/><button onClick={sendMsg} disabled={!input.trim()||typing} style={{padding:"12px 18px",borderRadius:"20px",border:"none",background:!input.trim()?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"14px",cursor:!input.trim()?"default":"pointer"}}>➤</button></div>
+    <div style={{display:"flex",gap:"8px"}}><input value={input} onChange={function(e){setInput(e.target.value);}} onKeyDown={function(e){if(e.key==="Enter")sendMsg();}} placeholder={t("chiedimi")} style={Object.assign({},iS,{flex:1,padding:"12px",borderRadius:"20px"})}/><button onClick={sendMsg} disabled={!input.trim()||typing} style={{padding:"12px 18px",borderRadius:"20px",border:"none",background:!input.trim()?C.bdr:"linear-gradient(135deg,"+C.sage+","+C.sageD+")",color:C.white,fontSize:"14px",cursor:!input.trim()?"default":"pointer"}}>➤</button></div>
     <p style={{fontSize:"8px",fontFamily:F.s,color:C.txtL,textAlign:"center",margin:"6px 0 0"}}>Le risposte sono basate sulle guide Lotus Flower PCOS 101. Consulta sempre il tuo medico per decisioni cliniche.</p>
   </div>);
 }
@@ -865,8 +917,8 @@ function PCOSAssistant({profile}){
 function Benessere(){
   const[sub,setSub]=useState("supps");
   return(<div>
-    <SecH title="Benessere PCOS" sub="Integratori, sonno, analisi, export e progress photos"/>
-    <SubT tabs={[{k:"supps",l:"Integratori",i:"💊"},{k:"sleep",l:"Sonno",i:"😴"},{k:"medical",l:"Analisi",i:"🩸"},{k:"photos",l:"Foto",i:"📸"},{k:"export",l:"Export",i:"📁"},{k:"tips",l:"Tips",i:"💡"}]} active={sub} onSel={setSub}/>
+    <SecH title={t("benessere")} sub={LANG_STORE==="en"?"Supplements, sleep, blood work, photos and export":"Integratori, sonno, analisi, export e progress photos"}/>
+    <SubT tabs={[{k:"supps",l:t("integratori"),i:"💊"},{k:"sleep",l:t("sonno"),i:"😴"},{k:"medical",l:t("analisi"),i:"🩸"},{k:"photos",l:t("foto"),i:"📸"},{k:"export",l:t("exp"),i:"📁"},{k:"tips",l:t("tips"),i:"💡"}]} active={sub} onSel={setSub}/>
     {sub==="supps"&&<SuppTracker/>}
     {sub==="sleep"&&(<div style={{display:"grid",gap:"12px"}}><SleepTracker/><Info bg={C.plumP} bdr={C.plumL} color={C.plum}><strong>Perche il sonno conta nella PCOS:</strong> Dormire meno di 7 ore aumenta il cortisolo del 37%, peggiora l'insulino-resistenza e aumenta la fame il giorno dopo. Punta a 7-9 ore per notte.</Info></div>)}
     {sub==="medical"&&<MedicalDashboard/>}
@@ -922,26 +974,27 @@ function App(){
       <div style={{background:C.white,borderBottom:"1px solid "+C.bdr,padding:"12px 16px 8px",position:"sticky",top:0,zIndex:100}}>
         <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}}>
           <div style={{width:"34px",height:"34px",borderRadius:"10px",background:"linear-gradient(135deg,"+C.sage+","+C.rose+")",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"16px"}}>🌸</div>
-          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v3.0 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
+          <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"17px",fontWeight:"600",color:C.txt,margin:0}}>PCOS Daily</h1><p style={{fontSize:"9px",color:C.txtL,margin:"1px 0 0"}}>v3.2 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
           <div style={{textAlign:"right"}}><div style={{fontSize:"12px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"8px",color:C.txtL,fontFamily:F.s}}>goal {profile.goalW} kg</div></div>
         </div>
         <div style={{display:"flex",gap:"4px",alignItems:"center",marginBottom:"6px"}}>
-          <button onClick={doSync} disabled={syncing} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:syncing?C.sageP:C.white,color:C.sageD,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>{syncing?"⏳ Sync...":"☁️ Sync"}</button>
+          <button onClick={doSync} disabled={syncing} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:syncing?C.sageP:C.white,color:C.sageD,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>{syncing?"⏳ Sync...":"☁️ "+t("sync")}</button>
           {lastSync&&<span style={{fontSize:"8px",fontFamily:F.s,color:C.txtL}}>✓ {lastSync}</span>}
-          <button onClick={function(){setShowShare(!showShare);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>🔗 Medico</button>
+          <button onClick={function(){setShowShare(!showShare);}} style={{padding:"4px 10px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.plum,fontSize:"9px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}}>🔗 {t("medico")}</button>
+          <LangToggle/>
           <div style={{flex:1}}/>
           <span style={{fontSize:"9px",fontFamily:F.s,color:C.txtL}}>{user.email?user.email.split("@")[0]:""}</span>
-          <button onClick={doLogout} style={{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.rose,fontSize:"9px",fontFamily:F.s,cursor:"pointer"}}>Esci</button>
+          <button onClick={doLogout} style={{padding:"4px 8px",borderRadius:"8px",border:"1px solid "+C.bdr,background:C.white,color:C.rose,fontSize:"9px",fontFamily:F.s,cursor:"pointer"}}>{t("esci")}</button>
         </div>
-        {showShare&&(<Cd style={{marginBottom:"8px",padding:"12px",background:C.plumP,border:"1px solid "+C.plumL}}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}}>🔗 Condividi con il tuo medico</h5><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 8px"}}>Il medico vedra una dashboard di sola lettura con: profilo, peso, analisi del sangue, allenamenti e digiuni.</p><div style={{display:"flex",gap:"6px"}}><input readOnly value={generateShareLink(user.uid)} style={Object.assign({},iS,{fontSize:"10px",padding:"8px"})}/><button onClick={function(){navigator.clipboard.writeText(generateShareLink(user.uid));}} style={{padding:"8px 14px",borderRadius:"8px",border:"none",background:C.plum,color:C.white,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap"}}>📋 Copia</button></div></Cd>)}
+        {showShare&&(<Cd style={{marginBottom:"8px",padding:"12px",background:C.plumP,border:"1px solid "+C.plumL}}><h5 style={{fontFamily:F.s,fontSize:"11px",fontWeight:"600",color:C.plum,margin:"0 0 6px"}}>🔗 {t("condividiMedico")}</h5><p style={{fontSize:"10px",fontFamily:F.s,color:C.txtM,margin:"0 0 8px"}}>{LANG_STORE==="en"?"Your doctor will see a read-only dashboard with: profile, weight, blood work, workouts and fasting data.":"Il medico vedra una dashboard di sola lettura con: profilo, peso, analisi del sangue, allenamenti e digiuni."}</p><div style={{display:"flex",gap:"6px"}}><input readOnly value={generateShareLink(user.uid)} style={Object.assign({},iS,{fontSize:"10px",padding:"8px"})}/><button onClick={function(){navigator.clipboard.writeText(generateShareLink(user.uid));}} style={{padding:"8px 14px",borderRadius:"8px",border:"none",background:C.plum,color:C.white,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer",whiteSpace:"nowrap"}}>📋 {t("copiaLink")}</button></div></Cd>)}
         <div style={{display:"flex",gap:"2px",overflowX:"auto"}}>
-          <NavTab label="Cibo" icon="🥗" active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}}/>
-          <NavTab label="Gym" icon="🏋️‍♀️" active={tab==="allenamento"} onClick={function(){setTab("allenamento");}}/>
-          <NavTab label="Digiuno" icon="⏳" active={tab==="digiuno"} onClick={function(){setTab("digiuno");}}/>
-          <NavTab label="Ciclo" icon="🩸" active={tab==="ciclo"} onClick={function(){setTab("ciclo");}}/>
-          <NavTab label="Garmin" icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
-          <NavTab label="Salute" icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
-          <NavTab label="AI" icon="🤖" active={tab==="ai"} onClick={function(){setTab("ai");}}/>
+          <NavTab label={t("cibo")} icon="🥗" active={tab==="alimentazione"} onClick={function(){setTab("alimentazione");}}/>
+          <NavTab label={t("gym")} icon="🏋️‍♀️" active={tab==="allenamento"} onClick={function(){setTab("allenamento");}}/>
+          <NavTab label={t("digiuno")} icon="⏳" active={tab==="digiuno"} onClick={function(){setTab("digiuno");}}/>
+          <NavTab label={t("ciclo")} icon="🩸" active={tab==="ciclo"} onClick={function(){setTab("ciclo");}}/>
+          <NavTab label={t("garmin")} icon="⌚" active={tab==="garmin"} onClick={function(){setTab("garmin");}}/>
+          <NavTab label={t("salute")} icon="💊" active={tab==="benessere"} onClick={function(){setTab("benessere");}}/>
+          <NavTab label={t("ai")} icon="🤖" active={tab==="ai"} onClick={function(){setTab("ai");}}/>
         </div>
       </div>
       <div ref={scrollRef} style={{flex:1,padding:"18px 12px 32px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
@@ -955,7 +1008,7 @@ function App(){
         {tab==="benessere"&&<Benessere/>}
         {tab==="ai"&&<PCOSAssistant profile={profile}/>}
       </div>
-      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v3.0 | Cloud ☁️ | lotusflowerpcos.com | Consulta sempre il tuo medico</p></div>
+      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"9px",color:C.txtL,margin:0}}>PCOS Daily v3.2 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
     </div>
   );
 }
