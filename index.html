@@ -1253,7 +1253,7 @@ function GIDatabase(){
   var _s1=useState(""),q=_s1[0],setQ=_s1[1];
   var _s2=useState("tutti"),cat=_s2[0],setCat=_s2[1];
   var _s3=useState(false),onlyPcos=_s3[0],setOnlyPcos=_s3[1];
-  var filtered=GI_DB.filter(function(f){return(cat==="tutti"||f.cat===cat)&&(!onlyPcos||f.pcos)&&(!q||f.n.toLowerCase().includes(q.toLowerCase()));}).sort(function(a,b){return a.gi-b.gi;});
+  var filtered=GI_DB.filter(function(f){return(cat==="tutti"||f.cat===cat)&&(!onlyPcos||f.pcos)&&(!q||f.n.toLowerCase().includes(q.toLowerCase()));}).sort(function(a,b){if(a.gi===0&&b.gi>0)return 1;if(a.gi>0&&b.gi===0)return -1;return a.gi-b.gi;});
   function giColor(gi){return gi<=55?C.sage:gi<=69?C.amber:C.rose;}
   return React.createElement("div",{style:{display:"grid",gap:"10px"}},
     React.createElement(Cd,null,
@@ -1262,13 +1262,13 @@ function GIDatabase(){
       React.createElement("div",{style:{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"8px"}},GI_CATS.map(function(c){return React.createElement("button",{key:c.k,onClick:function(){setCat(c.k);},style:{padding:"4px 10px",borderRadius:"14px",border:cat===c.k?"none":"1px solid "+C.bdr,background:cat===c.k?C.plum:C.white,color:cat===c.k?C.white:C.txtM,fontSize:"9px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},c.l);})),
       React.createElement("button",{onClick:function(){setOnlyPcos(!onlyPcos);},style:{padding:"6px 12px",borderRadius:"10px",border:"1.5px solid "+(onlyPcos?C.sage:C.bdr),background:onlyPcos?C.sageP:C.white,color:onlyPcos?C.sageD:C.txtM,fontSize:"10px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},onlyPcos?"\u2705 Solo PCOS-friendly":"\ud83d\udd18 "+(LANG_STORE==="en"?"Show PCOS only":"Solo PCOS-friendly"))
     ),
-    React.createElement("div",{style:{display:"grid",gap:"4px"}},filtered.slice(0,50).map(function(f,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderRadius:"10px",background:C.white,border:"1px solid "+C.bg}},
+    React.createElement("div",{style:{display:"grid",gap:"4px"}},filtered.slice(0,100).map(function(f,i){return React.createElement("div",{key:i,style:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",borderRadius:"10px",background:C.white,border:"1px solid "+C.bg}},
       React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"8px"}},
         React.createElement("span",{style:{width:"8px",height:"8px",borderRadius:"50%",background:f.pcos?C.sage:C.rose,flexShrink:0}},null),
         React.createElement("div",null,React.createElement("p",{style:{fontSize:"11px",fontFamily:F.s,fontWeight:"600",color:C.txt,margin:0}},f.n),React.createElement("p",{style:{fontSize:"8px",fontFamily:F.s,color:C.txtL,margin:0}},f.cat))
       ),
       React.createElement("div",{style:{display:"flex",gap:"8px",alignItems:"center"}},
-        React.createElement("div",{style:{textAlign:"center"}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:giColor(f.gi),margin:0}},f.gi),React.createElement("p",{style:{fontSize:"7px",color:C.txtL,margin:0}},"IG")),
+        React.createElement("div",{style:{textAlign:"center"}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:f.gi===0?C.txtL:giColor(f.gi),margin:0}},f.gi===0?"~0":f.gi),React.createElement("p",{style:{fontSize:"7px",color:C.txtL,margin:0}},f.gi===0?"no carb":"IG")),
         React.createElement("div",{style:{textAlign:"center"}},React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,fontWeight:"700",color:C.txtM,margin:0}},f.gl),React.createElement("p",{style:{fontSize:"7px",color:C.txtL,margin:0}},"GL"))
       )
     );})),
