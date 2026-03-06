@@ -42,7 +42,7 @@ if('serviceWorker' in navigator){
 <script type="text/babel">
 const{useState,useEffect,useRef,useCallback}=React;
 
-/* ═══════════ PCOS DAILY v7.0 — FULL ROADMAP ═══════════ */
+/* ═══════════ PCOS DAILY v7.1 — FULL ROADMAP ═══════════ */
 var PCOS_THEME=localStorage.getItem("pcos_theme")||"light";
 const C=PCOS_THEME==="dark"?{bg:"#0F0D1A",bgW:"#1A1730",white:"#1E1B35",sage:"#34D399",sageD:"#6EE7B7",sageL:"#064E3B",sageP:"#1A2E28",rose:"#FB7185",roseD:"#FDA4AF",roseL:"#4C0519",roseP:"#2A0A14",amber:"#FBBF24",amberL:"#4A3520",amberP:"#2E2010",plum:"#A78BFA",plumL:"#4C3D70",plumP:"#2A1F48",txt:"#F1F5F9",txtM:"#CBD5E1",txtL:"#64748B",bdr:"#334155",berry:"#F472B6",berryL:"#3A1A28",berryP:"#2E1420",blue:"#60A5FA"}:{bg:"#F5F3FF",bgW:"#EDE9FE",white:"#FFFFFF",sage:"#10B981",sageD:"#059669",sageL:"#A7F3D0",sageP:"#ECFDF5",rose:"#F43F5E",roseD:"#E11D48",roseL:"#FECDD3",roseP:"#FFF1F2",amber:"#F59E0B",amberL:"#FDE68A",amberP:"#FFFBEB",plum:"#8B5CF6",plumL:"#C4B5FD",plumP:"#EDE9FE",txt:"#1E1B4B",txtM:"#4C4669",txtL:"#9CA3AF",bdr:"#E5E7EB",berry:"#EC4899",berryL:"#FBCFE8",berryP:"#FDF2F8",blue:"#3B82F6"};
 const F={p:"'Sora',sans-serif",s:"'Inter',sans-serif"};
@@ -2163,6 +2163,177 @@ function SkinHairDiary(){
     )
   );
 }
+
+/* ═══════ CYCLE SYNC WEEKLY PLANNER (WomanCode) ═══════ */
+var CYCLE_SYNC_PLANS={
+0:{phase:"Mestruale",phaseEN:"Menstrual",icon:"\ud83c\udf39",color:"#e57373",
+meals:[
+{name:"Colazione",nameEN:"Breakfast",it:"Smoothie con frutti di bosco, proteine di riso/canapa e semi di lino. Oppure: kasha con semi di girasole e alghe.",en:"Berry smoothie with rice/hemp protein and flaxseed. Or: buckwheat with sunflower seeds and seaweed."},
+{name:"Pranzo",nameEN:"Lunch",it:"Zuppa di miso con riso integrale e alghe wakame. Oppure: sardine su pane di riso nero con cavolo riccio.",en:"Miso soup with brown rice and wakame seaweed. Or: sardines on black rice bread with kale."},
+{name:"Cena",nameEN:"Dinner",it:"Insalata di barbabietola con cavolo al vapore, castagne d'acqua, funghi shiitake. Oppure: cozze e calamari in brodo leggero di pomodoro.",en:"Beet salad over steamed kale, water chestnuts, shiitake mushrooms. Or: mussels and squid in light tomato broth."}
+],
+tips:{it:"Cibi a basso indice glicemico, ricchi di ferro e zinco. Frutta e verdura ad alto contenuto d'acqua. Metodi di cottura confortanti: zuppe e stufati. Rimineralizza il corpo.",en:"Low glycemic foods, rich in iron and zinc. Water-rich fruits and vegetables. Comforting cooking methods: soups and stews. Remineralize the body."},
+exercise:{it:"Riposo e recupero. Yoga, stretching, camminate dolci. I primi 1-2 giorni riposa, poi aumenta gradualmente.",en:"Rest and recovery. Yoga, stretching, gentle walks. Rest first 1-2 days, then gradually increase."},
+lifestyle:{it:"Analisi e introspezione. Comunicazione tra emisferi al massimo. Journaling, valutazione di obiettivi. Ascolta i messaggi intuitivi del corpo.",en:"Analysis and introspection. Hemisphere communication at peak. Journaling, goal evaluation. Listen to intuitive body messages."}
+},
+1:{phase:"Follicolare",phaseEN:"Follicular",icon:"\ud83c\udf31",color:"#81c784",
+meals:[
+{name:"Colazione",nameEN:"Breakfast",it:"Smoothie proteico con avocado, semi di lino e cannella. Oppure: porridge d'avena con anacardi, bacche di goji e cannella.",en:"Protein smoothie with avocado, flaxseed and cinnamon. Or: oatmeal with cashews, goji berries and cinnamon."},
+{name:"Pranzo",nameEN:"Lunch",it:"Petto di pollo al vapore con prezzemolo, broccoli saltati, fagiolini e carote. Oppure: insalata di lenticchie con carciofi.",en:"Steamed chicken breast with parsley, sauteed broccoli, string beans and carrots. Or: lentil salad with artichoke hearts."},
+{name:"Cena",nameEN:"Dinner",it:"Omelette con zucchine saltate. Oppure: lattuga romana con germogli, avocado e fagioli mung.",en:"Omelette with sauteed zucchini. Or: romaine lettuce with sprouts, avocado and mung beans."}
+],
+tips:{it:"Cibi freschi, leggeri e vibranti. Fitoestrogeni ok perche gli estrogeni sono ancora bassi. Cotture leggere: vapore e saltatura. Avocado migliora la transizione follicolare-ovulatoria.",en:"Fresh, light, vibrant foods. Phytoestrogens ok as estrogen is still low. Light cooking: steaming and sauteing. Avocado improves follicular-ovulatory transition."},
+exercise:{it:"Prova qualcosa di nuovo! Zumba, yoga sculpting, nuovi corsi. Energia in crescita, le nuove connessioni neurali si formano piu facilmente. Allenamenti sfidanti.",en:"Try something new! Zumba, yoga sculpting, new classes. Energy rising, new neural connections form more easily. Challenging workouts."},
+lifestyle:{it:"Creativita e nuovi inizi. Brainstorming, progetti mentalmente sfidanti. Energia sociale alta, accetta inviti. Esplora mostre, musica, novita.",en:"Creativity and new beginnings. Brainstorming, mentally challenging projects. High social energy, accept invitations. Explore exhibitions, music, novelty."}
+},
+2:{phase:"Ovulatoria",phaseEN:"Ovulatory",icon:"\u2728",color:"#ffb74d",
+meals:[
+{name:"Colazione",nameEN:"Breakfast",it:"Smoothie proteico con fichi e cocco. Oppure: fiocchi di quinoa con semi di zucca e bacche di goji.",en:"Protein smoothie with fig and coconut. Or: quinoa flakes with pumpkin seeds and goji berries."},
+{name:"Pranzo",nameEN:"Lunch",it:"Insalata di quinoa con verdure a foglia e mandorle. Oppure: curry di lenticchie rosse con curcuma su bietola saltata.",en:"Quinoa salad with chopped greens and almonds. Or: red lentil curry with turmeric over sauteed chard."},
+{name:"Cena",nameEN:"Dinner",it:"Salmone al vapore con asparagi. Oppure: insalata di indivia e spinaci con gamberetti grigliati.",en:"Steamed salmon with asparagus. Or: endive and spinach salad with grilled shrimp."}
+],
+tips:{it:"Vai leggera sui carboidrati, hai energia naturale dagli estrogeni. Cereali leggeri (mais, quinoa). Tante verdure e frutta (antiossidanti, glutatione per il fegato). Cibi crudi o al vapore.",en:"Go light on carbs, you have natural energy from estrogen. Light grains (corn, quinoa). Lots of veggies and fruit (antioxidants, glutathione for liver). Raw or steamed foods."},
+exercise:{it:"Massima energia! Carichi pesanti, pliometria, corsa, spinning. Allenamenti di gruppo. Prova a battere i tuoi record personali.",en:"Peak energy! Heavy lifts, plyometrics, running, spinning. Group workouts. Try to beat your personal records."},
+lifestyle:{it:"Connessione e comunicazione. Conversazioni importanti, negoziazioni, primi appuntamenti. Le tue capacita comunicative sono al massimo. Chiedi quell'aumento!",en:"Connection and communication. Important conversations, negotiations, first dates. Your communication skills are at their peak. Ask for that raise!"}
+},
+3:{phase:"Luteale",phaseEN:"Luteal",icon:"\ud83c\udf19",color:"#9575cd",
+meals:[
+{name:"Colazione",nameEN:"Breakfast",it:"Smoothie proteico con datteri e menta. Oppure: patata dolce al vapore con noci tostate.",en:"Protein smoothie with dates and mint. Or: steamed sweet potato with toasted walnuts."},
+{name:"Pranzo",nameEN:"Lunch",it:"Ceci saltati con cipolla e cavolfiore. Oppure: riso integrale con cipolla, carota, sedano, daikon e semi di girasole.",en:"Chickpeas sauteed with onion and cauliflower. Or: brown rice with onion, carrot, celery, daikon and sunflower seeds."},
+{name:"Cena",nameEN:"Dinner",it:"Halibut al forno con porri. Oppure: fettine di tacchino con cavolo saltato e mela verde.",en:"Roasted halibut with leeks. Or: turkey tenderloins with sauteed cabbage and green apple."}
+],
+tips:{it:"Vitamine B, calcio, magnesio e fibre. Le vitamine B sono usate per produrre progesterone. Calcio-magnesio nelle verdure a foglia riduce la ritenzione idrica. Le fibre aiutano il fegato a eliminare gli estrogeni. Verdure al forno: piu dolci naturalmente. Carboidrati complessi per serotonina e dopamina.",en:"B vitamins, calcium, magnesium and fiber. B vitamins are used for progesterone production. Calcium-magnesium in leafy greens reduces water retention. Fiber helps the liver flush estrogen. Roasted vegetables: naturally sweeter. Complex carbs for serotonin and dopamine."},
+exercise:{it:"Prima meta: ancora energia, intensita moderata. Seconda meta: scala: camminata, Pilates, yoga, ellittica. Meno resistenza, meno impatto — proteggi il corpo.",en:"First half: still have energy, moderate intensity. Second half: scale back: walking, Pilates, yoga, elliptical. Less resistance, less impact — protect the body."},
+lifestyle:{it:"Consapevolezza e comfort. Desiderio di nesting. Organizza casa, bucato, spesa grande. Il rapporto estrogeno/progesterone ti fa notare dettagli. Riduci gli impegni sociali per non esaurirti.",en:"Awareness and comfort. Nesting desire. Organize home, laundry, big grocery shop. Estrogen/progesterone ratio makes you notice details. Reduce social engagements to avoid exhaustion."}
+}
+};
+
+function CycleSyncPlanner(){
+  var cp=getCyclePhaseNow();
+  var phaseIdx=cp?cp.phase:1;
+  var plan=CYCLE_SYNC_PLANS[phaseIdx];
+  var _s=useState(0);var openMeal=_s[0];var setOpenMeal=_s[1];
+  var L=LANG_STORE==="en";
+  var dayOfWeek=new Date().getDay();
+  var dayNames=L?["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]:["Dom","Lun","Mar","Mer","Gio","Ven","Sab"];
+  return React.createElement("div",{style:{display:"grid",gap:"10px"}},
+    React.createElement(SecH,{title:L?"Weekly Cycle Sync Planner":"Planner Settimanale Cycle Sync",sub:L?"Personalized plan based on your current cycle phase (from WomanCode)":"Piano personalizzato basato sulla tua fase del ciclo attuale (da WomanCode)"}),
+    React.createElement(Cd,{accent:plan.color,style:{background:plan.color+"10"}},
+      React.createElement("div",{style:{display:"flex",alignItems:"center",gap:"10px",marginBottom:"10px"}},
+        React.createElement("span",{style:{fontSize:"28px"}},plan.icon),
+        React.createElement("div",null,
+          React.createElement("h3",{style:{fontFamily:F.p,fontSize:"16px",margin:0,color:C.txt}},L?"Phase: "+plan.phaseEN:"Fase: "+plan.phase),
+          cp&&React.createElement("p",{style:{fontSize:"13px",color:C.txtM,fontFamily:F.s,margin:"2px 0 0"}},(L?"Day ":"Giorno ")+cp.day)
+        )
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"3px",marginBottom:"12px"}},dayNames.map(function(dn,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",padding:"4px 0",borderRadius:"6px",fontSize:"11px",fontFamily:F.s,fontWeight:i===dayOfWeek?"600":"400",background:i===dayOfWeek?plan.color:C.white,color:i===dayOfWeek?"#fff":C.txtL}},dn);})),
+      React.createElement("h4",{style:{fontFamily:F.s,fontSize:"13px",color:plan.color,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:"0.05em"}},L?"\ud83c\udf7d Meals for this phase":"\ud83c\udf7d Pasti per questa fase"),
+      plan.meals.map(function(m,i){return React.createElement("div",{key:i,onClick:function(){setOpenMeal(openMeal===i?-1:i);},style:{padding:"10px",marginBottom:"6px",borderRadius:"10px",background:C.white,cursor:"pointer",border:"1px solid "+(openMeal===i?plan.color:C.bdr)}},
+        React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+          React.createElement("span",{style:{fontSize:"14px",fontFamily:F.s,fontWeight:"500",color:C.txt}},L?m.nameEN:m.name),
+          React.createElement("span",{style:{fontSize:"12px",color:C.txtL,transition:"transform .2s",transform:openMeal===i?"rotate(180deg)":"none"}},"\u25bc")
+        ),
+        openMeal===i&&React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,color:C.txtM,margin:"8px 0 0",lineHeight:1.6}},L?m.en:m.it)
+      );}),
+      React.createElement("div",{style:{marginTop:"10px",padding:"10px",borderRadius:"10px",background:C.white}},
+        React.createElement("h4",{style:{fontFamily:F.s,fontSize:"13px",color:plan.color,margin:"0 0 6px"}},L?"\ud83e\udd57 Nutrition focus":"\ud83e\udd57 Focus nutrizionale"),
+        React.createElement("p",{style:{fontSize:"13px",fontFamily:F.s,color:C.txtM,lineHeight:1.6,margin:0}},L?plan.tips.en:plan.tips.it)
+      ),
+      React.createElement("div",{style:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"8px",marginTop:"8px"}},
+        React.createElement("div",{style:{padding:"10px",borderRadius:"10px",background:C.white}},
+          React.createElement("h4",{style:{fontFamily:F.s,fontSize:"12px",color:plan.color,margin:"0 0 4px"}},L?"\ud83c\udfcb\ufe0f Exercise":"\ud83c\udfcb\ufe0f Allenamento"),
+          React.createElement("p",{style:{fontSize:"12px",fontFamily:F.s,color:C.txtM,lineHeight:1.5,margin:0}},L?plan.exercise.en:plan.exercise.it)
+        ),
+        React.createElement("div",{style:{padding:"10px",borderRadius:"10px",background:C.white}},
+          React.createElement("h4",{style:{fontFamily:F.s,fontSize:"12px",color:plan.color,margin:"0 0 4px"}},L?"\ud83c\udf1f Lifestyle":"\ud83c\udf1f Stile di vita"),
+          React.createElement("p",{style:{fontSize:"12px",fontFamily:F.s,color:C.txtM,lineHeight:1.5,margin:0}},L?plan.lifestyle.en:plan.lifestyle.it)
+        )
+      ),
+      React.createElement("p",{style:{fontSize:"11px",color:C.txtL,fontFamily:F.s,margin:"10px 0 0",fontStyle:"italic",textAlign:"center"}},"Fonte: WomanCode di Alisa Vitti \u2014 Cycle Syncing Protocol")
+    )
+  );
+}
+
+/* ═══════ MEAL ORDER TRACKER (Ordine dei cibi) ═══════ */
+function MealOrderTracker(){
+  var L=LANG_STORE==="en";
+  var todayK2=todayK();
+  var _s1=useState(function(){return LD("mealOrder_"+todayK2,[]);});var logs=_s1[0];var setLogs=_s1[1];
+  var _s2=useState(false);var adding=_s2[0];var setAdding=_s2[1];
+  var _s3=useState("");var mealName=_s3[0];var setMealName=_s3[1];
+  var _s4=useState([false,false,false,false]);var steps=_s4[0];var setSteps=_s4[1];
+
+  var STEPS=[
+    {icon:"\ud83e\udd57",label:L?"Vegetables first":"Verdura prima",labelShort:L?"Vegs":"Verd",color:C.sage},
+    {icon:"\ud83e\udd69",label:L?"Then protein":"Poi proteine",labelShort:L?"Prot":"Prot",color:C.blue},
+    {icon:"\ud83c\udf5a",label:L?"Carbs last":"Carboidrati per ultimi",labelShort:L?"Carbs":"Carb",color:C.amber},
+    {icon:"\ud83e\udd51",label:L?"Added healthy fat":"Aggiunto grasso buono",labelShort:L?"Fat":"Grasso",color:C.plum}
+  ];
+
+  function saveMeal(){
+    var score=steps.filter(Boolean).length;
+    var entry={meal:mealName||"Pasto",steps:steps.slice(),score:score,time:new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})};
+    var updated=logs.concat([entry]);
+    setLogs(updated);SV("mealOrder_"+todayK2,updated);
+    setAdding(false);setMealName("");setSteps([false,false,false,false]);
+  }
+
+  var weekScores=[];
+  for(var dd=6;dd>=0;dd--){
+    var dk=new Date();dk.setDate(dk.getDate()-dd);var dks=dk.toISOString().slice(0,10);
+    var dayLogs=LD("mealOrder_"+dks,[]);
+    var dayTotal=dayLogs.reduce(function(s,l){return s+l.score;},0);
+    var dayMax=dayLogs.length*4;
+    weekScores.push({day:dk.toLocaleDateString(L?"en":"it",{weekday:"short"}),score:dayTotal,max:dayMax,pct:dayMax>0?Math.round(dayTotal/dayMax*100):0});
+  }
+  var weekAvg=weekScores.filter(function(w){return w.max>0;});
+  var avgPct=weekAvg.length>0?Math.round(weekAvg.reduce(function(s,w){return s+w.pct;},0)/weekAvg.length):0;
+
+  return React.createElement("div",{style:{display:"grid",gap:"10px",marginTop:"12px"}},
+    React.createElement(Cd,{accent:C.sage,style:{background:C.sageP}},
+      React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}},
+        React.createElement("div",null,
+          React.createElement("h4",{style:{fontFamily:F.s,fontSize:"14px",fontWeight:"600",color:C.sageD,margin:0}},L?"\ud83e\udd57 Meal Order Tracker":"\ud83e\udd57 Ordine dei Cibi"),
+          React.createElement("p",{style:{fontSize:"12px",color:C.txtL,fontFamily:F.s,margin:"2px 0 0"}},L?"Veg \u2192 Protein \u2192 Carbs \u2192 Fat":"Verdura \u2192 Proteine \u2192 Carboidrati \u2192 Grassi")
+        ),
+        React.createElement("div",{style:{textAlign:"center"}},
+          React.createElement("div",{style:{fontSize:"22px",fontWeight:"600",fontFamily:F.s,color:avgPct>=75?C.sage:avgPct>=50?C.amber:C.rose}},avgPct+"%"),
+          React.createElement("div",{style:{fontSize:"10px",color:C.txtL,fontFamily:F.s}},L?"week avg":"media sett.")
+        )
+      ),
+      React.createElement("div",{style:{display:"flex",gap:"3px",marginBottom:"10px"}},weekScores.map(function(w,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center"}},
+        React.createElement("div",{style:{height:"40px",borderRadius:"4px",background:C.white,position:"relative",overflow:"hidden",marginBottom:"2px"}},
+          React.createElement("div",{style:{position:"absolute",bottom:0,width:"100%",height:Math.max(w.pct*0.4,2)+"px",borderRadius:"4px",background:w.pct>=75?C.sage:w.pct>=50?C.amber:w.max>0?C.rose:C.bdr,transition:"height .3s"}})
+        ),
+        React.createElement("span",{style:{fontSize:"10px",color:C.txtL,fontFamily:F.s}},w.day)
+      );})),
+      React.createElement("p",{style:{fontSize:"11px",color:C.txtL,fontFamily:F.s,margin:"0 0 6px",fontStyle:"italic"}},L?"Based on WomanCode & Glucose Goddess: eating in the right order reduces insulin spikes up to 48%":"Da WomanCode e Glucose Goddess: mangiare nell'ordine giusto riduce i picchi insulinici fino al 48%")
+    ),
+    logs.length>0&&React.createElement(Cd,null,
+      React.createElement("h4",{style:{fontFamily:F.s,fontSize:"13px",color:C.txt,margin:"0 0 8px"}},L?"Today's meals":"Pasti di oggi"),
+      logs.map(function(l,i){return React.createElement("div",{key:i,style:{display:"flex",alignItems:"center",gap:"8px",marginBottom:"6px",padding:"6px 8px",borderRadius:"8px",background:l.score>=3?C.sageP:l.score>=2?C.amberP:C.roseP}},
+        React.createElement("span",{style:{fontSize:"13px",fontFamily:F.s,color:C.txtM,width:"40px"}},l.time),
+        React.createElement("span",{style:{fontSize:"13px",fontFamily:F.s,color:C.txt,flex:1}},l.meal),
+        React.createElement("div",{style:{display:"flex",gap:"2px"}},STEPS.map(function(st,si){return React.createElement("div",{key:si,style:{width:"14px",height:"14px",borderRadius:"50%",background:l.steps[si]?st.color:C.bdr,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"8px"}},l.steps[si]?"\u2713":"");})),
+        React.createElement("span",{style:{fontSize:"12px",fontWeight:"600",fontFamily:F.s,color:l.score>=3?C.sage:l.score>=2?C.amber:C.rose}},l.score+"/4")
+      );})
+    ),
+    adding?React.createElement(Cd,{accent:C.sage},
+      React.createElement("h4",{style:{fontFamily:F.s,fontSize:"14px",color:C.sageD,margin:"0 0 10px"}},L?"Log a meal":"Registra un pasto"),
+      React.createElement("input",{value:mealName,onChange:function(e){setMealName(e.target.value);},placeholder:L?"Meal name (breakfast, lunch...)":"Nome pasto (colazione, pranzo...)",style:Object.assign({},iS,{marginBottom:"10px"})}),
+      React.createElement("div",{style:{display:"grid",gap:"6px",marginBottom:"12px"}},STEPS.map(function(st,i){return React.createElement("button",{key:i,onClick:function(){var ns=steps.slice();ns[i]=!ns[i];setSteps(ns);},style:{display:"flex",alignItems:"center",gap:"10px",padding:"10px",borderRadius:"10px",border:steps[i]?"2px solid "+st.color:"1px solid "+C.bdr,background:steps[i]?st.color+"15":C.white,cursor:"pointer",textAlign:"left"}},
+        React.createElement("span",{style:{fontSize:"18px"}},st.icon),
+        React.createElement("span",{style:{fontSize:"13px",fontFamily:F.s,color:steps[i]?st.color:C.txtM}},st.label),
+        steps[i]&&React.createElement("span",{style:{marginLeft:"auto",fontSize:"14px",color:st.color}},"\u2713")
+      );})),
+      React.createElement("div",{style:{display:"flex",gap:"8px"}},
+        React.createElement("button",{onClick:function(){setAdding(false);},style:Object.assign({},bS,{flex:1})},"Annulla"),
+        React.createElement("button",{onClick:saveMeal,style:Object.assign({},bSP,{flex:1})},L?"Save":"Salva")
+      )
+    ):React.createElement("button",{onClick:function(){setAdding(true);},style:{width:"100%",padding:"12px",borderRadius:"12px",border:"2px dashed "+C.sage,background:"transparent",color:C.sage,fontSize:"14px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}},L?"+ Log meal order":"+ Registra ordine pasto")
+  );
+}
+
 /* ═══════ PHASE 14: EDUCATION ═══════ */
 var PCOS_ENCYCLOPEDIA=[
 {title:LANG_STORE==="en"?"What is PCOS?":"Cos'e la PCOS?",icon:"\ud83c\udf38",content:LANG_STORE==="en"?"Polycystic Ovary Syndrome affects 8-13% of women. It's a hormonal disorder involving insulin resistance, excess androgens, and irregular ovulation. It's NOT just about ovarian cysts — it's a metabolic and hormonal condition that affects the whole body.":"La Sindrome dell'Ovaio Policistico colpisce l'8-13% delle donne. E un disordine ormonale che coinvolge insulino-resistenza, eccesso di androgeni e ovulazione irregolare. NON si tratta solo di cisti ovariche — e una condizione metabolica e ormonale che coinvolge tutto il corpo."},
@@ -2179,6 +2350,16 @@ var PCOS_ENCYCLOPEDIA=[
 {title:LANG_STORE==="en"?"Phase Foods (WomanCode)":"Cibi per Fase (WomanCode)",icon:"\ud83c\udf7d\ufe0f",content:LANG_STORE==="en"?"WomanCode food chart: FOLLICULAR — avocado, broccoli, string beans, carrots, lentils, oats, cashews, flaxseed, chicken, eggs, zucchini, artichokes, sprouted beans. OVULATORY — quinoa, corn, almonds, spinach, red lentils, turmeric, asparagus, salmon, shrimp, figs. LUTEAL — sweet potato, cauliflower, chickpeas, brown rice, walnuts, sunflower seeds, turkey, halibut, dates, cabbage, celery. MENSTRUAL — kale, beets, mushrooms, seaweed, miso, brown rice, berries, watermelon, mussels, sardines, buckwheat.":"Cibi per fase secondo WomanCode: FOLLICOLARE — avocado, broccoli, fagiolini, carote, lenticchie, avena, anacardi, semi di lino, pollo, uova, zucchine, carciofi, germogli. OVULATORIA — quinoa, mais, mandorle, spinaci, lenticchie rosse, curcuma, asparagi, salmone, gamberetti, fichi. LUTEALE — patata dolce, cavolfiore, ceci, riso integrale, noci, semi di girasole, tacchino, halibut, datteri, cavolo, sedano. MESTRUALE — cavolo riccio, barbabietola, funghi, alghe, miso, riso integrale, frutti di bosco, anguria, cozze, sardine, grano saraceno."},
 {title:LANG_STORE==="en"?"Exercise by Phase (WomanCode)":"Allenamento per Fase (WomanCode)",icon:"\ud83c\udfc3\u200d\u2640\ufe0f",content:LANG_STORE==="en"?"WomanCode exercise syncing: FOLLICULAR — try new activities, your brain forms new connections more easily. Moderate cardio, dance, new classes. OVULATORY — peak energy! High-impact workouts: weight lifting, running, spinning, plyometrics. Group settings are ideal. LUTEAL (first half) — continue intense workouts, then scale back: walking, Pilates, yoga, elliptical. MENSTRUAL — rest and recovery. Yoga, stretching, gentle walks. Listen to your body. Cross-training with your cycle prevents injury and internal stress.":"Allenamento sincronizzato secondo WomanCode: FOLLICOLARE — prova attivita nuove, il cervello forma nuove connessioni piu facilmente. Cardio moderato, danza, nuovi corsi. OVULATORIA — picco di energia! Allenamenti intensi: pesi, corsa, spinning, pliometria. Sessioni di gruppo sono ideali. LUTEALE (prima meta) — continua gli allenamenti intensi, poi riduci: camminata, Pilates, yoga, ellittica. MESTRUALE — riposo e recupero. Yoga, stretching, camminate dolci. Ascolta il tuo corpo. Il cross-training con il ciclo previene infortuni e stress interno."},
 {title:LANG_STORE==="en"?"Soy & PCOS (WomanCode)":"Soia e PCOS (WomanCode)",icon:"\u26a0\ufe0f",content:LANG_STORE==="en"?"From WomanCode: women with estrogen-dominant conditions like PCOS should limit soy. Phytoestrogens in soy mimic natural estrogen. Small amounts of fermented soy (natto, tempeh, miso) are fine. Avoid: large quantities of tofu, soy milk, soy yogurt, soy protein powder. GMO soy can be endocrine-disruptive. Alternative proteins: eggs, seeds, lentils, rice/pea/hemp protein powders.":"Dal WomanCode: le donne con condizioni estrogeno-dominanti come la PCOS dovrebbero limitare la soia. I fitoestrogeni nella soia imitano l'estrogeno naturale. Piccole quantita di soia fermentata (natto, tempeh, miso) vanno bene. Evita: grandi quantita di tofu, latte di soia, yogurt di soia, proteine di soia in polvere. La soia OGM puo essere un interferente endocrino. Proteine alternative: uova, semi, lenticchie, proteine di riso/pisello/canapa."},
+{title:LANG_STORE==="en"?"The 5 WomanCode Steps":"I 5 Step del WomanCode",icon:"\ud83d\udccd",content:LANG_STORE==="en"?"Alisa Vitti's complete protocol: Step 1 — Stabilize blood sugar (every meal, every day). Step 2 — Nurture adrenal health (manage cortisol). Step 3 — Support elimination pathways (liver, gut, lymph, skin). Step 4 — Sync with your cycle (food, exercise, lifestyle for each phase). Step 5 — Engage your feminine energy. The protocol addresses root causes rather than masking symptoms with medication.":"Il protocollo completo di Alisa Vitti: Step 1 — Stabilizzare la glicemia (ogni pasto, ogni giorno). Step 2 — Supportare le surrenali (gestire il cortisolo). Step 3 — Supportare le vie di eliminazione (fegato, intestino, linfa, pelle). Step 4 — Sincronizzarsi con il ciclo (cibo, esercizio, stile di vita per ogni fase). Step 5 — Attivare l'energia femminile. Il protocollo affronta le cause profonde invece di mascherare i sintomi con i farmaci."},
+{title:LANG_STORE==="en"?"Meal Order Science":"La Scienza dell'Ordine dei Cibi",icon:"\ud83e\udd57",content:LANG_STORE==="en"?"From Lotus Flower PCOS and Glucose Goddess research: always eat in this order — vegetables FIRST (fiber slows sugar absorption), then proteins, then complex carbohydrates, plus healthy fats. This reduces insulin spikes by up to 48%. Dairy products, even low-fat, have a very high insulin index. Skim yogurt stimulates more insulin than white bread. Apple cider vinegar before meals helps restore ovulatory function in PCOS.":"Dalla ricerca di Lotus Flower PCOS e Glucose Goddess: mangia sempre in quest'ordine — verdura PRIMA (la fibra rallenta l'assorbimento degli zuccheri), poi proteine, poi carboidrati complessi, piu grassi buoni. Questo riduce i picchi insulinici fino al 48%. I latticini, anche magri, hanno un indice insulinico altissimo. Lo yogurt magro stimola piu insulina del pane bianco. L'aceto di mele prima dei pasti aiuta a ripristinare la funzione ovulatoria nella PCOS."},
+{title:LANG_STORE==="en"?"PCOS Breakfast Rules":"Regole per la Colazione PCOS",icon:"\ud83c\udf73",content:LANG_STORE==="en"?"From Lotus Flower PCOS Special: breakfast is the most critical meal for PCOS women. A wrong breakfast triggers a vicious cycle of bad food choices all day. Rules: protein-rich (eggs, salmon, turkey), healthy fats (nuts, avocado), complex carbs (rye bread, oats, buckwheat). AVOID: skim yogurt (extremely high insulin index), croissants, rice cakes (very high GI), sugary cereals, fruit juice. Milk alternatives: almond, coconut, hazelnut (avoid rice milk — high GI).":"Dallo Speciale Lotus Flower PCOS: la colazione e il pasto piu critico per le donne con PCOS. Una colazione sbagliata innesca un circolo vizioso di scelte alimentari sbagliate per tutto il giorno. Regole: ricca di proteine (uova, salmone, tacchino), grassi buoni (frutta secca, avocado), carboidrati complessi (pane di segale, avena, grano saraceno). EVITA: yogurt magro (indice insulinico altissimo), cornetti, gallette di riso (IG molto alto), cereali zuccherati, succhi di frutta. Alternative al latte: mandorla, cocco, nocciola (evita latte di riso — IG alto)."},
+{title:LANG_STORE==="en"?"Vegetables in PCOS":"Verdure nella PCOS",icon:"\ud83e\udd66",content:LANG_STORE==="en"?"From Lotus Flower PCOS Special on Vegetables: vegetables must be the FIRST food at every meal. Fiber slows sugar absorption. Top PCOS vegetables: broccoli, cauliflower, zucchini, spinach (better raw), kale, arugula, celery, peppers, artichokes, fennel, mushrooms. Watch out: cooked carrots double their GI (eat raw), pumpkin is better baked than boiled, raw beet in slices. Non-starchy vegetables and fats don't significantly modify pancreatic insulin release. Goal: 2-3 portions daily.":"Dallo Speciale Lotus Flower PCOS sulle Verdure: le verdure devono essere il PRIMO alimento di ogni pasto. La fibra rallenta l'assorbimento degli zuccheri. Top verdure PCOS: broccoli, cavolfiore, zucchine, spinaci (meglio crudi), cavolo riccio, rucola, sedano, peperoni, carciofi, finocchi, funghi. Attenzione: le carote cotte raddoppiano l'IG (mangiale crude), la zucca e meglio al forno che bollita, barbabietola cruda a fettine. Le verdure non amidacee e i grassi non modificano significativamente il rilascio di insulina pancreatica. Obiettivo: 2-3 porzioni al giorno."},
+{title:LANG_STORE==="en"?"Building a PCOS Plate":"Costruire un Piatto PCOS",icon:"\ud83c\udf7d\ufe0f",content:LANG_STORE==="en"?"From PCOS 101 Lotus Flower: building a balanced PCOS-friendly meal requires all nutrients — vegetable fiber first, then proteins (animal or plant), the right amount of carbs (including medium-high GI ones), plus quality fats (extra virgin olive oil, avocado, nuts). Inadequate meals call for more insulin, which in PCOS means more androgens, more hunger, glycemic instability, more menstrual cycle alterations, less fertility. This negative stimulus happens 2-3 times daily for weeks, months, years.":"Da PCOS 101 Lotus Flower: costruire un pasto equilibrato PCOS-friendly richiede tutti i nutrienti — fibra vegetale prima, poi proteine (animali o vegetali), la giusta quantita di carboidrati (anche ad IG medio-alto), piu grassi di qualita (olio EVO, avocado, frutta secca). Pasti non adeguati richiamano piu insulina, che nella PCOS corrisponde a piu androgeni, piu fame, instabilita glicemica, piu alterazioni del ciclo mestruale, meno fertilita. Lo stimolo negativo avviene 2-3 volte al giorno per settimane, mesi, anni."},
+{title:LANG_STORE==="en"?"Insulin Index vs Glycemic Index":"Indice Insulinico vs Glicemico",icon:"\ud83d\udcca",content:LANG_STORE==="en"?"From Lotus Flower PCOS: the insulin index measures how much a food stimulates insulin, not just blood sugar. Surprising findings: different carbs stimulate insulin differently (choose whole grains like barley, quinoa, buckwheat, wild rice over refined flours). Dairy proteins, especially from milk, stimulate significant insulin release. Non-starchy vegetables and unsaturated fats (nuts, seeds, avocado, olive oil) don't significantly modify insulin release. This is why PCOS nutrition should focus on insulin, not just sugar.":"Da Lotus Flower PCOS: l'indice insulinico misura quanto un cibo stimola l'insulina, non solo la glicemia. Scoperte sorprendenti: diversi carboidrati stimolano l'insulina in modo diverso (scegli cereali integrali come orzo, quinoa, grano saraceno, riso selvatico invece di farine raffinate). Le proteine del latte stimolano un rilascio significativo di insulina. Verdure non amidacee e grassi insaturi (frutta secca, semi, avocado, olio d'oliva) non modificano significativamente il rilascio insulinico. Per questo la nutrizione PCOS deve focalizzarsi sull'insulina, non solo sugli zuccheri."},
+{title:LANG_STORE==="en"?"Overtraining & PCOS":"Sovrallenamento e PCOS",icon:"\u26a0\ufe0f",content:LANG_STORE==="en"?"From PCOS 101 Magazine: 'no pain, no gain' is wrong for PCOS. Sedentary lifestyle and very intense exercise are two sides of the same coin — an unhealthy relationship with your body. Fatigue is never 'healthy'. Follow WHO guidelines: 3-4 sessions per week with warm-up, muscle strengthening, and joint mobility. On rest days, add 30 min of gentle cardio ('active rest'). The body must be preserved in all its parts: cardiovascular, musculoskeletal, nervous system. Listen to yourself and move consciously.":"Dal Magazine PCOS 101: 'no pain, no gain' e sbagliato per la PCOS. Sedentarieta ed esercizio molto intenso sono due facce della stessa medaglia — un rapporto poco sano con il corpo. La fatica non e mai 'sana'. Segui le linee guida OMS: 3-4 sessioni a settimana con riscaldamento, rinforzo muscolare e mobilita articolare. Nei giorni di riposo, aggiungi 30 min di cardio dolce ('riposo attivo'). Il corpo va preservato in tutte le sue parti: apparato cardiovascolare, muscolo-scheletrico, sistema nervoso. Ascoltati e muoviti con consapevolezza."},
+{title:LANG_STORE==="en"?"Mind-Body Connection":"Connessione Mente-Corpo",icon:"\ud83e\udde0",content:LANG_STORE==="en"?"From PCOS 101 Magazine — Train With Brain methodology: your body obeys hormones, and hormones are influenced by your mood. Destructive thoughts trigger cortisol production which blocks dopamine and creates a vicious cycle preventing action. Gray weather + fatigue causes serotonin drop, then self-critical thoughts trigger cortisol, blocking the dopamine needed to believe in yourself and take action. The right mindset and the right training can change your life. Mind and body work together.":"Dal Magazine PCOS 101 — metodologia Train With Brain: il nostro corpo obbedisce agli ormoni, e gli ormoni sono influenzati dal nostro stato d'animo. Pensieri distruttivi innescano la produzione di cortisolo che blocca la dopamina e crea un circolo vizioso che impedisce l'azione. Tempo grigio + stanchezza causano un calo di serotonina, poi pensieri autocritici innescano cortisolo, bloccando la dopamina necessaria per credere in se stesse e agire. Il mindset adeguato e l'allenamento adeguato possono cambiare la vita. Mente e corpo lavorano insieme."},
+{title:LANG_STORE==="en"?"Apple Cider Vinegar & PCOS":"Aceto di Mele e PCOS",icon:"\ud83c\udf4e",content:LANG_STORE==="en"?"Multiple studies cited by Lotus Flower PCOS: vinegar intake reduces body weight, body fat, and triglycerides. It increases insulin-stimulated glucose uptake. A study in the Tohoku Journal found that vinegar beverage intake is associated with restoration of ovulatory function in women with PCOS. Use: 1-2 tablespoons of apple cider vinegar diluted in water before meals. Helps reduce post-meal glucose spikes and supports metabolic health.":"Diversi studi citati da Lotus Flower PCOS: l'assunzione di aceto riduce peso corporeo, massa grassa e trigliceridi. Aumenta l'assorbimento del glucosio stimolato dall'insulina. Uno studio sul Tohoku Journal ha trovato che l'assunzione di aceto e associata al ripristino della funzione ovulatoria nelle donne con PCOS. Uso: 1-2 cucchiai di aceto di mele diluiti in acqua prima dei pasti. Aiuta a ridurre i picchi glicemici post-pasto e supporta la salute metabolica."},
+{title:LANG_STORE==="en"?"Teas & Herbs for PCOS":"Tisane ed Erbe per PCOS",icon:"\ud83c\udf75",content:LANG_STORE==="en"?"From PCOS 101 research: Green tea improves glucose control and insulin sensitivity (meta-analysis of 17 RCTs). Peppermint tea has bioactive health benefits including anti-androgenic properties. Cinnamon extract improves insulin resistance parameters in PCOS (pilot study). Spearmint tea may help reduce excess androgens. These are complementary to medical treatment, not replacements.":"Dalla ricerca PCOS 101: il te verde migliora il controllo glicemico e la sensibilita insulinica (meta-analisi di 17 studi). La tisana alla menta piperita ha proprieta anti-androgeniche. L'estratto di cannella migliora i parametri di insulino-resistenza nella PCOS (studio pilota). La tisana alla menta verde puo aiutare a ridurre gli androgeni in eccesso. Sono complementari al trattamento medico, non sostitutivi."},
 {title:LANG_STORE==="en"?"Abdominal Fat":"Grasso Addominale",icon:"\ud83d\udca5",content:LANG_STORE==="en"?"PCOS makes it harder to lose belly fat due to insulin resistance and high androgens. Key strategies: strength training (builds muscle, boosts metabolism), post-meal walks (reduce glucose spikes), adequate sleep (reduces cortisol), reduce refined carbs, increase protein and fiber. Waist-to-hip ratio >0.85 indicates increased metabolic risk.":"La PCOS rende piu difficile perdere grasso addominale a causa dell'insulino-resistenza e degli androgeni alti. Strategie chiave: allenamento con pesi (costruisce muscolo, aumenta metabolismo), camminate post-pasto (riducono picchi glicemici), sonno adeguato (riduce cortisolo), ridurre carboidrati raffinati, aumentare proteine e fibre. Rapporto vita/fianchi >0.85 indica rischio metabolico aumentato."}
 ];
 function PCOSEncyclopedia(){
@@ -2420,17 +2601,17 @@ function App(){
         <DailyQuote/>
         <WeeklyInsight profile={profile}/>
         {tab==="home"&&<><CycleTip/><HomeDashboard profile={profile} setTab={setTab}/></>}
-        {tab==="alimentazione"&&<><Alimentazione profile={profile} setProfile={setProfile}/><MealIntelligence profile={profile}/></>}
+        {tab==="alimentazione"&&<><Alimentazione profile={profile} setProfile={setProfile}/><MealOrderTracker/><MealIntelligence profile={profile}/></>}
         {tab==="allenamento"&&<><Allenamento/><CycleWorkoutSuggestions/></>}
         {tab==="digiuno"&&<Digiuno profile={profile}/>}
-        {tab==="ciclo"&&<><CicloMestruale/><CyclePrediction/><SkinHairDiary/></>}
+        {tab==="ciclo"&&<><CicloMestruale/><CycleSyncPlanner/><CyclePrediction/><SkinHairDiary/></>}
         {tab==="track"&&<SmartTracking/>}
         {tab==="garmin"&&<GarminSection profile={profile}/>}
         {tab==="benessere"&&<><Benessere/><SuppReminders/><BBTTracker/><AntiInflamScore/><BreathingTimer/><SleepTracker/><MonthlyReport profile={profile}/></>}
         {tab==="ai"&&<><PCOSAssistant profile={profile}/><ShareCard profile={profile}/></>}
         {tab==="wiki"&&<PCOSEncyclopedia/>}
       </div>
-      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"15px",color:C.txtL,margin:0}}>PCOS Daily v5.1 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
+      <div style={{textAlign:"center",padding:"12px",borderTop:"1px solid "+C.bdr,background:C.white}}><p style={{fontSize:"15px",color:C.txtL,margin:0}}>PCOS Daily v7.1 | Cloud ☁️ | lotusflowerpcos.com | {t("consultaMedico")}</p></div>
     </div>
   );
 }
