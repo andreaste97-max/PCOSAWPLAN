@@ -2418,7 +2418,6 @@ function App(){
       </div>
       <div ref={scrollRef} style={{flex:1,padding:"20px 16px 36px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <DailyQuote/>
-        <CycleTip/>
         <WeeklyInsight profile={profile}/>
         {tab==="home"&&<><CycleTip/><HomeDashboard profile={profile} setTab={setTab}/></>}
         {tab==="alimentazione"&&<><Alimentazione profile={profile} setProfile={setProfile}/><MealIntelligence profile={profile}/></>}
