@@ -14,10 +14,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:'Inter',sans-serif;background:#FBF8F4;overscroll-behavior:none}
+    body{font-family:'Inter',sans-serif;background:#FBF8F4;overscroll-behavior:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
     input[type="date"],input[type="time"]{-webkit-appearance:none}
     ::-webkit-scrollbar{display:none}
-    button{-webkit-appearance:none}
+    html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+    body{-webkit-overflow-scrolling:touch}
+    input,select,textarea{font-size:16px!important;-webkit-appearance:none;border-radius:0}
+    button{-webkit-appearance:none;touch-action:manipulation}
+    img{max-width:100%;height:auto}
+    table{width:100%;table-layout:fixed;word-break:break-word}
+    @media(max-width:480px){
+      .nav-scroll{-webkit-overflow-scrolling:touch;scrollbar-width:none}
+      .nav-scroll::-webkit-scrollbar{display:none}
+    }
     @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.2)}}
     @keyframes ripple{0%{box-shadow:0 0 0 0 rgba(139,92,246,.4)}100%{box-shadow:0 0 0 12px rgba(139,92,246,0)}}@keyframes glow{0%,100%{box-shadow:0 4px 14px rgba(139,92,246,.3)}50%{box-shadow:0 4px 20px rgba(236,72,153,.3)}}
@@ -466,8 +475,8 @@ function Pill({children,color}){var c=color||C.sage;return(<span style={{display
 function Bar({v,mx,color}){var c=color||C.sage;return(<div style={{height:"8px",borderRadius:"4px",background:C.bdr,width:"100%",overflow:"hidden"}}><div style={{height:"100%",borderRadius:"4px",background:"linear-gradient(90deg,"+c+","+c+"cc)",width:Math.min((v/mx)*100,100)+"%",transition:"width .8s"}}/></div>);}
 function Info({bg,bdr,color,children}){return(<Cd style={{background:bg,border:"1px solid "+bdr}}><div style={{fontSize:"16px",fontFamily:F.s,color:color,margin:0,lineHeight:1.6}}>{children}</div></Cd>);}
 function MacroBar({p,c,f,kcal}){var tot=p+c+f;return(<div style={{marginTop:"8px"}}><div style={{display:"flex",height:"6px",borderRadius:"3px",overflow:"hidden",gap:"2px"}}><div style={{width:((p/tot)*100)+"%",background:C.rose,borderRadius:"3px"}}/><div style={{width:((c/tot)*100)+"%",background:C.amber,borderRadius:"3px"}}/><div style={{width:((f/tot)*100)+"%",background:C.sage,borderRadius:"3px"}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:"4px",fontSize:"16px",fontFamily:F.s,color:C.txtL}}><span style={{color:C.rose}}>P {p}g</span><span style={{color:C.amber}}>C {c}g</span><span style={{color:C.sage}}>G {f}g</span><span style={{fontWeight:"600",color:C.txt}}>{kcal} kcal</span></div></div>);}
-function SubT({tabs,active,onSel}){return(<div style={{display:"flex",gap:"4px",flexWrap:"wrap",marginBottom:"18px"}}>{tabs.map(function(t){return(<button key={t.k} onClick={function(){onSel(t.k);}} style={{padding:"6px 12px",borderRadius:"10px",border:active===t.k?"none":"1px solid "+C.bdr,background:active===t.k?C.sageP:C.white,color:active===t.k?C.sageD:C.txtM,fontWeight:active===t.k?"600":"400",fontSize:"15px",fontFamily:F.s,cursor:"pointer"}}>{t.i?t.i+" ":""}{t.l}</button>);})}</div>);}
-function NavTab({label,icon,active,onClick}){return(<button onClick={onClick} style={{display:"flex",alignItems:"center",gap:"6px",padding:"10px 16px",borderRadius:"50px",border:"none",cursor:"pointer",fontSize:"15px",fontWeight:active?"700":"500",fontFamily:F.s,background:active?"linear-gradient(135deg,"+C.plum+","+C.berry+")":"transparent",color:active?C.white:C.txtM,transition:"all .3s",whiteSpace:"nowrap",boxShadow:active?"0 4px 14px "+C.plum+"40":"none"}}><span style={{fontSize:"16px"}}>{icon}</span><span>{label}</span></button>);}
+function SubT({tabs,active,onSel}){return(<div style={{display:"flex",gap:"4px",flexWrap:"nowrap",overflowX:"auto",WebkitOverflowScrolling:"touch",scrollbarWidth:"none",marginBottom:"18px",paddingBottom:"2px"}}>{tabs.map(function(t){return(<button key={t.k} onClick={function(){onSel(t.k);}} style={{padding:"6px 12px",borderRadius:"10px",border:active===t.k?"none":"1px solid "+C.bdr,background:active===t.k?C.sageP:C.white,color:active===t.k?C.sageD:C.txtM,fontWeight:active===t.k?"600":"400",fontSize:"15px",fontFamily:F.s,cursor:"pointer"}}>{t.i?t.i+" ":""}{t.l}</button>);})}</div>);}
+function NavTab({label,icon,active,onClick}){return(<button onClick={onClick} style={{display:"flex",alignItems:"center",gap:"4px",padding:"7px 10px",borderRadius:"50px",border:"none",cursor:"pointer",whiteSpace:"nowrap",flexShrink:0,fontSize:"15px",fontWeight:active?"700":"500",fontFamily:F.s,background:active?"linear-gradient(135deg,"+C.plum+","+C.berry+")":"transparent",color:active?C.white:C.txtM,transition:"all .3s",whiteSpace:"nowrap",boxShadow:active?"0 4px 14px "+C.plum+"40":"none"}}><span style={{fontSize:"16px"}}>{icon}</span><span>{label}</span></button>);}
 function SecH({title,sub}){return(<div style={{marginBottom:"20px"}}><h2 style={{fontFamily:F.p,fontSize:"24px",fontWeight:"600",color:C.txt,margin:0}}>{title}</h2><p style={{fontFamily:F.s,fontSize:"16px",color:C.txtL,marginTop:"5px"}}>{sub}</p></div>);}
 var iS={width:"100%",padding:"12px 14px",borderRadius:"12px",border:"1.5px solid "+C.bdr,fontFamily:F.s,fontSize:"16px",boxSizing:"border-box",background:C.white,transition:"border-color .2s"};
 var lS={fontSize:"16px",fontFamily:F.s,color:C.txtM,display:"block",marginBottom:"4px",fontWeight:"600",letterSpacing:".3px"};
@@ -786,7 +795,7 @@ function MenstrualCalendar(){
           else if(info.predicted){bg=C.berry+"25";color=C.berry;border="1px dashed "+C.berry;}
           else if(info.ovulation){bg=C.sage+"25";color=C.sageD;border="1px solid "+C.sage;}
           if(isToday&&!info.isPeriod){border="2px solid "+C.plum;}
-          return React.createElement("button",{key:i,onClick:function(){togglePeriod(dateStr);},style:{aspectRatio:"1",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontFamily:F.s,fontWeight:isToday?"600":"400",background:bg,color:color,border:border,cursor:"pointer",position:"relative",transition:"all 0.15s"}},day);
+          return React.createElement("button",{key:i,onClick:function(){togglePeriod(dateStr);},style:{aspectRatio:"1",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",minWidth:"36px",minHeight:"36px",fontFamily:F.s,fontWeight:isToday?"600":"400",background:bg,color:color,border:border,cursor:"pointer",position:"relative",transition:"all 0.15s"}},day);
         })
       ),
       React.createElement("div",{style:{display:"flex",gap:"16px",justifyContent:"center",marginTop:"12px",flexWrap:"wrap"}},
@@ -1064,7 +1073,7 @@ function ProgressPhotos(){
       <div style={{position:"absolute",top:"8px",right:"8px",padding:"3px 8px",borderRadius:"6px",background:"rgba(0,0,0,.6)",color:C.white,fontSize:"15px",fontFamily:F.s,zIndex:3}}>{t("dopo")} — {fmtD(photos[selB||0].date)}</div>
     </div></Cd>)}</div>)}
     {photos.length===0&&<Info bg={C.plumP} bdr={C.plumL} color={C.plum}>Scatta una foto al mese per vedere i tuoi progressi nel tempo! Le foto restano solo sul tuo dispositivo.</Info>}
-    <div style={{display:"grid",gap:"8px",gridTemplateColumns:"repeat(3,1fr)"}}>{photos.map(function(p,i){return(<div key={i} style={{position:"relative",borderRadius:"10px",overflow:"hidden",aspectRatio:"3/4"}}><img src={p.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,.7))",padding:"4px 6px"}}><span style={{fontSize:"15px",fontFamily:F.s,color:C.white}}>{fmtD(p.date)}</span></div><button onClick={function(){delPhoto(i);}} style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,.5)",color:C.white,fontSize:"15px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>);})}</div>
+    <div style={{display:"grid",gap:"8px",gridTemplateColumns:"repeat(auto-fill,minmax(90px,1fr))"}}>{photos.map(function(p,i){return(<div key={i} style={{position:"relative",borderRadius:"10px",overflow:"hidden",aspectRatio:"3/4"}}><img src={p.data} style={{width:"100%",height:"100%",objectFit:"cover"}}/><div style={{position:"absolute",bottom:0,left:0,right:0,background:"linear-gradient(transparent,rgba(0,0,0,.7))",padding:"4px 6px"}}><span style={{fontSize:"15px",fontFamily:F.s,color:C.white}}>{fmtD(p.date)}</span></div><button onClick={function(){delPhoto(i);}} style={{position:"absolute",top:"4px",right:"4px",width:"20px",height:"20px",borderRadius:"50%",border:"none",background:"rgba(0,0,0,.5)",color:C.white,fontSize:"15px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>✕</button></div>);})}</div>
   </div>);
 }
 
@@ -2226,7 +2235,7 @@ function CycleSyncPlanner(){
           cp&&React.createElement("p",{style:{fontSize:"13px",color:C.txtM,fontFamily:F.s,margin:"2px 0 0"}},(L?"Day ":"Giorno ")+cp.day)
         )
       ),
-      React.createElement("div",{style:{display:"flex",gap:"3px",marginBottom:"12px"}},dayNames.map(function(dn,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",padding:"4px 0",borderRadius:"6px",fontSize:"11px",fontFamily:F.s,fontWeight:i===dayOfWeek?"600":"400",background:i===dayOfWeek?plan.color:C.white,color:i===dayOfWeek?"#fff":C.txtL}},dn);})),
+      React.createElement("div",{style:{display:"flex",gap:"3px",marginBottom:"12px"}},dayNames.map(function(dn,i){return React.createElement("div",{key:i,style:{flex:1,textAlign:"center",padding:"4px 0",borderRadius:"6px",fontSize:"10px",fontFamily:F.s,fontWeight:i===dayOfWeek?"600":"400",background:i===dayOfWeek?plan.color:C.white,overflow:"hidden",textOverflow:"ellipsis",color:i===dayOfWeek?"#fff":C.txtL}},dn);})),
       React.createElement("h4",{style:{fontFamily:F.s,fontSize:"13px",color:plan.color,margin:"0 0 8px",textTransform:"uppercase",letterSpacing:"0.05em"}},L?"\ud83c\udf7d Meals for this phase":"\ud83c\udf7d Pasti per questa fase"),
       plan.meals.map(function(m,i){return React.createElement("div",{key:i,onClick:function(){setOpenMeal(openMeal===i?-1:i);},style:{padding:"10px",marginBottom:"6px",borderRadius:"10px",background:C.white,cursor:"pointer",border:"1px solid "+(openMeal===i?plan.color:C.bdr)}},
         React.createElement("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
@@ -2305,7 +2314,7 @@ function MealOrderTracker(){
         React.createElement("div",{style:{height:"40px",borderRadius:"4px",background:C.white,position:"relative",overflow:"hidden",marginBottom:"2px"}},
           React.createElement("div",{style:{position:"absolute",bottom:0,width:"100%",height:Math.max(w.pct*0.4,2)+"px",borderRadius:"4px",background:w.pct>=75?C.sage:w.pct>=50?C.amber:w.max>0?C.rose:C.bdr,transition:"height .3s"}})
         ),
-        React.createElement("span",{style:{fontSize:"10px",color:C.txtL,fontFamily:F.s}},w.day)
+        React.createElement("span",{style:{fontSize:"11px",color:C.txtL,fontFamily:F.s}},w.day)
       );})),
       React.createElement("p",{style:{fontSize:"11px",color:C.txtL,fontFamily:F.s,margin:"0 0 6px",fontStyle:"italic"}},L?"Based on WomanCode & Glucose Goddess: eating in the right order reduces insulin spikes up to 48%":"Da WomanCode e Glucose Goddess: mangiare nell'ordine giusto riduce i picchi insulinici fino al 48%")
     ),
@@ -2573,7 +2582,7 @@ function App(){
           <div style={{flex:1}}><h1 style={{fontFamily:F.p,fontSize:"22px",fontWeight:"700",color:C.txt,margin:0,letterSpacing:"-0.5px"}}>PCOS Daily</h1><p style={{fontSize:"15px",color:C.txtL,margin:"2px 0 0",fontWeight:"500"}}>v6.0 ☁️ | ~{mc.target} kcal | IF {profile.ifH}:{24-profile.ifH}</p></div>
           <div style={{textAlign:"right"}}><div style={{fontSize:"16px",fontWeight:"700",color:C.sage,fontFamily:F.s}}>{profile.weight} kg</div><div style={{fontSize:"16px",color:C.txtL,fontFamily:F.s,fontWeight:"500"}}>goal {profile.goalW} kg</div></div>
         </div>
-        <div style={{display:"flex",gap:"4px",alignItems:"center",marginBottom:"6px"}}>
+        <div style={{display:"flex",gap:"4px",alignItems:"center",marginBottom:"6px",flexWrap:"wrap"}}>
           <button onClick={doSync} disabled={syncing} style={{padding:"6px 14px",borderRadius:"10px",border:"1.5px solid "+C.bdr,background:syncing?C.sageP:C.white,color:C.sage,fontSize:"15px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>{syncing?"⏳ Sync...":"☁️ "+t("sync")}</button>
           {lastSync&&<span style={{fontSize:"16px",fontFamily:F.s,color:C.txtL}}>✓ {lastSync}</span>}
           <button onClick={function(){setShowShare(!showShare);}} style={{padding:"6px 14px",borderRadius:"10px",border:"1.5px solid "+C.plumL,background:C.plumP,color:C.plum,fontSize:"15px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}}>🔗 {t("medico")}</button>
@@ -2597,7 +2606,7 @@ function App(){
           <NavTab label={LANG_STORE==="en"?"Wiki":"Wiki"} icon="📚" active={tab==="wiki"} onClick={function(){setTab("wiki");}}/>
         </div>
       </div>
-      <div ref={scrollRef} style={{flex:1,padding:"20px 16px 36px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
+      <div ref={scrollRef} style={{flex:1,padding:"16px 14px 80px",maxWidth:"640px",width:"100%",margin:"0 auto",boxSizing:"border-box"}}>
         <DailyQuote/>
         <WeeklyInsight profile={profile}/>
         {tab==="home"&&<><CycleTip/><HomeDashboard profile={profile} setTab={setTab}/></>}
