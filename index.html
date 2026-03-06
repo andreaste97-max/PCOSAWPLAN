@@ -111,7 +111,7 @@ var fbAuth=firebase.auth();
 var fbDb=firebase.firestore();
 var googleProvider=new firebase.auth.GoogleAuthProvider();
 
-var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
+var SYNC_KEYS=["profile","weighins","workouts","daily","fasts","gymLogs","favRecipes","bloodwork","lastPeriod","cycleLen","periodDates","fast_goal","symptoms","bodyMeas","habits","suppLog","bbt","mealPlan","pcos_onboarded"];
 function syncToCloud(uid){if(!uid)return Promise.resolve();var data={};SYNC_KEYS.forEach(function(k){var v=localStorage.getItem("pcos_"+k);if(v)data[k]=v;});var today=todayK();var dayKeys=["meals_","water_","supps_","sleep_"];dayKeys.forEach(function(prefix){for(var i=0;i<7;i++){var d=new Date();d.setDate(d.getDate()-i);var dk=d.toISOString().slice(0,10);var v=localStorage.getItem("pcos_"+prefix+dk);if(v)data[prefix+dk]=v;}});data.lastSync=new Date().toISOString();var p1=fbDb.collection("users").doc(uid).set(data,{merge:true});var photos=localStorage.getItem("pcos_progressPhotos");var p2=photos?fbDb.collection("users").doc(uid).collection("photos").doc("data").set({photos:photos},{merge:true}):Promise.resolve();return Promise.all([p1,p2]);}
 function syncFromCloud(uid){if(!uid)return Promise.resolve();var p1=fbDb.collection("users").doc(uid).get().then(function(doc){if(!doc.exists)return;var data=doc.data();var cloudProf=null;try{cloudProf=data.profile?JSON.parse(data.profile):null;}catch(e){}var localProf=null;try{var lp=localStorage.getItem("pcos_profile");localProf=lp?JSON.parse(lp):null;}catch(e){}var cloudHasProfile=cloudProf&&cloudProf.name;var localHasProfile=localProf&&localProf.name;var localFastOn=false;try{localFastOn=JSON.parse(localStorage.getItem("pcos_fast_isOn"));}catch(e){}Object.keys(data).forEach(function(k){if(k==="lastSync")return;if(k==="profile"&&localHasProfile&&!cloudHasProfile)return;if(k==="pcos_onboarded"&&localHasProfile&&!cloudHasProfile)return;if(localFastOn&&(k==="fast_isOn"||k==="fast_start"))return;localStorage.setItem("pcos_"+k,data[k]);});});var p2=fbDb.collection("users").doc(uid).collection("photos").doc("data").get().then(function(doc){if(doc.exists&&doc.data().photos)localStorage.setItem("pcos_progressPhotos",doc.data().photos);}).catch(function(){});return Promise.all([p1,p2]);}
 function generateShareLink(uid){if(!uid)return"";return window.location.origin+window.location.pathname+"?view="+uid;}
@@ -693,6 +693,12 @@ function MenstrualCalendar(){
     if(idx>=0){updated=periodDates.filter(function(d){return d!==dateStr;});}
     else{updated=periodDates.concat([dateStr]).sort();}
     setPeriodDates(updated);SV("periodDates",updated);
+    /* Sync with lastPeriod for homepage */
+    var sorted2=updated.slice().sort();if(sorted2.length>0){
+      var starts2=[sorted2[0]];for(var s=1;s<sorted2.length;s++){if((new Date(sorted2[s])-new Date(sorted2[s-1]))/86400000>5)starts2.push(sorted2[s]);}
+      SV("lastPeriod",starts2[starts2.length-1]);
+      if(starts2.length>=2){var diffs2=[];for(var d2=1;d2<starts2.length;d2++){diffs2.push(Math.round((new Date(starts2[d2])-new Date(starts2[d2-1]))/86400000));}SV("cycleLen",Math.round(diffs2.reduce(function(a,b){return a+b;},0)/diffs2.length));}
+    }
   }
   
   function getPeriodStarts(){
@@ -806,7 +812,7 @@ function MenstrualCalendar(){
 /* ═══════════ CICLO MESTRUALE ═══════════ */
 function CicloMestruale(){
   const[sub,setSub]=useState("calendario");
-  const[lastPeriod,setLastPeriod]=useState(function(){return LD("lastPeriod","");});
+  const[lastPeriod,setLastPeriod]=useState(function(){var lp=LD("lastPeriod","");if(lp)return lp;var pd=LD("periodDates",[]);if(pd.length>0){var sorted=pd.slice().sort();var starts=[sorted[0]];for(var i=1;i<sorted.length;i++){if((new Date(sorted[i])-new Date(sorted[i-1]))/86400000>5)starts.push(sorted[i]);}return starts[starts.length-1];}return"";});
   const[cycleLen,setCycleLen]=useState(function(){return LD("cycleLen",35);});
   const[showResult,setShowResult]=useState(false);
   var today=new Date();var lpDate=lastPeriod?new Date(lastPeriod):null;
@@ -816,7 +822,12 @@ function CicloMestruale(){
   var currentPhase=null;
   if(dayOfCycle){if(dayOfCycle<=5)currentPhase=0;else if(dayOfCycle<=Math.floor(cycleLen*0.46))currentPhase=1;else if(dayOfCycle<=Math.floor(cycleLen*0.57))currentPhase=2;else currentPhase=3;}
   function formatDate(d){if(!d)return"--";return d.toLocaleDateString("it-IT",{day:"numeric",month:"short"});}
-  useEffect(function(){if(lastPeriod)SV("lastPeriod",lastPeriod);SV("cycleLen",cycleLen);},[lastPeriod,cycleLen]);
+  useEffect(function(){if(lastPeriod){SV("lastPeriod",lastPeriod);
+    /* Sync tracker → calendar: add 5 period days starting from lastPeriod */
+    var pd=LD("periodDates",[]);var lpD=new Date(lastPeriod);var changed=false;
+    for(var dd=0;dd<5;dd++){var ds=new Date(lpD.getTime()+dd*86400000).toISOString().slice(0,10);if(pd.indexOf(ds)<0){pd.push(ds);changed=true;}}
+    if(changed){pd.sort();SV("periodDates",pd);}
+  }SV("cycleLen",cycleLen);},[lastPeriod,cycleLen]);
   return(<div>
     <SecH title="Ciclo Mestruale" sub="Tracker, fasi e consigli PCOS-specifici"/>
     <SubT tabs={[{k:"calendario",l:"Calendario",i:"📅"},{k:"tracker",l:"Tracker",i:"🔮"},{k:"fasi",l:"Fasi",i:"🌙"},{k:"pcos",l:"PCOS & Ciclo",i:"🩺"}]} active={sub} onSel={setSub}/>
@@ -1060,7 +1071,9 @@ function ProgressPhotos(){
 /* ═══════════ CYCLE CORRELATION ═══════════ */
 var CYCLE_PHASES=[{name:LANG_STORE==="en"?"Menstrual":"Mestruale",icon:"\ud83c\udf39",color:"#e57373",days:LANG_STORE==="en"?"Days 1-5":"Giorni 1-5",hormones:LANG_STORE==="en"?"Estrogen and progesterone low":"Estrogeni e progesterone bassi",symptoms:LANG_STORE==="en"?"Cramps, fatigue, bloating, headache":"Crampi, stanchezza, gonfiore, mal di testa",gym:LANG_STORE==="en"?"Rest and gentle movement. Yoga, stretching, light walks.":"Riposo e movimento dolce. Yoga, stretching, camminate leggere.",food:LANG_STORE==="en"?"Iron-rich foods: spinach, lentils, lean red meat. Ginger for cramps. Dark chocolate 85% for magnesium.":"Cibi ricchi di ferro: spinaci, lenticchie, carne rossa magra. Zenzero per crampi. Cioccolato fondente 85% per magnesio.",pcos:LANG_STORE==="en"?"Energy is low, that's normal. Prioritize rest and avoid intense training. Warm, comforting foods help.":"L'energia e bassa, e normale. Dai priorita al riposo ed evita allenamenti intensi. Cibi caldi e confortanti aiutano."},{name:LANG_STORE==="en"?"Follicular":"Follicolare",icon:"\ud83c\udf31",color:"#81c784",days:LANG_STORE==="en"?"Days 6-13":"Giorni 6-13",hormones:LANG_STORE==="en"?"Estrogen rising, energy increasing":"Estrogeni in crescita, energia in aumento",symptoms:LANG_STORE==="en"?"High energy, positive mood, better skin":"Energia alta, umore positivo, pelle migliore",gym:LANG_STORE==="en"?"Peak performance! Heavy lifts, HIIT, progressive overload.":"Massima performance! Carichi pesanti, HIIT, sovraccarico progressivo.",food:LANG_STORE==="en"?"Protein to support follicles. Cruciferous vegetables (broccoli, cauliflower). Whole grains for energy.":"Proteine per supportare i follicoli. Verdure crucifere (broccoli, cavolfiore). Cereali integrali per energia.",pcos:LANG_STORE==="en"?"Estrogen rises, energy is high. Best time for challenging workouts and trying new recipes!":"L'estrogeno sale, l'energia e alta. Momento migliore per allenamenti sfidanti e nuove ricette!"},{name:LANG_STORE==="en"?"Ovulatory":"Ovulatoria",icon:"\u2728",color:"#ffb74d",days:LANG_STORE==="en"?"Days 14-16":"Giorni 14-16",hormones:LANG_STORE==="en"?"Estrogen and LH peak":"Picco di estrogeni e LH",symptoms:LANG_STORE==="en"?"Peak energy, high libido, glowing skin":"Massima energia, libido alta, pelle luminosa",gym:LANG_STORE==="en"?"Maximum strength and energy. Try for personal records.":"Forza ed energia al massimo. Prova per record personali.",food:LANG_STORE==="en"?"Fiber to metabolize excess estrogen. Zinc (pumpkin seeds). Omega-3 (salmon). Reduce salt.":"Fibre per metabolizzare estrogeni in eccesso. Zinco (semi di zucca). Omega-3 (salmone). Riduci sale.",pcos:LANG_STORE==="en"?"Fertility window. If tracking ovulation, BBT rises slightly. Include anti-inflammatory foods.":"Finestra di fertilita. Se monitori l'ovulazione, la BBT sale leggermente. Includi cibi anti-infiammatori."},{name:LANG_STORE==="en"?"Luteal":"Luteale",icon:"\ud83c\udf19",color:"#9575cd",days:LANG_STORE==="en"?"Days 17-28":"Giorni 17-28",hormones:LANG_STORE==="en"?"Progesterone high, then pre-menstrual drop":"Progesterone alto, poi calo pre-mestruale",symptoms:LANG_STORE==="en"?"PMS, bloating, sugar cravings, anxiety, water retention":"SPM, gonfiore, voglia di dolce, ansia, ritenzione idrica",gym:LANG_STORE==="en"?"Lower intensity. Pilates, moderate strength, steady walks.":"Intensita ridotta. Pilates, forza moderata, camminate costanti.",food:LANG_STORE==="en"?"Complex carbs for serotonin. Magnesium. Cinnamon. Dark chocolate for sweet cravings.":"Carboidrati complessi per serotonina. Magnesio. Cannella. Cioccolato fondente per voglia di dolce.",pcos:LANG_STORE==="en"?"PMS cravings are normal with PCOS. Prepare healthy snacks in advance. Magnesium and B6 help.":"Le voglie premestruali sono normali con la PCOS. Prepara snack sani in anticipo. Magnesio e B6 aiutano."}];
 function getCyclePhaseNow(){
-  var lp=LD("lastPeriod","");var cl=LD("cycleLen",35);
+  var lp=LD("lastPeriod","");
+  if(!lp){var pd=LD("periodDates",[]);if(pd.length>0){var sorted=pd.slice().sort();var starts=[sorted[0]];for(var i=1;i<sorted.length;i++){if((new Date(sorted[i])-new Date(sorted[i-1]))/86400000>5)starts.push(sorted[i]);}lp=starts[starts.length-1];}}
+  var cl=LD("cycleLen",35);
   if(!lp)return null;
   var d=Math.floor((new Date()-new Date(lp))/86400000)+1;
   if(d<=5)return{phase:0,day:d};
