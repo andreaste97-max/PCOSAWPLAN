@@ -2327,8 +2327,8 @@ function MealOrderTracker(){
         steps[i]&&React.createElement("span",{style:{marginLeft:"auto",fontSize:"14px",color:st.color}},"\u2713")
       );})),
       React.createElement("div",{style:{display:"flex",gap:"8px"}},
-        React.createElement("button",{onClick:function(){setAdding(false);},style:Object.assign({},bS,{flex:1})},"Annulla"),
-        React.createElement("button",{onClick:saveMeal,style:Object.assign({},bSP,{flex:1})},L?"Save":"Salva")
+        React.createElement("button",{onClick:function(){setAdding(false);},style:{flex:1,padding:"10px",borderRadius:"10px",border:"1px solid "+C.bdr,background:C.white,color:C.txt,fontSize:"14px",fontFamily:F.s,cursor:"pointer"}},"Annulla"),
+        React.createElement("button",{onClick:saveMeal,style:{flex:1,padding:"10px",borderRadius:"10px",border:"none",background:C.sage,color:C.white,fontSize:"14px",fontFamily:F.s,fontWeight:"600",cursor:"pointer"}},L?"Save":"Salva")
       )
     ):React.createElement("button",{onClick:function(){setAdding(true);},style:{width:"100%",padding:"12px",borderRadius:"12px",border:"2px dashed "+C.sage,background:"transparent",color:C.sage,fontSize:"14px",fontFamily:F.s,fontWeight:"500",cursor:"pointer"}},L?"+ Log meal order":"+ Registra ordine pasto")
   );
